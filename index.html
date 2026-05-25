@@ -2,617 +2,78 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="theme-color" content="#000000" />
-<title>OLDA — L'écosystème</title>
-<meta name="description" content="L'écosystème digital OLDA. Tous nos outils, un seul endroit." />
+<title>OLDA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-
-  :root {
-    --bg: #000000;
-    --bg-2: #0a0a0a;
-    --surface: rgba(255,255,255,0.04);
-    --surface-hover: rgba(255,255,255,0.08);
-    --border: rgba(255,255,255,0.08);
-    --border-hover: rgba(255,255,255,0.18);
-    --text: #f5f5f7;
-    --text-dim: #a1a1a6;
-    --text-faint: #6e6e73;
-    --accent: #ffffff;
-    --blue: #0a84ff;
-    --purple: #bf5af2;
-    --pink: #ff375f;
-    --orange: #ff9f0a;
-    --green: #30d158;
-    --teal: #64d2ff;
-  }
-
-  html { scroll-behavior: smooth; }
-
-  body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    overflow-x: hidden;
-    line-height: 1.47;
-    letter-spacing: -0.01em;
-  }
-
-  /* === Aurora background === */
-  .aurora {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    overflow: hidden;
-    pointer-events: none;
-  }
-  .aurora::before, .aurora::after {
-    content: '';
-    position: absolute;
-    width: 60vmax;
-    height: 60vmax;
-    border-radius: 50%;
-    filter: blur(120px);
-    opacity: 0.35;
-    animation: float 22s ease-in-out infinite;
-  }
-  .aurora::before {
-    background: radial-gradient(circle, #0a84ff 0%, transparent 60%);
-    top: -20vmax;
-    left: -10vmax;
-  }
-  .aurora::after {
-    background: radial-gradient(circle, #bf5af2 0%, transparent 60%);
-    bottom: -20vmax;
-    right: -10vmax;
-    animation-delay: -11s;
-  }
-  @keyframes float {
-    0%, 100% { transform: translate(0,0) scale(1); }
-    50% { transform: translate(5vmax, -5vmax) scale(1.15); }
-  }
-
-  /* === Navigation === */
-  nav {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    background: rgba(0,0,0,0.72);
-    border-bottom: 1px solid var(--border);
-    transition: background .3s ease;
-  }
-  .nav-inner {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 14px 22px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .logo {
-    font-weight: 700;
-    font-size: 19px;
-    letter-spacing: -0.02em;
-    background: linear-gradient(180deg, #ffffff 0%, #a1a1a6 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .nav-links { display: flex; gap: 28px; }
-  .nav-links a {
-    color: var(--text-dim);
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 400;
-    transition: color .2s ease;
-  }
-  .nav-links a:hover { color: var(--text); }
-  @media (max-width: 640px) {
-    .nav-links { display: none; }
-  }
-
-  /* === Hero === */
-  .hero {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 120px 22px 80px;
-    text-align: center;
-    position: relative;
-  }
-  .eyebrow {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-faint);
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
-    margin-bottom: 24px;
-    opacity: 0;
-    animation: fadeUp .9s .1s ease forwards;
-  }
-  .hero h1 {
-    font-size: clamp(48px, 9vw, 112px);
-    font-weight: 800;
-    letter-spacing: -0.045em;
-    line-height: 0.98;
-    margin-bottom: 28px;
-    background: linear-gradient(180deg, #ffffff 0%, #ffffff 40%, #8e8e93 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    opacity: 0;
-    animation: fadeUp 1s .25s ease forwards;
-  }
-  .hero h1 .accent {
-    background: linear-gradient(135deg, #0a84ff 0%, #bf5af2 50%, #ff375f 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .hero p {
-    font-size: clamp(18px, 2.2vw, 24px);
-    color: var(--text-dim);
-    max-width: 680px;
-    font-weight: 400;
-    margin-bottom: 48px;
-    opacity: 0;
-    animation: fadeUp 1s .4s ease forwards;
-  }
-  .hero-cta {
-    display: flex;
-    gap: 14px;
-    flex-wrap: wrap;
-    justify-content: center;
-    opacity: 0;
-    animation: fadeUp 1s .55s ease forwards;
-  }
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 14px 28px;
-    border-radius: 980px;
-    font-size: 15px;
-    font-weight: 500;
-    text-decoration: none;
-    transition: all .25s ease;
-    border: 1px solid transparent;
-    cursor: pointer;
-  }
-  .btn-primary {
-    background: var(--text);
-    color: #000;
-  }
-  .btn-primary:hover { transform: translateY(-1px); background: #fff; }
-  .btn-secondary {
-    background: var(--surface);
-    color: var(--text);
-    border-color: var(--border);
-    backdrop-filter: blur(20px);
-  }
-  .btn-secondary:hover { background: var(--surface-hover); border-color: var(--border-hover); }
-
-  .scroll-hint {
-    position: absolute;
-    bottom: 32px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: var(--text-faint);
-    font-size: 11px;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    opacity: 0;
-    animation: fadeUp 1s 1s ease forwards, bounce 2.4s 1.6s ease infinite;
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes bounce {
-    0%, 100% { transform: translate(-50%, 0); }
-    50% { transform: translate(-50%, 8px); }
-  }
-
-  /* === Section === */
-  section { padding: 100px 22px; position: relative; }
-  .container { max-width: 1280px; margin: 0 auto; }
-
-  .section-header {
-    text-align: center;
-    margin-bottom: 64px;
-  }
-  .section-eyebrow {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--blue);
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
-    margin-bottom: 14px;
-  }
-  .section-header h2 {
-    font-size: clamp(36px, 5vw, 64px);
-    font-weight: 700;
-    letter-spacing: -0.035em;
-    line-height: 1.05;
-    margin-bottom: 18px;
-    background: linear-gradient(180deg, #ffffff 0%, #a1a1a6 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .section-header p {
-    font-size: 19px;
-    color: var(--text-dim);
-    max-width: 580px;
-    margin: 0 auto;
-  }
-
-  /* === Cards Grid === */
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 20px;
-  }
-
-  .card {
-    position: relative;
-    background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%);
-    border: 1px solid var(--border);
-    border-radius: 28px;
-    padding: 36px 32px;
-    text-decoration: none;
-    color: var(--text);
-    overflow: hidden;
-    transition: transform .4s cubic-bezier(0.22, 1, 0.36, 1), border-color .3s ease, background .3s ease;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    display: flex;
-    flex-direction: column;
-    min-height: 320px;
-    opacity: 0;
-    transform: translateY(40px);
-  }
-  .card.in-view {
-    opacity: 1;
-    transform: translateY(0);
-    transition: opacity .8s ease, transform .8s cubic-bezier(0.22, 1, 0.36, 1), border-color .3s ease, background .3s ease;
-  }
-  .card:hover {
-    transform: translateY(-6px);
-    border-color: var(--border-hover);
-    background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.025) 100%);
-  }
-  .card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(600px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.06), transparent 40%);
-    opacity: 0;
-    transition: opacity .4s ease;
-    pointer-events: none;
-  }
-  .card:hover::before { opacity: 1; }
-
-  .card-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 24px;
-    font-size: 26px;
-    position: relative;
-    overflow: hidden;
-  }
-  .card-icon svg { width: 28px; height: 28px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; position: relative; z-index: 1; }
-
-  .icon-blue { background: linear-gradient(135deg, #0a84ff, #0040dd); box-shadow: 0 8px 32px rgba(10,132,255,0.3); }
-  .icon-purple { background: linear-gradient(135deg, #bf5af2, #7d28b8); box-shadow: 0 8px 32px rgba(191,90,242,0.3); }
-  .icon-pink { background: linear-gradient(135deg, #ff375f, #c2185b); box-shadow: 0 8px 32px rgba(255,55,95,0.3); }
-  .icon-orange { background: linear-gradient(135deg, #ff9f0a, #d77400); box-shadow: 0 8px 32px rgba(255,159,10,0.3); }
-  .icon-green { background: linear-gradient(135deg, #30d158, #1a8c3a); box-shadow: 0 8px 32px rgba(48,209,88,0.3); }
-  .icon-teal { background: linear-gradient(135deg, #64d2ff, #0a84ff); box-shadow: 0 8px 32px rgba(100,210,255,0.3); }
-
-  .card-tag {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-faint);
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    margin-bottom: 10px;
-  }
-  .card h3 {
-    font-size: 26px;
-    font-weight: 600;
-    letter-spacing: -0.025em;
-    margin-bottom: 10px;
-    line-height: 1.15;
-  }
-  .card-desc {
-    font-size: 15px;
-    color: var(--text-dim);
-    line-height: 1.55;
-    margin-bottom: 24px;
-    flex: 1;
-  }
-  .card-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text);
-    transition: gap .25s ease;
-  }
-  .card:hover .card-link { gap: 12px; }
-  .card-link svg { width: 14px; height: 14px; }
-
-  /* === CTA section === */
-  .cta-section {
-    padding: 120px 22px;
-    text-align: center;
-  }
-  .cta-box {
-    background: linear-gradient(135deg, rgba(10,132,255,0.12), rgba(191,90,242,0.12));
-    border: 1px solid var(--border);
-    border-radius: 36px;
-    padding: 80px 40px;
-    max-width: 1000px;
-    margin: 0 auto;
-    position: relative;
-    overflow: hidden;
-    backdrop-filter: blur(40px);
-  }
-  .cta-box::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(800px circle at 50% 0%, rgba(255,255,255,0.08), transparent 50%);
-    pointer-events: none;
-  }
-  .cta-box h2 {
-    font-size: clamp(32px, 5vw, 56px);
-    font-weight: 700;
-    letter-spacing: -0.035em;
-    margin-bottom: 18px;
-    position: relative;
-  }
-  .cta-box p {
-    font-size: 19px;
-    color: var(--text-dim);
-    margin-bottom: 36px;
-    position: relative;
-  }
-
-  /* === Footer === */
-  footer {
-    border-top: 1px solid var(--border);
-    padding: 40px 22px;
-    text-align: center;
-    color: var(--text-faint);
-    font-size: 12px;
-  }
-  footer a { color: var(--text-dim); text-decoration: none; }
-  footer a:hover { color: var(--text); }
-
-  /* Stat band */
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 28px;
-    margin-top: 64px;
-    padding-top: 56px;
-    border-top: 1px solid var(--border);
-  }
-  .stat { text-align: center; }
-  .stat-value {
-    font-size: clamp(36px, 5vw, 56px);
-    font-weight: 700;
-    letter-spacing: -0.04em;
-    background: linear-gradient(135deg, #ffffff, #8e8e93);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .stat-label {
-    font-size: 13px;
-    color: var(--text-faint);
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    margin-top: 6px;
-  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+  html, body { height: 100%; font-family: 'Inter', -apple-system, system-ui, sans-serif; background: #000; color: #f5f5f7; overflow-x: hidden; }
+  body::before, body::after { content: ''; position: fixed; width: 70vmax; height: 70vmax; border-radius: 50%; filter: blur(140px); opacity: 0.30; pointer-events: none; z-index: 0; animation: float 22s ease-in-out infinite; }
+  body::before { background: radial-gradient(circle, #0a84ff 0%, transparent 60%); top: -25vmax; left: -15vmax; }
+  body::after { background: radial-gradient(circle, #bf5af2 0%, transparent 60%); bottom: -25vmax; right: -15vmax; animation-delay: -11s; }
+  @keyframes float { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(6vmax,-6vmax) scale(1.15);} }
+  .wrap { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 24px; }
+  header { text-align: center; margin-bottom: 64px; }
+  .logo { font-size: clamp(56px, 10vw, 96px); font-weight: 800; letter-spacing: -0.05em; line-height: 1; background: linear-gradient(135deg, #ffffff 0%, #ffffff 30%, #8e8e93 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 14px; }
+  .subtitle { font-size: clamp(15px, 2vw, 18px); color: #a1a1a6; font-weight: 400; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; width: 100%; max-width: 920px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: repeat(2, 1fr); gap: 16px; } }
+  .tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; aspect-ratio: 1/1; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.10); border-radius: 28px; text-decoration: none; color: #f5f5f7; backdrop-filter: blur(20px); transition: transform .35s cubic-bezier(0.22,1,0.36,1), border-color .25s, background .25s; overflow: hidden; opacity: 0; transform: translateY(30px); animation: appear .7s cubic-bezier(0.22,1,0.36,1) forwards; }
+  .tile:nth-child(1){animation-delay:.05s} .tile:nth-child(2){animation-delay:.12s} .tile:nth-child(3){animation-delay:.19s} .tile:nth-child(4){animation-delay:.26s} .tile:nth-child(5){animation-delay:.33s} .tile:nth-child(6){animation-delay:.40s}
+  @keyframes appear { to { opacity: 1; transform: translateY(0); } }
+  .tile:hover { transform: translateY(-6px) scale(1.02); border-color: rgba(255,255,255,0.25); background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)); }
+  .tile:active { transform: translateY(-2px) scale(0.99); }
+  .tile-icon { width: 72px; height: 72px; border-radius: 22px; display: flex; align-items: center; justify-content: center; transition: transform .35s cubic-bezier(0.22,1,0.36,1); }
+  .tile:hover .tile-icon { transform: scale(1.1) rotate(-3deg); }
+  .tile-icon svg { width: 38px; height: 38px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .ic-blue { background: linear-gradient(135deg, #0a84ff, #0040dd); box-shadow: 0 10px 30px rgba(10,132,255,0.4); }
+  .ic-purple { background: linear-gradient(135deg, #bf5af2, #7d28b8); box-shadow: 0 10px 30px rgba(191,90,242,0.4); }
+  .ic-pink { background: linear-gradient(135deg, #ff375f, #c2185b); box-shadow: 0 10px 30px rgba(255,55,95,0.4); }
+  .ic-orange { background: linear-gradient(135deg, #ff9f0a, #d77400); box-shadow: 0 10px 30px rgba(255,159,10,0.4); }
+  .ic-green { background: linear-gradient(135deg, #30d158, #1a8c3a); box-shadow: 0 10px 30px rgba(48,209,88,0.4); }
+  .ic-teal { background: linear-gradient(135deg, #64d2ff, #0a84ff); box-shadow: 0 10px 30px rgba(100,210,255,0.4); }
+  .tile-name { font-size: clamp(15px, 1.8vw, 18px); font-weight: 600; letter-spacing: -0.01em; text-align: center; padding: 0 8px; }
+  .tile-sub { font-size: 12px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.12em; margin-top: -6px; }
+  footer { margin-top: 60px; color: #6e6e73; font-size: 12px; text-align: center; }
 </style>
 </head>
 <body>
-
-<div class="aurora"></div>
-
-<nav>
-  <div class="nav-inner">
+<div class="wrap">
+  <header>
     <div class="logo">OLDA</div>
-    <div class="nav-links">
-      <a href="#produits">Produits</a>
-      <a href="#interne">Interne</a>
-      <a href="#clients">Clients</a>
-      <a href="#contact">Contact</a>
-    </div>
+    <div class="subtitle">Choisissez une plateforme</div>
+  </header>
+  <div class="grid">
+    <a href="https://myolda.up.railway.app/" target="_blank" rel="noopener" class="tile">
+      <div class="tile-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <div class="tile-sub">B2C</div><div class="tile-name">myOLDA</div>
+    </a>
+    <a href="https://atelierolda.up.railway.app" target="_blank" rel="noopener" class="tile">
+      <div class="tile-icon ic-purple"><svg viewBox="0 0 24 24"><path d="M2 22h20"/><path d="M6 18V8l6-4 6 4v10"/><path d="M10 22V12h4v10"/></svg></div>
+      <div class="tile-sub">B2B</div><div class="tile-name">Atelier</div>
+    </a>
+    <a href="https://dtfolda.up.railway.app" target="_blank" rel="noopener" class="tile">
+      <div class="tile-icon ic-pink"><svg viewBox="0 0 24 24"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg></div>
+      <div class="tile-sub">Demande</div><div class="tile-name">DTF</div>
+    </a>
+    <a href="https://api-production-3eed.up.railway.app/tablet" target="_blank" rel="noopener" class="tile">
+      <div class="tile-icon ic-orange"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+      <div class="tile-sub">Tablette</div><div class="tile-name">Devis Flash</div>
+    </a>
+    <a href="https://batolda-production.up.railway.app" target="_blank" rel="noopener" class="tile">
+      <div class="tile-icon ic-green"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+      <div class="tile-sub">Validation</div><div class="tile-name">BAT Flash</div>
+    </a>
+    <a href="https://kanbanolda.up.railway.app/" target="_blank" rel="noopener" class="tile">
+      <div class="tile-icon ic-teal"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="18" rx="1.5"/><rect x="14" y="3" width="7" height="11" rx="1.5"/></svg></div>
+      <div class="tile-sub">Production</div><div class="tile-name">Kanban</div>
+    </a>
   </div>
-</nav>
-
-<section class="hero">
-  <div class="eyebrow">L'écosystème OLDA</div>
-  <h1>Toute l'entreprise.<br><span class="accent">Un seul endroit.</span></h1>
-  <p>Accédez instantanément à l'ensemble de nos plateformes — de la production à la relation client, tout est connecté.</p>
-  <div class="hero-cta">
-    <a href="#produits" class="btn btn-primary">Découvrir nos outils →</a>
-    <a href="https://myolda.up.railway.app/" target="_blank" rel="noopener" class="btn btn-secondary">Espace client</a>
-  </div>
-  <div class="scroll-hint">Scroll</div>
-</section>
-
-<section id="produits">
-  <div class="container">
-    <div class="section-header">
-      <div class="section-eyebrow">Plateformes Clients</div>
-      <h2>Conçues pour vous.</h2>
-      <p>Des interfaces pensées pour vos clients, vos commandes et vos demandes spéciales.</p>
-    </div>
-
-    <div class="grid">
-
-      <a href="https://myolda.up.railway.app/" target="_blank" rel="noopener" class="card">
-        <div class="card-icon icon-blue">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 10v6M4.22 4.22l4.24 4.24m7.07 7.07l4.24 4.24M1 12h6m10 0h6M4.22 19.78l4.24-4.24m7.07-7.07l4.24-4.24"/></svg>
-        </div>
-        <span class="card-tag">B2C</span>
-        <h3>myOLDA</h3>
-        <p class="card-desc">L'expérience client OLDA. Personnalisation, commandes en ligne, suivi en temps réel.</p>
-        <span class="card-link">Ouvrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-      </a>
-
-      <a href="https://atelierolda.up.railway.app" target="_blank" rel="noopener" class="card">
-        <div class="card-icon icon-purple">
-          <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
-        </div>
-        <span class="card-tag">B2B</span>
-        <h3>Atelier OLDA</h3>
-        <p class="card-desc">L'espace dédié aux professionnels. Catalogue, tarifs partenaires, commandes pro.</p>
-        <span class="card-link">Ouvrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-      </a>
-
-      <a href="https://dtfolda.up.railway.app" target="_blank" rel="noopener" class="card">
-        <div class="card-icon icon-pink">
-          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-        </div>
-        <span class="card-tag">DTF</span>
-        <h3>Demande DTF</h3>
-        <p class="card-desc">Soumettez vos fichiers DTF en quelques clics. Suivi de production intégré.</p>
-        <span class="card-link">Ouvrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-      </a>
-
-    </div>
-  </div>
-</section>
-
-<section id="interne" style="background: linear-gradient(180deg, transparent, rgba(10,10,10,0.6) 50%, transparent);">
-  <div class="container">
-    <div class="section-header">
-      <div class="section-eyebrow" style="color: var(--orange);">Outils Internes</div>
-      <h2>La force opérationnelle.</h2>
-      <p>Les plateformes qui font tourner OLDA au quotidien.</p>
-    </div>
-
-    <div class="grid">
-
-      <a href="https://api-production-3eed.up.railway.app/tablet" target="_blank" rel="noopener" class="card">
-        <div class="card-icon icon-orange">
-          <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        </div>
-        <span class="card-tag">Tablette</span>
-        <h3>Devis Flash</h3>
-        <p class="card-desc">Générez des devis en quelques secondes depuis n'importe quelle tablette.</p>
-        <span class="card-link">Ouvrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-      </a>
-
-      <a href="https://batolda-production.up.railway.app" target="_blank" rel="noopener" class="card">
-        <div class="card-icon icon-green">
-          <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
-        </div>
-        <span class="card-tag">Validation</span>
-        <h3>BAT Flash</h3>
-        <p class="card-desc">Bon À Tirer instantané. Validation client express avant production.</p>
-        <span class="card-link">Ouvrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-      </a>
-
-      <a href="https://kanbanolda.up.railway.app/" target="_blank" rel="noopener" class="card">
-        <div class="card-icon icon-teal">
-          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="11" rx="1"/></svg>
-        </div>
-        <span class="card-tag">Production</span>
-        <h3>Kanban OLDA</h3>
-        <p class="card-desc">Pilotage visuel de la production. Suivez chaque commande à chaque étape.</p>
-        <span class="card-link">Ouvrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
-      </a>
-
-    </div>
-
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-value">6</div>
-        <div class="stat-label">Plateformes</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value">24/7</div>
-        <div class="stat-label">Disponibles</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value">1</div>
-        <div class="stat-label">Écosystème</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value">∞</div>
-        <div class="stat-label">Possibilités</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="contact" class="cta-section">
-  <div class="cta-box">
-    <h2>Une question ?<br>On y répond.</h2>
-    <p>L'équipe OLDA reste joignable pour toute demande, professionnelle ou particulière.</p>
-    <a href="mailto:contact@olda.fr" class="btn btn-primary">Nous contacter →</a>
-  </div>
-</section>
-
-<footer>
-  <p>© <span id="year"></span> OLDA — Tous droits réservés. <a href="https://github.com/dockbearolda/clafoubotv2" target="_blank" rel="noopener">GitHub</a></p>
-</footer>
-
-<script>
-  // Year
-  document.getElementById('year').textContent = new Date().getFullYear();
-
-  // Intersection observer reveal
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('in-view');
-        io.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.12 });
-  document.querySelectorAll('.card').forEach(c => io.observe(c));
-
-  // Mouse-tracking glow on cards
-  document.querySelectorAll('.card').forEach(card => {
-    card.addEventListener('mousemove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      card.style.setProperty('--mx', x + 'px');
-      card.style.setProperty('--my', y + 'px');
-    });
-  });
-
-  // Nav darken on scroll
-  const nav = document.querySelector('nav');
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 20) nav.style.background = 'rgba(0,0,0,0.88)';
-    else nav.style.background = 'rgba(0,0,0,0.72)';
-  });
-</script>
-
+  <footer>© <span id="y"></span> OLDA</footer>
+</div>
+<script>document.getElementById('y').textContent = new Date().getFullYear();</script>
 </body>
 </html>
