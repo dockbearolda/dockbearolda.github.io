@@ -22,7 +22,7 @@
   .grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; width: 100%; max-width: 1000px; }
   .tile { flex: 0 0 calc((100% - 48px) / 3); position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; aspect-ratio: 1/1; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.10); border-radius: 28px; text-decoration: none; color: #f5f5f7; backdrop-filter: blur(20px); transition: transform .35s cubic-bezier(0.22,1,0.36,1), border-color .25s, background .25s; overflow: hidden; opacity: 0; transform: translateY(30px); animation: appear .7s cubic-bezier(0.22,1,0.36,1) forwards; }
   @media (max-width: 720px) { .tile { flex-basis: calc((100% - 16px) / 2); } .grid { gap: 16px; } }
-  .tile:nth-child(1){animation-delay:.05s} .tile:nth-child(2){animation-delay:.12s} .tile:nth-child(3){animation-delay:.19s} .tile:nth-child(4){animation-delay:.26s} .tile:nth-child(5){animation-delay:.33s} .tile:nth-child(6){animation-delay:.40s} .tile:nth-child(7){animation-delay:.47s}
+  .tile:nth-child(1){animation-delay:.05s} .tile:nth-child(2){animation-delay:.12s} .tile:nth-child(3){animation-delay:.19s} .tile:nth-child(4){animation-delay:.26s} .tile:nth-child(5){animation-delay:.33s} .tile:nth-child(6){animation-delay:.40s} .tile:nth-child(7){animation-delay:.47s} .tile:nth-child(8){animation-delay:.54s}
   @keyframes appear { to { opacity: 1; transform: translateY(0); } }
   .tile:hover { transform: translateY(-6px) scale(1.02); border-color: rgba(255,255,255,0.25); background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)); }
   .tile:active { transform: translateY(-2px) scale(0.99); }
@@ -36,6 +36,7 @@
   .ic-green { background: linear-gradient(135deg, #30d158, #1a8c3a); box-shadow: 0 10px 30px rgba(48,209,88,0.4); }
   .ic-teal { background: linear-gradient(135deg, #64d2ff, #0a84ff); box-shadow: 0 10px 30px rgba(100,210,255,0.4); }
   .ic-fiverr { background: linear-gradient(135deg, #1dbf73, #0e8a52); box-shadow: 0 10px 30px rgba(29,191,115,0.4); }
+  .ic-indigo { background: linear-gradient(135deg, #5e5ce6, #3634a3); box-shadow: 0 10px 30px rgba(94,92,230,0.4); }
   .tile-name { font-size: clamp(15px, 1.8vw, 18px); font-weight: 600; letter-spacing: -0.01em; text-align: center; padding: 0 8px; }
   .tile-sub { font-size: 12px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.12em; margin-top: -6px; }
   footer { margin-top: 60px; color: #6e6e73; font-size: 12px; text-align: center; }
@@ -71,6 +72,10 @@
     <a href="https://batolda-production.up.railway.app" target="_blank" rel="noopener" class="tile">
       <div class="tile-icon ic-green"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
       <div class="tile-sub">Validation</div><div class="tile-name">BAT Flash</div>
+    </a>
+    <a href="https://suivi-logos-production.up.railway.app/" target="_blank" rel="noopener" class="tile">
+      <div class="tile-icon ic-indigo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg></div>
+      <div class="tile-sub">Suivi</div><div class="tile-name">Suivi Logos</div>
     </a>
     <a href="https://fr.fiverr.com/" target="_blank" rel="noopener" class="tile">
       <div class="tile-icon ic-fiverr"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
