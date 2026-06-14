@@ -1,0 +1,40 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6D5BF8"/>
+      <stop offset="0.5" stop-color="#A855F7"/>
+      <stop offset="1" stop-color="#EC4899"/>
+    </linearGradient>
+    <linearGradient id="g1" x1="248" y1="248" x2="488" y2="560" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#34D399"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="536" y1="248" x2="776" y2="424" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FDE047"/>
+      <stop offset="1" stop-color="#FB923C"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="20" flood-color="#1E1145" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <rect x="0" y="0" width="1024" height="1024" rx="232" fill="url(#bg)"/>
+  <g filter="url(#soft)">
+    <rect x="248" y="248" width="240" height="312" rx="40" fill="#FFFFFF"/>
+    <rect x="292" y="452" width="36" height="64" rx="14" fill="#34D399"/>
+    <rect x="350" y="412" width="36" height="104" rx="14" fill="#22D3EE"/>
+    <rect x="408" y="372" width="36" height="144" rx="14" fill="#6D5BF8"/>
+    <rect x="292" y="300" width="120" height="22" rx="11" fill="#E5E7F2"/>
+    <rect x="536" y="248" width="240" height="176" rx="40" fill="#FFFFFF"/>
+    <circle cx="616" cy="336" r="42" fill="none" stroke="#EEF0F7" stroke-width="20"/>
+    <path d="M616 294 a42 42 0 0 1 36 63" fill="none" stroke="url(#g2)" stroke-width="20" stroke-linecap="round"/>
+    <rect x="688" y="312" width="56" height="18" rx="9" fill="#E5E7F2"/>
+    <rect x="688" y="344" width="40" height="18" rx="9" fill="#EEF0F7"/>
+    <rect x="536" y="472" width="240" height="304" rx="40" fill="#FFFFFF"/>
+    <path d="M576 700 L628 648 L676 680 L736 596" fill="none" stroke="#EC4899" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="736" cy="596" r="14" fill="#EC4899"/>
+    <rect x="576" y="524" width="120" height="22" rx="11" fill="#E5E7F2"/>
+    <rect x="248" y="608" width="240" height="168" rx="40" fill="url(#g1)"/>
+    <rect x="288" y="652" width="120" height="24" rx="12" fill="#FFFFFF" opacity="0.95"/>
+    <rect x="288" y="700" width="80" height="20" rx="10" fill="#FFFFFF" opacity="0.7"/>
+  </g>
+</svg>
