@@ -3,85 +3,122 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="theme-color" content="#000000" />
+<meta name="theme-color" content="#ffffff" />
+<title>OLDA</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-<link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAEoklEQVRYhcWWTWhcVRTHf+e8Nx+ZmcRpm+YDUl341Sq4UYQqgsWN7Upqm9JFKRXaXS1FEZfVtYi6LYX6sdCUtmClFPwCrQtpQUHRBiKS1tQ2yczkcyZv5t17XbyZySSZN6VQ0wOPeXM5vN85/3vOuVdosRNHXGZxITjswR5FtilukzoQQFsft/wuuDVr0foK31vi+EXFnTo40nVOENdgSuPlzf3l7So6ojDUCroH8JXrju+ThPuGz3RPNQOow79TSP/P8Mb/0WRYe373+Z6CnjjiMvXM1wuOYh63vvsEQBcXgsPrIHsrHHUGdWbXl3smd2pUcOsMx+A5g2APq8KT9wOuGBTznK+Q7wTP9wobB0GQFUHOTDjKxSionk1CflCaYAHEwfyEIyi6ODhqTZ+vDukEf+39JH6CNVZbgi+OB/gKez9I4SXA1WaQRL7pEy7BpWNlgmIbuDMoVvxOsuf7wE/AwmKV0FgAfE/JZZMk0rBhoJ6171hYDEje/BTxNqMP7SM0lmRK6RmEQrEtPPrttOeNKZXNJOjJpejJpchmluVoSB6GllQqSfLRo7i5MYy1mDAadtI+8+aWaBy8sQYgIqhGTzUQrv1u6x+P/H1fCaqGcqWGG3gZ31OSKUVE8JyNhzcDiIE353TdZozj+t+Wz0+FTQXmbzlsIOQyCbrSPqmBZ1AVfE8xVUfldi0W7jmDf6dWa1jZOp69NsM5elYEtVRwfHUsID8kKBbBNkHlmzWC6WosfMUWtIM3FDg+fomxpRmMA9MCb/h5HmvggkVsfOYNVfw7DRmA8WCWig3wJEXSj4CNGsj1Crs+jNpwtZklx+WjE9QK7eGKwe8ED+YcODj98Ct0eymubHU84AlvvBNFUJt3dPc7vATMzQdYF1VtwvfIZhJ4aSE36DFbaA9X6grEjdfZG45v3qvS/5iHECLARD270phj/npI5olIp+5cEtfSNcvbFA/X1UXYbrb/c9Vy86qNne1S3ygRoYVLZeRXNJ9GyMTClxWIgdfSISOHLlPqLdUViB5w9P+7gQOnX8RzyWWqdaCCLZUJx6bpfvsl9MfxWHizCONOtWLfLKXeIq/3P0WXKmAZXSpwoTTK7cESUwMFHqQ/KrgbMyx+9AP+tgHs1ALZI9tBZe3gaYF7NLug/ZGKWJQaF2eu0eV5LJoaxbC8nLFELWYnFyh/fIXud3dixku4pRram41cOsDVGfyO5zkOocoj6SFS4vFbZZJ5U20pMIs4g+TT5N7agSR9/K19K1pRsbHwzl3gYGMhR7Lq8/XsX6w2P/TYVExRma1ireKldY2PrVqqt8qxcMUgJ4crVkHibjLl7gWKvaUVE06xbJ5Os2E2hTpD10YhN+TXP2oRF/kEE4uEU5VYuDrrfIVphc1x16ieuST5ud6OR2qtaJgrlDtWexs4iplWRX66izvcHWf7XcBRF/6pHpy8P3CDYs4KwGd7KxcVdq4n3MNcl6xuVQAT1g4ojK5j5hXBDW85M1xRgIPnewpK+II68+16ZK64HVsu7v8ZVt26HE4uvDq5W8QdUmeeVmcG7hF8Wl34h2LOatY7ueXMcKXB/A8P+qhnGnOMMgAAAABJRU5ErkJggg==" />
-<link rel="apple-touch-icon" href="data:image/png;base64,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" />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
-  html, body { height: 100%; font-family: 'Inter', -apple-system, system-ui, sans-serif; background: #000; color: #f5f5f7; overflow-x: hidden; }
-  body::before, body::after { content: ''; position: fixed; width: 70vmax; height: 70vmax; border-radius: 50%; filter: blur(140px); opacity: 0.30; pointer-events: none; z-index: 0; animation: float 22s ease-in-out infinite; }
-  body::before { background: radial-gradient(circle, #0a84ff 0%, transparent 60%); top: -25vmax; left: -15vmax; }
-  body::after { background: radial-gradient(circle, #bf5af2 0%, transparent 60%); bottom: -25vmax; right: -15vmax; animation-delay: -11s; }
-  @keyframes float { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(6vmax,-6vmax) scale(1.15);} }
-  .wrap { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 24px; }
-  header { text-align: center; margin-bottom: 64px; }
-  .logo { font-size: clamp(56px, 10vw, 96px); font-weight: 800; letter-spacing: -0.05em; line-height: 1; background: linear-gradient(135deg, #ffffff 0%, #ffffff 30%, #8e8e93 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 14px; }
-  .subtitle { font-size: clamp(15px, 2vw, 18px); color: #a1a1a6; font-weight: 400; }
-  .grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; width: 100%; max-width: 1000px; }
-  .tile { flex: 0 0 calc((100% - 48px) / 3); position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; aspect-ratio: 1/1; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.10); border-radius: 28px; text-decoration: none; color: #f5f5f7; backdrop-filter: blur(20px); transition: transform .35s cubic-bezier(0.22,1,0.36,1), border-color .25s, background .25s; overflow: hidden; opacity: 0; transform: translateY(30px); animation: appear .7s cubic-bezier(0.22,1,0.36,1) forwards; }
-  @media (max-width: 720px) { .tile { flex-basis: calc((100% - 16px) / 2); } .grid { gap: 16px; } }
-  .tile:nth-child(1){animation-delay:.05s} .tile:nth-child(2){animation-delay:.12s} .tile:nth-child(3){animation-delay:.19s} .tile:nth-child(4){animation-delay:.26s} .tile:nth-child(5){animation-delay:.33s} .tile:nth-child(6){animation-delay:.40s} .tile:nth-child(7){animation-delay:.47s} .tile:nth-child(8){animation-delay:.54s}
-  @keyframes appear { to { opacity: 1; transform: translateY(0); } }
-  .tile:hover { transform: translateY(-6px) scale(1.02); border-color: rgba(255,255,255,0.25); background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)); }
-  .tile:active { transform: translateY(-2px) scale(0.99); }
-  .tile-icon { width: 72px; height: 72px; border-radius: 22px; display: flex; align-items: center; justify-content: center; transition: transform .35s cubic-bezier(0.22,1,0.36,1); }
-  .tile:hover .tile-icon { transform: scale(1.1) rotate(-3deg); }
-  .tile-icon svg { width: 38px; height: 38px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .ic-blue { background: linear-gradient(135deg, #0a84ff, #0040dd); box-shadow: 0 10px 30px rgba(10,132,255,0.4); }
-  .ic-purple { background: linear-gradient(135deg, #bf5af2, #7d28b8); box-shadow: 0 10px 30px rgba(191,90,242,0.4); }
-  .ic-pink { background: linear-gradient(135deg, #ff375f, #c2185b); box-shadow: 0 10px 30px rgba(255,55,95,0.4); }
-  .ic-orange { background: linear-gradient(135deg, #ff9f0a, #d77400); box-shadow: 0 10px 30px rgba(255,159,10,0.4); }
-  .ic-green { background: linear-gradient(135deg, #30d158, #1a8c3a); box-shadow: 0 10px 30px rgba(48,209,88,0.4); }
-  .ic-teal { background: linear-gradient(135deg, #64d2ff, #0a84ff); box-shadow: 0 10px 30px rgba(100,210,255,0.4); }
-  .ic-fiverr { background: linear-gradient(135deg, #1dbf73, #0e8a52); box-shadow: 0 10px 30px rgba(29,191,115,0.4); }
-  .ic-indigo { background: linear-gradient(135deg, #5e5ce6, #3634a3); box-shadow: 0 10px 30px rgba(94,92,230,0.4); }
-  .tile-name { font-size: clamp(15px, 1.8vw, 18px); font-weight: 600; letter-spacing: -0.01em; text-align: center; padding: 0 8px; }
-  .tile-sub { font-size: 12px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.12em; margin-top: -6px; }
-  footer { margin-top: 60px; color: #6e6e73; font-size: 12px; text-align: center; }
+  :root{
+    --duck:#4A6274; --duck-hover:#42596A; --duck-focus:#6B8191;
+    --sage:#8BA0AF; --sage-2:#ADB8B9;
+    --ink:#202930; --muted:#5b6b78; --muted-2:#7a8893;
+    --card-border:rgba(74,98,116,0.12);
+    --tint:rgba(74,98,116,0.07);
+    --shadow:0 1px 2px rgba(32,41,48,.05),0 8px 20px rgba(74,98,116,.08),0 18px 44px rgba(74,98,116,.10);
+    --shadow-hover:0 2px 6px rgba(32,41,48,.07),0 16px 34px rgba(74,98,116,.16),0 30px 64px rgba(74,98,116,.20);
+    --radius:18px;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+  html,body{ height:100%; }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(1100px 560px at 50% -12%, rgba(74,98,116,.07), transparent 62%),
+      radial-gradient(900px 500px at 110% 115%, rgba(139,160,175,.08), transparent 60%),
+      #ffffff;
+    color:var(--ink);
+    font-variant-numeric:tabular-nums; overflow-x:hidden;
+  }
+  .wrap{ min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:48px 24px; }
+  .grid{ display:flex; flex-wrap:nowrap; justify-content:center; align-items:stretch; gap:18px; width:100%; max-width:1180px; }
+  .tile{
+    flex:1 1 0; min-width:0;
+    position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:13px;
+    padding:24px 12px;
+    background:linear-gradient(180deg,#ffffff 0%,#fbfcfd 100%);
+    border:1px solid var(--card-border); border-radius:var(--radius);
+    box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.9);
+    text-decoration:none; color:var(--ink); overflow:hidden; isolation:isolate;
+    transition:transform .4s cubic-bezier(.22,1,.36,1), box-shadow .3s, border-color .3s;
+    opacity:0; transform:translateY(24px); animation:appear .6s cubic-bezier(.22,1,.36,1) forwards;
+  }
+  /* reflet diagonal qui balaye la tuile au survol */
+  .tile::after{
+    content:""; position:absolute; inset:0; z-index:2; pointer-events:none;
+    background:linear-gradient(115deg, transparent 30%, rgba(255,255,255,.55) 48%, transparent 66%);
+    transform:translateX(-130%); transition:transform .7s cubic-bezier(.22,1,.36,1);
+  }
+  .tile:hover::after{ transform:translateX(130%); }
+  /* Tablette paysage : on resserre un peu */
+  @media (max-width:1100px){ .grid{ gap:12px; } .tile{ padding:18px 8px; gap:10px; } }
+  /* Tablette portrait : tuiles plus compactes, toujours sur une ligne */
+  @media (max-width:820px){ .grid{ gap:9px; } .tile{ padding:14px 6px; gap:8px; border-radius:13px; } .tile-icon{ width:46px; height:46px; border-radius:12px; } .tile-icon svg{ width:24px; height:24px; } }
+  /* Petit écran : la ligne reste intacte mais défile horizontalement */
+  @media (max-width:620px){
+    .grid{ flex-wrap:nowrap; justify-content:flex-start; overflow-x:auto; gap:10px; padding:4px 4px 14px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .grid::-webkit-scrollbar{ display:none; }
+    .tile{ flex:0 0 116px; padding:16px 10px; }
+  }
+  .tile:nth-child(1){animation-delay:.04s} .tile:nth-child(2){animation-delay:.10s} .tile:nth-child(3){animation-delay:.16s} .tile:nth-child(4){animation-delay:.22s} .tile:nth-child(5){animation-delay:.28s} .tile:nth-child(6){animation-delay:.34s} .tile:nth-child(7){animation-delay:.40s} .tile:nth-child(8){animation-delay:.46s}
+  @keyframes appear{ to{ opacity:1; transform:translateY(0); } }
+  .tile:hover{ transform:translateY(-6px); box-shadow:var(--shadow-hover), inset 0 1px 0 rgba(255,255,255,.9); border-color:rgba(74,98,116,0.24); }
+  .tile:active{ transform:translateY(-2px) scale(.97); }
+  .tile:focus-visible{ outline:none; border-color:var(--duck-focus); box-shadow:0 0 0 3px rgba(107,129,145,.20),var(--shadow); }
+  .tile-icon{
+    position:relative; z-index:1;
+    width:62px; height:62px; border-radius:16px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(160deg, rgba(74,98,116,.10), rgba(74,98,116,.05));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.7), inset 0 0 0 1px rgba(74,98,116,.06);
+    transition:transform .4s cubic-bezier(.22,1,.36,1), background .3s, box-shadow .3s;
+  }
+  .tile:hover .tile-icon{
+    transform:scale(1.08) translateY(-1px);
+    background:linear-gradient(150deg,#56707f 0%,#42596A 100%);
+    box-shadow:0 12px 26px rgba(74,98,116,.34), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .tile-icon svg{ width:31px; height:31px; stroke:var(--duck); fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; transition:stroke .3s; }
+  .tile:hover .tile-icon svg{ stroke:#fff; }
+  .tile-text{ display:flex; flex-direction:column; align-items:center; gap:3px; }
+  @media (max-width:440px){ .tile-text{ align-items:flex-start; } }
+  .tile-name{ font-size:clamp(14px,1.6vw,16px); font-weight:600; letter-spacing:-.005em; text-align:center; color:var(--duck); transition:color .3s; }
+  .tile:hover .tile-name{ color:var(--duck-hover); }
+  footer{ margin-top:56px; color:var(--muted-2); font-size:12px; text-align:center; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div class="logo">OLDA</div>
-    <div class="subtitle">Choisissez une plateforme</div>
-  </header>
   <div class="grid">
     <a href="https://web-production-a63b27.up.railway.app/" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon ic-teal"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-      <div class="tile-sub">Planning</div><div class="tile-name">Planning OLDA</div>
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <div class="tile-text"><div class="tile-name">Planning</div></div>
     </a>
     <a href="https://myolda.up.railway.app/" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon ic-blue"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-      <div class="tile-sub">B2C</div><div class="tile-name">myOLDA</div>
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <div class="tile-text"><div class="tile-name">Site B2C</div></div>
     </a>
     <a href="https://atelierolda.up.railway.app" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon ic-purple"><svg viewBox="0 0 24 24"><path d="M2 22h20"/><path d="M6 18V8l6-4 6 4v10"/><path d="M10 22V12h4v10"/></svg></div>
-      <div class="tile-sub">B2B</div><div class="tile-name">Atelier</div>
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><path d="M2 22h20"/><path d="M6 18V8l6-4 6 4v10"/><path d="M10 22V12h4v10"/></svg></div>
+      <div class="tile-text"><div class="tile-name">Site B2B</div></div>
     </a>
     <a href="https://dtfolda.up.railway.app" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon ic-pink"><svg viewBox="0 0 24 24"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg></div>
-      <div class="tile-sub">Demande</div><div class="tile-name">DTF</div>
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg></div>
+      <div class="tile-text"><div class="tile-name">DTF</div></div>
     </a>
     <a href="https://oldaflash.up.railway.app" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon ic-orange"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-      <div class="tile-sub">Tablette</div><div class="tile-name">Devis Flash</div>
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+      <div class="tile-text"><div class="tile-name">Devis Flash</div></div>
     </a>
     <a href="https://batolda-production.up.railway.app" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon ic-green"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-      <div class="tile-sub">Validation</div><div class="tile-name">BAT Flash</div>
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+      <div class="tile-text"><div class="tile-name">Bon à Tirer</div></div>
     </a>
     <a href="https://suivi-logos-production.up.railway.app/" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon ic-indigo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg></div>
-      <div class="tile-sub">Suivi</div><div class="tile-name">Suivi Logos</div>
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg></div>
+      <div class="tile-text"><div class="tile-name">Logo Client</div></div>
     </a>
     <a href="https://fr.fiverr.com/" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon ic-fiverr"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
-      <div class="tile-sub">Freelance</div><div class="tile-name">Fiverr</div>
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
+      <div class="tile-text"><div class="tile-name">Fiverr</div></div>
     </a>
   </div>
   <footer>© <span id="y"></span> OLDA</footer>
