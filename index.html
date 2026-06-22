@@ -3,408 +3,126 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="theme-color" content="#0a0a0c" />
-<title>OLDA · Dashboard</title>
-<link rel="preconnect" href="https://api.frankfurter.app" />
+<meta name="theme-color" content="#ffffff" />
+<title>OLDA</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <style>
   :root{
-    --bg:#0a0a0c;
-    --bg-2:#101014;
-    --card:rgba(255,255,255,0.045);
-    --card-hover:rgba(255,255,255,0.08);
-    --stroke:rgba(255,255,255,0.09);
-    --stroke-strong:rgba(255,255,255,0.16);
-    --txt:#f5f5f7;
-    --txt-2:#a1a1a8;
-    --txt-3:#6e6e76;
-    --accent:#0a84ff;
-    --green:#30d158;
-    --radius:22px;
-    --ease:cubic-bezier(.22,1,.36,1);
-    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Inter,Segoe UI,Roboto,sans-serif;
+    --duck:#4A6274; --duck-hover:#42596A; --duck-focus:#6B8191;
+    --sage:#8BA0AF; --sage-2:#ADB8B9;
+    --ink:#202930; --muted:#5b6b78; --muted-2:#7a8893;
+    --card-border:rgba(74,98,116,0.12);
+    --tint:rgba(74,98,116,0.07);
+    --shadow:0 1px 2px rgba(32,41,48,.05),0 8px 20px rgba(74,98,116,.08),0 18px 44px rgba(74,98,116,.10);
+    --shadow-hover:0 2px 6px rgba(32,41,48,.07),0 16px 34px rgba(74,98,116,.16),0 30px 64px rgba(74,98,116,.20);
+    --radius:18px;
   }
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-  html{scroll-behavior:smooth;}
+  *{ margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+  html,body{ height:100%; }
   body{
-    min-height:100vh;color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     background:
-      radial-gradient(900px 600px at 12% -8%, rgba(10,132,255,.16), transparent 60%),
-      radial-gradient(800px 600px at 92% 0%, rgba(191,90,242,.13), transparent 55%),
-      radial-gradient(700px 700px at 50% 120%, rgba(48,209,88,.08), transparent 60%),
-      var(--bg);
-    background-attachment:fixed;
-    -webkit-font-smoothing:antialiased;
-    padding:clamp(20px,4vw,56px) clamp(16px,4vw,48px) 64px;
-    letter-spacing:-0.01em;
+      radial-gradient(1100px 560px at 50% -12%, rgba(74,98,116,.07), transparent 62%),
+      radial-gradient(900px 500px at 110% 115%, rgba(139,160,175,.08), transparent 60%),
+      #ffffff;
+    color:var(--ink);
+    font-variant-numeric:tabular-nums; overflow-x:hidden;
   }
-  .wrap{max-width:1180px;margin:0 auto;}
-
-  /* ---------- TOP BAR ---------- */
-  .topbar{
-    display:flex;align-items:center;justify-content:space-between;
-    gap:20px;flex-wrap:wrap;margin-bottom:clamp(28px,4vw,44px);
+  .wrap{ min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:48px 24px; }
+  .grid{ display:flex; flex-wrap:nowrap; justify-content:center; align-items:stretch; gap:18px; width:100%; max-width:1180px; }
+  .tile{
+    flex:1 1 0; min-width:0;
+    position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:13px;
+    padding:24px 12px;
+    background:linear-gradient(180deg,#ffffff 0%,#fbfcfd 100%);
+    border:1px solid var(--card-border); border-radius:var(--radius);
+    box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.9);
+    text-decoration:none; color:var(--ink); overflow:hidden; isolation:isolate;
+    transition:transform .4s cubic-bezier(.22,1,.36,1), box-shadow .3s, border-color .3s;
+    opacity:0; transform:translateY(24px); animation:appear .6s cubic-bezier(.22,1,.36,1) forwards;
   }
-  .brand{display:flex;align-items:center;gap:14px;}
-  .logo{
-    width:46px;height:46px;border-radius:14px;flex:none;
-    background:linear-gradient(145deg,#ffffff,#c9c9cf);
-    color:#0a0a0c;font-weight:800;font-size:20px;letter-spacing:-1px;
-    display:flex;align-items:center;justify-content:center;
-    box-shadow:0 8px 24px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.6);
+  /* reflet diagonal qui balaye la tuile au survol */
+  .tile::after{
+    content:""; position:absolute; inset:0; z-index:2; pointer-events:none;
+    background:linear-gradient(115deg, transparent 30%, rgba(255,255,255,.55) 48%, transparent 66%);
+    transform:translateX(-130%); transition:transform .7s cubic-bezier(.22,1,.36,1);
   }
-  .brand h1{font-size:21px;font-weight:700;letter-spacing:-.02em;}
-  .brand p{font-size:12.5px;color:var(--txt-3);font-weight:500;margin-top:1px;}
-
-  /* clock + rate cluster */
-  .cluster{display:flex;align-items:stretch;gap:12px;flex-wrap:wrap;}
-  .pill{
-    background:var(--card);border:1px solid var(--stroke);
-    border-radius:16px;padding:11px 16px;backdrop-filter:blur(20px);
-    -webkit-backdrop-filter:blur(20px);min-width:0;
+  .tile:hover::after{ transform:translateX(130%); }
+  /* Tablette paysage : on resserre un peu */
+  @media (max-width:1100px){ .grid{ gap:12px; } .tile{ padding:18px 8px; gap:10px; } }
+  /* Tablette portrait : tuiles plus compactes, toujours sur une ligne */
+  @media (max-width:820px){ .grid{ gap:9px; } .tile{ padding:14px 6px; gap:8px; border-radius:13px; } .tile-icon{ width:46px; height:46px; border-radius:12px; } .tile-icon svg{ width:24px; height:24px; } }
+  /* Petit écran : la ligne reste intacte mais défile horizontalement */
+  @media (max-width:620px){
+    .grid{ flex-wrap:nowrap; justify-content:flex-start; overflow-x:auto; gap:10px; padding:4px 4px 14px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .grid::-webkit-scrollbar{ display:none; }
+    .tile{ flex:0 0 116px; padding:16px 10px; }
   }
-  .pill .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--txt-3);font-weight:600;}
-  #date{font-size:14px;font-weight:600;margin-top:3px;text-transform:capitalize;}
-  #time{font-size:14px;font-weight:600;margin-top:3px;font-variant-numeric:tabular-nums;}
-  .rate-pill{display:flex;align-items:center;gap:13px;}
-  .rate-val{display:flex;flex-direction:column;}
-  .rate-val .big{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:5px;}
-  .rate-val .big small{font-size:11px;color:var(--txt-3);font-weight:500;}
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(48,209,88,.5);animation:pulse 2s infinite;flex:none;}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(48,209,88,.45)}70%{box-shadow:0 0 0 7px rgba(48,209,88,0)}100%{box-shadow:0 0 0 0 rgba(48,209,88,0)}}
-
-  /* ---------- CONVERTER ---------- */
-  .converter{
-    background:var(--card);border:1px solid var(--stroke);border-radius:var(--radius);
-    padding:20px clamp(18px,3vw,28px);margin-bottom:clamp(26px,4vw,40px);
-    backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-    display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:18px;
-    box-shadow:0 1px 0 rgba(255,255,255,.05) inset;
+  .tile:nth-child(1){animation-delay:.04s} .tile:nth-child(2){animation-delay:.10s} .tile:nth-child(3){animation-delay:.16s} .tile:nth-child(4){animation-delay:.22s} .tile:nth-child(5){animation-delay:.28s} .tile:nth-child(6){animation-delay:.34s} .tile:nth-child(7){animation-delay:.40s} .tile:nth-child(8){animation-delay:.46s}
+  @keyframes appear{ to{ opacity:1; transform:translateY(0); } }
+  .tile:hover{ transform:translateY(-6px); box-shadow:var(--shadow-hover), inset 0 1px 0 rgba(255,255,255,.9); border-color:rgba(74,98,116,0.24); }
+  .tile:active{ transform:translateY(-2px) scale(.97); }
+  .tile:focus-visible{ outline:none; border-color:var(--duck-focus); box-shadow:0 0 0 3px rgba(107,129,145,.20),var(--shadow); }
+  .tile-icon{
+    position:relative; z-index:1;
+    width:62px; height:62px; border-radius:16px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(160deg, rgba(74,98,116,.10), rgba(74,98,116,.05));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.7), inset 0 0 0 1px rgba(74,98,116,.06);
+    transition:transform .4s cubic-bezier(.22,1,.36,1), background .3s, box-shadow .3s;
   }
-  .conv-field{display:flex;flex-direction:column;gap:8px;min-width:0;}
-  .conv-field .cap{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt-3);font-weight:600;display:flex;align-items:center;gap:7px;}
-  .flag{font-size:15px;}
-  .conv-input{
-    display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.28);
-    border:1px solid var(--stroke);border-radius:14px;padding:12px 15px;
-    transition:border-color .25s var(--ease),background .25s var(--ease);
+  .tile:hover .tile-icon{
+    transform:scale(1.08) translateY(-1px);
+    background:linear-gradient(150deg,#56707f 0%,#42596A 100%);
+    box-shadow:0 12px 26px rgba(74,98,116,.34), inset 0 1px 0 rgba(255,255,255,.25);
   }
-  .conv-input:focus-within{border-color:var(--stroke-strong);background:rgba(0,0,0,.4);}
-  .conv-input span{font-size:19px;font-weight:600;color:var(--txt-2);}
-  .conv-input input{
-    width:100%;background:none;border:none;outline:none;color:var(--txt);
-    font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;font-family:inherit;
-  }
-  .swap{
-    width:42px;height:42px;border-radius:50%;flex:none;cursor:pointer;margin-bottom:5px;
-    background:var(--card);border:1px solid var(--stroke);color:var(--txt-2);
-    display:flex;align-items:center;justify-content:center;font-size:17px;
-    transition:transform .4s var(--ease),background .25s,color .25s,border-color .25s;
-  }
-  .swap:hover{background:var(--card-hover);color:var(--txt);border-color:var(--stroke-strong);transform:rotate(180deg);}
-  .conv-meta{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-top:4px;border-top:1px solid var(--stroke);margin-top:2px;}
-  .conv-meta span{font-size:11.5px;color:var(--txt-3);font-weight:500;}
-  .conv-meta b{color:var(--txt-2);font-weight:600;}
-
-  /* ---------- SECTIONS ---------- */
-  .section{margin-bottom:clamp(26px,4vw,40px);}
-  .sec-head{display:flex;align-items:center;gap:11px;margin:0 4px 15px;}
-  .sec-head h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.11em;color:var(--txt-2);}
-  .sec-head .bar{height:1px;flex:1;background:linear-gradient(90deg,var(--stroke),transparent);}
-  .grid{display:grid;gap:14px;}
-  .g-1{grid-template-columns:1fr;}
-  .g-2{grid-template-columns:repeat(2,1fr);}
-  .g-4{grid-template-columns:repeat(4,1fr);}
-
-  /* ---------- CARDS ---------- */
-  .card{
-    position:relative;display:flex;flex-direction:column;gap:14px;
-    background:var(--card);border:1px solid var(--stroke);border-radius:var(--radius);
-    padding:22px;text-decoration:none;color:inherit;overflow:hidden;
-    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-    transition:transform .4s var(--ease),background .35s var(--ease),border-color .35s var(--ease),box-shadow .4s var(--ease);
-  }
-  .card::after{
-    content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-    background:radial-gradient(420px 220px at var(--mx,50%) var(--my,0%),rgba(255,255,255,.07),transparent 60%);
-    opacity:0;transition:opacity .4s var(--ease);
-  }
-  .card:hover{transform:translateY(-4px);background:var(--card-hover);border-color:var(--stroke-strong);box-shadow:0 22px 48px -18px rgba(0,0,0,.7);}
-  .card:hover::after{opacity:1;}
-  .ic{
-    width:48px;height:48px;border-radius:14px;flex:none;
-    display:flex;align-items:center;justify-content:center;font-size:23px;
-    border:1px solid rgba(255,255,255,.10);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 6px 16px rgba(0,0,0,.3);
-  }
-  .card .body{display:flex;flex-direction:column;gap:3px;}
-  .card .ttl{font-size:16.5px;font-weight:650;letter-spacing:-.01em;}
-  .card .sub{font-size:12.5px;color:var(--txt-3);font-weight:500;line-height:1.35;}
-  .card .arrow{
-    position:absolute;top:22px;right:22px;color:var(--txt-3);font-size:15px;
-    transition:transform .35s var(--ease),color .35s var(--ease);
-  }
-  .card:hover .arrow{transform:translate(3px,-3px);color:var(--txt);}
-
-  /* hero (planning) */
-  .hero{
-    flex-direction:row;align-items:center;gap:22px;padding:26px clamp(22px,3vw,30px);
-    background:linear-gradient(120deg,rgba(10,132,255,.14),rgba(191,90,242,.10)),var(--card);
-    border-color:rgba(255,255,255,.13);
-  }
-  .hero .ic{width:60px;height:60px;font-size:30px;background:linear-gradient(145deg,#0a84ff,#0066d6);}
-  .hero .ttl{font-size:22px;font-weight:700;}
-  .hero .sub{font-size:13.5px;}
-  .hero .badge{
-    margin-left:auto;align-self:flex-start;font-size:11px;font-weight:600;letter-spacing:.05em;
-    color:var(--green);background:rgba(48,209,88,.12);border:1px solid rgba(48,209,88,.25);
-    padding:5px 11px;border-radius:999px;display:flex;align-items:center;gap:6px;
-  }
-  .hero .arrow{position:static;margin-left:8px;font-size:20px;}
-
-  /* icon palettes */
-  .i-b2c{background:linear-gradient(145deg,#ff9f0a,#ff6b00);}
-  .i-b2b{background:linear-gradient(145deg,#5e5ce6,#3634c4);}
-  .i-dtf{background:linear-gradient(145deg,#ff375f,#d61f45);}
-  .i-flash{background:linear-gradient(145deg,#ffd60a,#ff9f0a);color:#1a1500;}
-  .i-bat{background:linear-gradient(145deg,#30d158,#1fa547);}
-  .i-logo{background:linear-gradient(145deg,#64d2ff,#0a84ff);}
-  .i-fiverr{background:linear-gradient(145deg,#1dbf73,#0c8a4f);}
-
-  footer{text-align:center;color:var(--txt-3);font-size:12px;margin-top:46px;font-weight:500;}
-
-  /* ---------- RESPONSIVE ---------- */
-  @media(max-width:860px){
-    .g-4{grid-template-columns:repeat(2,1fr);}
-  }
-  @media(max-width:620px){
-    .converter{grid-template-columns:1fr;}
-    .swap{justify-self:center;transform:rotate(90deg);margin:2px 0;}
-    .swap:hover{transform:rotate(270deg);}
-    .topbar{gap:16px;}
-    .cluster{width:100%;}
-    .pill{flex:1;}
-  }
-  @media(max-width:480px){
-    .g-2,.g-4{grid-template-columns:1fr;}
-    .hero{flex-wrap:wrap;}
-    .hero .badge{margin-left:0;}
-  }
+  .tile-icon svg{ width:31px; height:31px; stroke:var(--duck); fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; transition:stroke .3s; }
+  .tile:hover .tile-icon svg{ stroke:#fff; }
+  .tile-text{ display:flex; flex-direction:column; align-items:center; gap:3px; }
+  @media (max-width:440px){ .tile-text{ align-items:flex-start; } }
+  .tile-name{ font-size:clamp(14px,1.6vw,16px); font-weight:600; letter-spacing:-.005em; text-align:center; color:var(--duck); transition:color .3s; }
+  .tile:hover .tile-name{ color:var(--duck-hover); }
+  footer{ margin-top:56px; color:var(--muted-2); font-size:12px; text-align:center; }
 </style>
 </head>
 <body>
 <div class="wrap">
-
-  <!-- TOP BAR -->
-  <header class="topbar">
-    <div class="brand">
-      <div class="logo">O</div>
-      <div>
-        <h1>OLDA</h1>
-        <p>Dashboard</p>
-      </div>
-    </div>
-    <div class="cluster">
-      <div class="pill">
-        <div class="lbl">Date</div>
-        <div id="date">—</div>
-      </div>
-      <div class="pill">
-        <div class="lbl">Heure</div>
-        <div id="time">—</div>
-      </div>
-      <div class="pill rate-pill">
-        <span class="dot" id="rate-dot"></span>
-        <div class="rate-val">
-          <div class="lbl">EUR / USD · taux du jour</div>
-          <div class="big">1&nbsp;€ <small>=</small> <span id="rate-hdr">—</span> <small>$</small></div>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- LIVE CONVERTER -->
-  <section class="converter" aria-label="Convertisseur euro dollar">
-    <div class="conv-field">
-      <div class="cap"><span class="flag">🇪🇺</span> Euro</div>
-      <div class="conv-input">
-        <span>€</span>
-        <input id="eur" type="number" inputmode="decimal" value="1" min="0" step="any" aria-label="Montant en euros" />
-      </div>
-    </div>
-    <button class="swap" id="swap" title="Inverser" aria-label="Inverser">⇄</button>
-    <div class="conv-field">
-      <div class="cap"><span class="flag">🇺🇸</span> Dollar US</div>
-      <div class="conv-input">
-        <span>$</span>
-        <input id="usd" type="number" inputmode="decimal" value="—" min="0" step="any" aria-label="Montant en dollars" />
-      </div>
-    </div>
-    <div class="conv-meta">
-      <span>Taux : <b id="rate-txt">chargement…</b></span>
-      <span id="rate-src">Source : Banque centrale européenne · mis à jour <b id="rate-upd">—</b></span>
-    </div>
-  </section>
-
-  <!-- PLANNING -->
-  <section class="section">
-    <div class="sec-head"><h2>Planning</h2><div class="bar"></div></div>
-    <a class="card hero" href="https://web-production-a63b27.up.railway.app/" target="_blank" rel="noopener">
-      <div class="ic">🗓️</div>
-      <div class="body">
-        <div class="ttl">Planning OLDA</div>
-        <div class="sub">Organisation, suivi et coordination de l'atelier</div>
-      </div>
-      <span class="badge"><span class="dot"></span>En direct</span>
-      <span class="arrow">↗</span>
+  <div class="grid">
+    <a href="https://web-production-a63b27.up.railway.app/" target="_blank" rel="noopener" class="tile">
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <div class="tile-text"><div class="tile-name">Planning</div></div>
     </a>
-  </section>
-
-  <!-- SITES B2C / B2B -->
-  <section class="section">
-    <div class="sec-head"><h2>Sites · B2C &amp; B2B</h2><div class="bar"></div></div>
-    <div class="grid g-2">
-      <a class="card" href="https://myolda.up.railway.app/" target="_blank" rel="noopener">
-        <div class="ic i-b2c">🛍️</div>
-        <div class="body"><div class="ttl">Site B2C</div><div class="sub">myOLDA · boutique grand public</div></div>
-        <span class="arrow">↗</span>
-      </a>
-      <a class="card" href="https://atelierolda.up.railway.app" target="_blank" rel="noopener">
-        <div class="ic i-b2b">🏢</div>
-        <div class="body"><div class="ttl">Site B2B</div><div class="sub">Atelier OLDA · professionnels</div></div>
-        <span class="arrow">↗</span>
-      </a>
-    </div>
-  </section>
-
-  <!-- APPS OLDA -->
-  <section class="section">
-    <div class="sec-head"><h2>Applications OLDA</h2><div class="bar"></div></div>
-    <div class="grid g-4">
-      <a class="card" href="https://dtfolda.up.railway.app" target="_blank" rel="noopener">
-        <div class="ic i-dtf">🎨</div>
-        <div class="body"><div class="ttl">DTF</div><div class="sub">Impression DTF</div></div>
-        <span class="arrow">↗</span>
-      </a>
-      <a class="card" href="https://oldaflash.up.railway.app" target="_blank" rel="noopener">
-        <div class="ic i-flash">⚡</div>
-        <div class="body"><div class="ttl">Devis Flash</div><div class="sub">Devis instantanés</div></div>
-        <span class="arrow">↗</span>
-      </a>
-      <a class="card" href="https://batolda-production.up.railway.app" target="_blank" rel="noopener">
-        <div class="ic i-bat">✔️</div>
-        <div class="body"><div class="ttl">Bon à Tirer</div><div class="sub">Validation BAT</div></div>
-        <span class="arrow">↗</span>
-      </a>
-      <a class="card" href="https://suivi-logos-production.up.railway.app/" target="_blank" rel="noopener">
-        <div class="ic i-logo">🖼️</div>
-        <div class="body"><div class="ttl">Logo Client</div><div class="sub">Suivi des logos</div></div>
-        <span class="arrow">↗</span>
-      </a>
-    </div>
-  </section>
-
-  <!-- FIVERR -->
-  <section class="section">
-    <div class="sec-head"><h2>Fiverr</h2><div class="bar"></div></div>
-    <div class="grid g-1">
-      <a class="card" href="https://fr.fiverr.com/" target="_blank" rel="noopener">
-        <div class="ic i-fiverr">💼</div>
-        <div class="body"><div class="ttl">Fiverr</div><div class="sub">Plateforme freelance · commandes &amp; missions</div></div>
-        <span class="arrow">↗</span>
-      </a>
-    </div>
-  </section>
-
-  <footer>© <span id="yr"></span> OLDA — Dashboard</footer>
+    <a href="https://myolda.up.railway.app/" target="_blank" rel="noopener" class="tile">
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <div class="tile-text"><div class="tile-name">Site B2C</div></div>
+    </a>
+    <a href="https://atelierolda.up.railway.app" target="_blank" rel="noopener" class="tile">
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><path d="M2 22h20"/><path d="M6 18V8l6-4 6 4v10"/><path d="M10 22V12h4v10"/></svg></div>
+      <div class="tile-text"><div class="tile-name">Site B2B</div></div>
+    </a>
+    <a href="https://dtfolda.up.railway.app" target="_blank" rel="noopener" class="tile">
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg></div>
+      <div class="tile-text"><div class="tile-name">DTF</div></div>
+    </a>
+    <a href="https://oldaflash.up.railway.app" target="_blank" rel="noopener" class="tile">
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+      <div class="tile-text"><div class="tile-name">Devis Flash</div></div>
+    </a>
+    <a href="https://batolda-production.up.railway.app" target="_blank" rel="noopener" class="tile">
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+      <div class="tile-text"><div class="tile-name">Bon à Tirer</div></div>
+    </a>
+    <a href="https://suivi-logos-production.up.railway.app/" target="_blank" rel="noopener" class="tile">
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg></div>
+      <div class="tile-text"><div class="tile-name">Logo Client</div></div>
+    </a>
+    <a href="https://fr.fiverr.com/" target="_blank" rel="noopener" class="tile">
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
+      <div class="tile-text"><div class="tile-name">Fiverr</div></div>
+    </a>
+  </div>
+  <footer>© <span id="y"></span> OLDA</footer>
 </div>
-
-<script>
-(function(){
-  "use strict";
-
-  /* ---------- DATE & HEURE ---------- */
-  var dEl=document.getElementById("date"),tEl=document.getElementById("time");
-  function tick(){
-    var n=new Date();
-    dEl.textContent=n.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-    tEl.textContent=n.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
-  }
-  tick();setInterval(tick,1000);
-  document.getElementById("yr").textContent=new Date().getFullYear();
-
-  /* ---------- TAUX EUR/USD ---------- */
-  var rate=null;
-  var eur=document.getElementById("eur"),usd=document.getElementById("usd");
-  var rateTxt=document.getElementById("rate-txt"),rateHdr=document.getElementById("rate-hdr");
-  var rateUpd=document.getElementById("rate-upd"),rateSrc=document.getElementById("rate-src");
-  var rateDot=document.getElementById("rate-dot");
-  var nf=new Intl.NumberFormat("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
-
-  function applyRate(r,dateStr,source){
-    rate=r;
-    rateHdr.textContent=nf.format(r);
-    rateTxt.textContent="1 € = "+nf.format(r)+" $";
-    if(dateStr){rateUpd.textContent=dateStr;}
-    if(source){rateSrc.innerHTML="Source : "+source+" · mis à jour <b id='rate-upd'>"+(dateStr||"—")+"</b>";}
-    recalc("eur");
-  }
-  function fail(){
-    rateTxt.textContent="indisponible";rateHdr.textContent="—";
-    rateDot.style.background="#ff453a";rateDot.style.animation="none";
-  }
-
-  // Primaire : Frankfurter (BCE). Repli : open.er-api.com.
-  function load(){
-    fetch("https://api.frankfurter.app/latest?from=EUR&to=USD")
-      .then(function(r){if(!r.ok)throw 0;return r.json();})
-      .then(function(d){
-        if(!d||!d.rates||!d.rates.USD)throw 0;
-        applyRate(d.rates.USD,frDate(d.date),"Banque centrale européenne");
-      })
-      .catch(function(){
-        fetch("https://open.er-api.com/v6/latest/EUR")
-          .then(function(r){return r.json();})
-          .then(function(d){
-            if(!d||!d.rates||!d.rates.USD)throw 0;
-            var dt=d.time_last_update_utc?new Date(d.time_last_update_utc).toLocaleDateString("fr-FR"):null;
-            applyRate(d.rates.USD,dt,"open.er-api.com");
-          })
-          .catch(fail);
-      });
-  }
-  function frDate(iso){
-    try{return new Date(iso+"T00:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});}
-    catch(e){return iso;}
-  }
-  load();
-  setInterval(load,15*60*1000); // rafraîchit toutes les 15 min
-
-  /* ---------- CONVERSION ---------- */
-  function recalc(from){
-    if(rate==null)return;
-    if(from==="eur"){
-      var e=parseFloat(eur.value);
-      usd.value=isNaN(e)?"":(e*rate).toFixed(2);
-    }else{
-      var u=parseFloat(usd.value);
-      eur.value=isNaN(u)?"":(u/rate).toFixed(2);
-    }
-  }
-  eur.addEventListener("input",function(){recalc("eur");});
-  usd.addEventListener("input",function(){recalc("usd");});
-  document.getElementById("swap").addEventListener("click",function(){
-    var tmp=eur.value;eur.value=usd.value;usd.value=tmp;recalc("eur");
-  });
-
-  /* ---------- LUEUR AU SURVOL DES CARTES ---------- */
-  document.querySelectorAll(".card").forEach(function(c){
-    c.addEventListener("pointermove",function(e){
-      var r=c.getBoundingClientRect();
-      c.style.setProperty("--mx",(e.clientX-r.left)+"px");
-      c.style.setProperty("--my",(e.clientY-r.top)+"px");
-    });
-  });
-})();
-</script>
+<script>document.getElementById('y').textContent = new Date().getFullYear();</script>
 </body>
 </html>
