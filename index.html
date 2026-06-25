@@ -58,7 +58,7 @@
     .grid::-webkit-scrollbar{ display:none; }
     .tile{ flex:0 0 116px; padding:16px 10px; }
   }
-  .tile:nth-child(1){animation-delay:.04s} .tile:nth-child(2){animation-delay:.10s} .tile:nth-child(3){animation-delay:.16s} .tile:nth-child(4){animation-delay:.22s} .tile:nth-child(5){animation-delay:.28s} .tile:nth-child(6){animation-delay:.34s} .tile:nth-child(7){animation-delay:.40s} .tile:nth-child(8){animation-delay:.46s} .tile:nth-child(9){animation-delay:.52s}
+  .tile:nth-child(1){animation-delay:.04s} .tile:nth-child(2){animation-delay:.10s} .tile:nth-child(3){animation-delay:.16s} .tile:nth-child(4){animation-delay:.22s} .tile:nth-child(5){animation-delay:.28s} .tile:nth-child(6){animation-delay:.34s} .tile:nth-child(7){animation-delay:.40s} .tile:nth-child(8){animation-delay:.46s} .tile:nth-child(9){animation-delay:.52s} .tile:nth-child(10){animation-delay:.58s}
   @keyframes appear{ to{ opacity:1; transform:translateY(0); } }
   .tile:hover{ transform:translateY(-6px); box-shadow:var(--shadow-hover), inset 0 1px 0 rgba(255,255,255,.9); border-color:rgba(74,98,116,0.24); }
   .tile:active{ transform:translateY(-2px) scale(.97); }
@@ -183,8 +183,11 @@
       <div class="tile-icon"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
       <div class="tile-text"><div class="tile-name">Fiverr</div></div>
     </a>
-    <button type="button" class="tile tile--secret" id="secretTile" aria-label="Accès protégé">
+    <button type="button" class="tile tile--secret" id="secretCatalogue" data-url="https://catalogue-olda-production.up.railway.app/" aria-label="Accès protégé">
       <div class="tile-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg></div>
+    </button>
+    <button type="button" class="tile tile--secret" id="secretChiffrage" data-url="https://chiffrage-olda-production.up.railway.app/" aria-label="Accès protégé">
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
     </button>
   </div>
   <footer>© <span id="y"></span> OLDA</footer>
@@ -208,23 +211,26 @@
   document.getElementById('y').textContent = new Date().getFullYear();
 
   (function(){
-    var CATALOGUE_URL = "https://catalogue-olda-production.up.railway.app/";
+    // Mot de passe partagé (haché SHA-256). La destination dépend de la tuile
+    // discrète cliquée (attribut data-url) : catalogue ou chiffrage.
     var PASS_HASH = "403239d9e06a5add5bd7ff6cdb64b524b4768723574fefbd23850b7349834814";
     var overlay = document.getElementById('lockOverlay');
     var input   = document.getElementById('lockInput');
     var errorEl = document.getElementById('lockError');
     var form    = document.getElementById('lockForm');
-    var tile    = document.getElementById('secretTile');
     var cancel  = document.getElementById('lockCancel');
+    var tiles   = document.querySelectorAll('.tile--secret');
+    var target  = null;
 
-    function openLock(){
+    function openLock(url){
+      target = url;
       errorEl.hidden = true;
       input.value = '';
       input.classList.remove('shake');
       overlay.hidden = false;
       setTimeout(function(){ input.focus(); }, 60);
     }
-    function closeLock(){ overlay.hidden = true; }
+    function closeLock(){ overlay.hidden = true; target = null; }
 
     async function sha256(str){
       var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
@@ -233,18 +239,20 @@
       }).join('');
     }
 
-    tile.addEventListener('click', openLock);
+    Array.prototype.forEach.call(tiles, function(t){
+      t.addEventListener('click', function(){ openLock(t.getAttribute('data-url')); });
+    });
     cancel.addEventListener('click', closeLock);
     overlay.addEventListener('click', function(e){ if(e.target === overlay) closeLock(); });
     document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && !overlay.hidden) closeLock(); });
 
     form.addEventListener('submit', async function(e){
       e.preventDefault();
-      var ok = false;
+      var dest = target, ok = false;
       try { ok = (await sha256(input.value)) === PASS_HASH; } catch(_){ ok = false; }
-      if(ok){
+      if(ok && dest){
         closeLock();
-        window.location.href = CATALOGUE_URL;
+        window.location.href = dest;
       } else {
         errorEl.hidden = false;
         input.classList.remove('shake'); void input.offsetWidth; input.classList.add('shake');
