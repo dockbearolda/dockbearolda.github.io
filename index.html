@@ -65,19 +65,27 @@
   .tile:focus-visible{ outline:none; border-color:var(--duck-focus); box-shadow:0 0 0 3px rgba(107,129,145,.20),var(--shadow); }
   .tile-icon{
     position:relative; z-index:1;
-    width:62px; height:62px; border-radius:16px; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center;
-    background:linear-gradient(160deg, rgba(74,98,116,.10), rgba(74,98,116,.05));
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.7), inset 0 0 0 1px rgba(74,98,116,.06);
+    width:62px; height:62px; border-radius:17px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+    background:linear-gradient(155deg, var(--c-hi,#8ba0af), var(--c-lo,#4a6274));
+    box-shadow:0 8px 20px var(--c-glow,rgba(74,98,116,.30)), inset 0 1px 0 rgba(255,255,255,.55), inset 0 0 0 1px rgba(255,255,255,.16);
     transition:transform .4s cubic-bezier(.22,1,.36,1), background .3s, box-shadow .3s;
   }
+  .tile-icon::before{ content:""; position:absolute; left:0; right:0; top:0; height:55%; background:linear-gradient(to bottom, rgba(255,255,255,.55), rgba(255,255,255,0)); pointer-events:none; }
   .tile:hover .tile-icon{
     transform:scale(1.08) translateY(-1px);
-    background:linear-gradient(150deg,#56707f 0%,#42596A 100%);
-    box-shadow:0 12px 26px rgba(74,98,116,.34), inset 0 1px 0 rgba(255,255,255,.25);
+    box-shadow:0 15px 32px var(--c-glow,rgba(74,98,116,.42)), inset 0 1px 0 rgba(255,255,255,.7), inset 0 0 0 1px rgba(255,255,255,.28);
   }
-  .tile-icon svg{ width:31px; height:31px; stroke:var(--duck); fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; transition:stroke .3s; }
-  .tile:hover .tile-icon svg{ stroke:#fff; }
+  .tile-icon svg{ position:relative; z-index:1; width:31px; height:31px; stroke:#fff; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.22)); transition:transform .4s cubic-bezier(.22,1,.36,1); }
+  .tile:hover .tile-icon svg{ transform:scale(1.06); }
+  .ic-planning{ --c-hi:#5ad1e6; --c-lo:#0aa6c9; --c-glow:rgba(10,166,201,.38); }
+  .ic-b2c{ --c-hi:#4aa3ff; --c-lo:#0a5cff; --c-glow:rgba(10,92,255,.35); }
+  .ic-b2b{ --c-hi:#8f83ff; --c-lo:#4b3fd6; --c-glow:rgba(75,63,214,.35); }
+  .ic-dtf{ --c-hi:#ff7db3; --c-lo:#e0247e; --c-glow:rgba(224,36,126,.35); }
+  .ic-devis{ --c-hi:#ffc04d; --c-lo:#ff7a00; --c-glow:rgba(255,122,0,.38); }
+  .ic-bat{ --c-hi:#4fd98a; --c-lo:#12a651; --c-glow:rgba(18,166,81,.35); }
+  .ic-logo{ --c-hi:#b982ff; --c-lo:#7a2fd6; --c-glow:rgba(122,47,214,.35); }
+  .ic-fiverr{ --c-hi:#43e0a0; --c-lo:#12a15e; --c-glow:rgba(18,161,94,.35); }
   .tile-text{ display:flex; flex-direction:column; align-items:center; gap:3px; }
   @media (max-width:440px){ .tile-text{ align-items:flex-start; } }
   .tile-name{ font-size:clamp(14px,1.6vw,16px); font-weight:600; letter-spacing:-.005em; text-align:center; color:var(--duck); transition:color .3s; }
@@ -152,35 +160,35 @@
 <div class="wrap">
   <div class="grid">
     <a href="https://web-production-a63b27.up.railway.app/" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <div class="tile-icon ic-planning"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
       <div class="tile-text"><div class="tile-name">Planning</div></div>
     </a>
     <a href="https://myolda.up.railway.app/" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <div class="tile-icon ic-b2c"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
       <div class="tile-text"><div class="tile-name">Site B2C</div></div>
     </a>
     <a href="https://atelierolda.up.railway.app" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon"><svg viewBox="0 0 24 24"><path d="M2 22h20"/><path d="M6 18V8l6-4 6 4v10"/><path d="M10 22V12h4v10"/></svg></div>
+      <div class="tile-icon ic-b2b"><svg viewBox="0 0 24 24"><path d="M2 22h20"/><path d="M6 18V8l6-4 6 4v10"/><path d="M10 22V12h4v10"/></svg></div>
       <div class="tile-text"><div class="tile-name">Site B2B</div></div>
     </a>
     <a href="https://dtfolda.up.railway.app" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon"><svg viewBox="0 0 24 24"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg></div>
+      <div class="tile-icon ic-dtf"><svg viewBox="0 0 24 24"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg></div>
       <div class="tile-text"><div class="tile-name">DTF</div></div>
     </a>
     <a href="https://oldaflash.up.railway.app" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+      <div class="tile-icon ic-devis"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
       <div class="tile-text"><div class="tile-name">Devis Flash</div></div>
     </a>
     <a href="https://batolda-production.up.railway.app" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+      <div class="tile-icon ic-bat"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
       <div class="tile-text"><div class="tile-name">Bon à Tirer</div></div>
     </a>
     <a href="https://suivi-logos-production.up.railway.app/" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg></div>
+      <div class="tile-icon ic-logo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg></div>
       <div class="tile-text"><div class="tile-name">Logo Client</div></div>
     </a>
     <a href="https://fr.fiverr.com/" target="_blank" rel="noopener" class="tile">
-      <div class="tile-icon"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
+      <div class="tile-icon ic-fiverr"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
       <div class="tile-text"><div class="tile-name">Fiverr</div></div>
     </a>
     <button type="button" class="tile tile--secret" id="secretCatalogue" data-enc="v0vJEnK5hpjthVmoM3k4Tw==.woFPMkfWTtmuV7+R.yKYoQXNF1nvpTSiT7W9qRHJsdLbtyUGLbYnzlRsfhOJV80PGgIrgZYZaYqEE49FT4B75zmXe8PER+XsuduCD6kY=" aria-label="Accès protégé">
@@ -278,4 +286,3 @@
 </script>
 </body>
 </html>
-
