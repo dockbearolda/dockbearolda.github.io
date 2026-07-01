@@ -58,7 +58,7 @@
     .grid::-webkit-scrollbar{ display:none; }
     .tile{ flex:0 0 116px; padding:16px 10px; }
   }
-  .tile:nth-child(1){animation-delay:.04s} .tile:nth-child(2){animation-delay:.10s} .tile:nth-child(3){animation-delay:.16s} .tile:nth-child(4){animation-delay:.22s} .tile:nth-child(5){animation-delay:.28s} .tile:nth-child(6){animation-delay:.34s} .tile:nth-child(7){animation-delay:.40s} .tile:nth-child(8){animation-delay:.46s} .tile:nth-child(9){animation-delay:.52s} .tile:nth-child(10){animation-delay:.58s} .tile:nth-child(11){animation-delay:.64s}
+  .tile:nth-child(1){animation-delay:.04s} .tile:nth-child(2){animation-delay:.10s} .tile:nth-child(3){animation-delay:.16s} .tile:nth-child(4){animation-delay:.22s} .tile:nth-child(5){animation-delay:.28s} .tile:nth-child(6){animation-delay:.34s} .tile:nth-child(7){animation-delay:.40s} .tile:nth-child(8){animation-delay:.46s} .tile:nth-child(9){animation-delay:.52s} .tile:nth-child(10){animation-delay:.58s} .tile:nth-child(11){animation-delay:.64s} .tile:nth-child(12){animation-delay:.70s} .tile:nth-child(13){animation-delay:.76s}
   @keyframes appear{ to{ opacity:1; transform:translateY(0); } }
   .tile:hover{ transform:translateY(-6px); box-shadow:var(--shadow-hover), inset 0 1px 0 rgba(255,255,255,.9); border-color:rgba(74,98,116,0.24); }
   .tile:active{ transform:translateY(-2px) scale(.97); }
@@ -191,6 +191,12 @@
     </button>
         <button type="button" class="tile tile--secret" id="secretChiffrage" data-enc="Sj6eZD81MRz3cnROz8gczA==.1seQtGQrKfACiTyt.BQEkqQcuOjkG2HVEayQwuKm/s4prHMqBonwh36ebqcA2Z/7ldWGQfdaVTvE6jDCK2/MTV+iNut3bFyZIcXcIPGQ=" aria-label="Accès protégé">
       <div class="tile-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    </button>
+    <button type="button" class="tile tile--secret" id="secretHeures" data-enc="zuvqV0oLAmP6KgLQTtPSGg==.hyCBov1/eFaJj1yj.AR4KoWhRtnTfVRI6duhCMwYFpSVwC08HxpXe6JN8dHzayXsqEVxOetEiObuj90S0Jb+ZmPn/Fg3qIeuiafGhF5x6mJTCs7PSnzrtFQODM6kP/2g=" aria-label="Accès protégé">
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+    </button>
+    <button type="button" class="tile tile--secret" id="secretClients" data-enc="k/oNuNCQtm2X1nFgOdBgyQ==.1WgZ6cU4o1AYfNWp.Vz6/sdogO+KG73XGRuj297TIbYvwoUcTaD8UteedRhCiZFuPN+ySwsNolpgfJe8zjdWmvernFm4j8tU=" aria-label="Accès protégé">
+      <div class="tile-icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
     </button>
   </div>
   <footer>© <span id="y"></span> OLDA</footer>
