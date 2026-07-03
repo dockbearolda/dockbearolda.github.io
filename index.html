@@ -212,7 +212,7 @@
     </button>
   </div>
 
-  <footer>© <span id="y"></span> OLDA</footer>
+  <footer>© <span id="y"></span> OLDA<a href="#" id="forgetPw" hidden style="color:inherit; text-decoration:underline; margin-left:8px;">Oublier le mot de passe sur cet appareil</a></footer>
 </div>
 
 <div class="lock-overlay" id="lockOverlay" hidden>
@@ -244,7 +244,18 @@
     var form    = document.getElementById('lockForm');
     var cancel  = document.getElementById('lockCancel');
     var tiles   = document.querySelectorAll('[data-enc]');
+    var forget  = document.getElementById('forgetPw');
     var encStr  = null;
+
+    // Mémorisation « une fois par poste » : après une première saisie correcte,
+    // le mot de passe est conservé sur cet appareil (localStorage) et les tuiles
+    // s'ouvrent ensuite sans le redemander. Rien n'est stocké tant que le bon
+    // mot de passe n'a pas effectivement déchiffré une URL.
+    var PW_KEY = 'olda_access_pw';
+    function getPw(){ try { return localStorage.getItem(PW_KEY) || null; } catch(_){ return null; } }
+    function setPw(pw){ try { localStorage.setItem(PW_KEY, pw); } catch(_){} refreshForget(); }
+    function clearPw(){ try { localStorage.removeItem(PW_KEY); } catch(_){} refreshForget(); }
+    function refreshForget(){ if(forget) forget.hidden = !getPw(); }
 
     function openLock(enc){
       encStr = enc;
@@ -268,8 +279,18 @@
     }
 
     Array.prototype.forEach.call(tiles, function(t){
-      t.addEventListener('click', function(){ openLock(t.getAttribute('data-enc')); });
+      t.addEventListener('click', async function(){
+        var enc = t.getAttribute('data-enc');
+        var pw = getPw();
+        if(pw){
+          try { window.location.href = await decryptUrl(enc, pw); return; }
+          catch(_){ clearPw(); }   // mot de passe mémorisé devenu invalide
+        }
+        openLock(enc);
+      });
     });
+    if(forget){ forget.addEventListener('click', function(e){ e.preventDefault(); clearPw(); }); }
+    refreshForget();
     cancel.addEventListener('click', closeLock);
     overlay.addEventListener('click', function(e){ if(e.target === overlay) closeLock(); });
     document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && !overlay.hidden) closeLock(); });
@@ -279,6 +300,7 @@
       var dest = null;
       if(encStr){ try { dest = await decryptUrl(encStr, input.value); } catch(_){ dest = null; } }
       if(dest){
+        setPw(input.value);   // mémorise sur cet appareil
         closeLock();
         window.location.href = dest;
       } else {
