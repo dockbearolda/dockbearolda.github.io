@@ -278,13 +278,26 @@
       return new TextDecoder().decode(pt);
     }
 
+    // Ouvre l'URL dans un NOUVEL onglet (comme n'importe quel site), en réutilisant
+    // l'onglet pré-ouvert pendant le geste de clic pour éviter le blocage des popups.
+    function loadInTab(url, preWin){
+      if(preWin && !preWin.closed){ preWin.location.href = url; return; }
+      var w = window.open(url, '_blank');            // pas de pré-ouverture disponible
+      if(w){ try { w.opener = null; } catch(_){} return; }
+      window.location.href = url;                    // dernier recours si les popups sont bloqués
+    }
+
     Array.prototype.forEach.call(tiles, function(t){
       t.addEventListener('click', async function(){
         var enc = t.getAttribute('data-enc');
         var pw = getPw();
         if(pw){
-          try { window.location.href = await decryptUrl(enc, pw); return; }
-          catch(_){ clearPw(); }   // mot de passe mémorisé devenu invalide
+          // On ouvre l'onglet TOUT DE SUITE (dans le geste de clic), puis on y
+          // charge l'URL une fois déchiffrée : sinon le navigateur bloque le popup.
+          var preWin = window.open('', '_blank');
+          if(preWin){ try { preWin.opener = null; } catch(_){} }
+          try { loadInTab(await decryptUrl(enc, pw), preWin); return; }
+          catch(_){ if(preWin && !preWin.closed){ preWin.close(); } clearPw(); }   // mot de passe mémorisé devenu invalide
         }
         openLock(enc);
       });
@@ -297,13 +310,17 @@
 
     form.addEventListener('submit', async function(e){
       e.preventDefault();
+      // Onglet pré-ouvert dans le geste de soumission (évite le blocage popup).
+      var preWin = window.open('', '_blank');
+      if(preWin){ try { preWin.opener = null; } catch(_){} }
       var dest = null;
       if(encStr){ try { dest = await decryptUrl(encStr, input.value); } catch(_){ dest = null; } }
       if(dest){
         setPw(input.value);   // mémorise sur cet appareil
         closeLock();
-        window.location.href = dest;
+        loadInTab(dest, preWin);
       } else {
+        if(preWin && !preWin.closed){ preWin.close(); }   // mauvais mot de passe → on referme l'onglet
         errorEl.hidden = false;
         input.classList.remove('shake'); void input.offsetWidth; input.classList.add('shake');
         input.select();
