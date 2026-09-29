@@ -109,77 +109,9 @@
   .card-name{ font-size:15px; font-weight:600; letter-spacing:-.005em; color:var(--duck); transition:color .3s; }
   .card:hover .card-name{ color:var(--duck-hover); }
 
-  /* Accès protégés — cartes normales colorées (ouvrent la modale mot de passe) */
-  button.card{ -webkit-appearance:none; appearance:none; font-family:inherit; text-align:left; width:100%; cursor:pointer; }
-  .bento + .bento{ margin-top:16px; }
   .ic-catalogue{ --c-hi:#ff8a6b; --c-lo:#e5372b; --c-glow:rgba(229,55,43,.35); }
   .ic-design2{ --c-hi:#f48be0; --c-lo:#c112a6; --c-glow:rgba(193,18,166,.35); }
   .ic-chiffrage{ --c-hi:#ffd15c; --c-lo:#e39a12; --c-glow:rgba(227,154,18,.38); }
-
-  /* Modale d'accès par mot de passe */
-  .lock-overlay{
-    position:fixed; inset:0; z-index:50;
-    display:flex; align-items:center; justify-content:center;
-    padding:24px; padding-bottom:calc(24px + env(safe-area-inset-bottom));
-    background:rgba(32,41,48,.34);
-    -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
-    animation:overlayIn .25s ease forwards;
-  }
-  .lock-overlay[hidden]{ display:none; }
-  @keyframes overlayIn{ from{opacity:0} to{opacity:1} }
-  .lock-card{
-    width:100%; max-width:340px;
-    background:var(--glass);
-    -webkit-backdrop-filter:blur(20px) saturate(160%); backdrop-filter:blur(20px) saturate(160%);
-    border:1px solid var(--card-border); border-radius:var(--radius);
-    box-shadow:var(--shadow-hover); padding:26px 22px 22px;
-    display:flex; flex-direction:column; align-items:center; gap:16px;
-    transform:translateY(8px) scale(.98); opacity:0;
-    animation:cardIn .35s var(--spring) forwards;
-  }
-  @keyframes cardIn{ to{ transform:translateY(0) scale(1); opacity:1; } }
-  .lock-badge{
-    width:54px; height:54px; border-radius:16px;
-    display:flex; align-items:center; justify-content:center;
-    background:linear-gradient(160deg,#1a1d21,#000);
-    box-shadow:0 10px 22px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.1);
-  }
-  .lock-badge svg{ width:26px; height:26px; stroke:#fff; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
-  #lockForm{ width:100%; display:flex; flex-direction:column; gap:12px; }
-  #lockInput{
-    width:100%; height:48px; padding:0 14px;
-    font-size:16px; color:var(--ink); font-family:inherit;
-    background:rgba(255,255,255,.7); border:1px solid rgba(255,255,255,.8); border-radius:13px;
-    outline:none; transition:border-color .2s, box-shadow .2s;
-  }
-  #lockInput:focus{ border-color:var(--duck-focus); box-shadow:0 0 0 3px rgba(107,129,145,.18); }
-  #lockInput.shake{ animation:shake .4s; border-color:#c0392b; }
-  @keyframes shake{ 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
-  .lock-actions{ display:flex; gap:10px; }
-  .lock-btn{
-    flex:1; min-height:46px; border-radius:13px; font-size:15px; font-weight:600; font-family:inherit;
-    cursor:pointer; border:1px solid transparent;
-    -webkit-appearance:none; appearance:none; transition:transform .15s, background .2s, border-color .2s;
-  }
-  .lock-btn:active{ transform:scale(.97); }
-  .lock-btn--ghost{ background:rgba(255,255,255,.7); color:var(--muted); border-color:rgba(255,255,255,.8); }
-  .lock-btn--go{ background:linear-gradient(150deg,#1a1d21,#000); color:#fff; }
-  .lock-error{ font-size:13px; color:#c0392b; text-align:center; margin-top:2px; }
-  .lock-error[hidden]{ display:none; }
-  footer{ margin-top:40px; color:var(--muted-2); font-size:12px; text-align:center; }
-  /* le pied ne porte plus que le lien « Oublier » : caché avec lui, il ne décale pas la grille */
-  footer:has(> #forgetPw[hidden]){ display:none; }
-  /* Toast de confirmation (ex. « Mot de passe oublié ✓ ») */
-  .toast{
-    position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(12px);
-    z-index:60; max-width:calc(100% - 32px);
-    padding:12px 18px; border-radius:14px;
-    background:rgba(32,41,48,.92); color:#fff; font-size:14px; font-weight:600; letter-spacing:-.005em;
-    box-shadow:0 10px 30px rgba(32,41,48,.28), inset 0 1px 0 rgba(255,255,255,.12);
-    opacity:0; pointer-events:none; transition:opacity .3s, transform .3s;
-  }
-  .toast--show{ opacity:1; transform:translateX(-50%) translateY(0); }
-  .toast[hidden]{ display:none; }
 </style>
 </head>
 <body>
@@ -215,203 +147,24 @@
       <div class="card-icon ic-fiverr"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
       <div class="card-name">Fiverr</div>
     </a>
-  </div>
-
-  <div class="bento bento--lock">
-    <button type="button" class="card" data-enc="wQEMIPTDIQF2wpjiIMpl0w==.VYiZge83tte3H7A0.GbLWYZGuj5FQvS8j1l5IEBcArChdnRcTJ1WECBkBd825AU2VGMd9UFoAk7x5rW5qKcmCPWkQoMqTMcaI56zi1ik=" aria-label="Stock — accès protégé">
+    <a href="https://catalogue-olda-production.up.railway.app/" target="_blank" rel="noopener" class="card">
       <div class="card-icon ic-catalogue"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg></div>
       <div class="card-name">Stock</div>
-    </button>
-    <button type="button" class="card" data-enc="fa1xOipnZVOph6Ycmf7/8A==.WfbhdsPzsZV6h+yA.ffkWTuGjc5lOI+HoTZw7viHPiNOdQ6a3iKjuHNvMje49KI38H9fS5w18oIT2JQNshrSox5dSyppAhJ1hBS8=" aria-label="Design — accès protégé">
+    </a>
+    <a href="https://design-olda-production.up.railway.app/" target="_blank" rel="noopener" class="card">
       <div class="card-icon ic-design2"><svg viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg></div>
       <div class="card-name">Design</div>
-    </button>
-    <button type="button" class="card" data-enc="kelIXRaOoxZAGX/jAC0iDA==.R4ruAxcUI9F+4oAX.RPguKsJRrRL86zMScRaP8sZKlyqKDOa5j0iUVfbTs61VwV8LS2pGNmWjbHrnbFC9iWLFDFdTna197tfHRy6Md68=" aria-label="Chiffrage — accès protégé">
+    </a>
+    <a href="https://chiffrage-olda-production.up.railway.app/" target="_blank" rel="noopener" class="card">
       <div class="card-icon ic-chiffrage"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
       <div class="card-name">Chiffrage</div>
-    </button>
-  </div>
-
-  <footer><a href="#" id="forgetPw" hidden style="color:inherit; text-decoration:underline;">Oublier le mot de passe sur cet appareil</a></footer>
-</div>
-
-<div class="lock-overlay" id="lockOverlay" hidden>
-  <div class="lock-card" role="dialog" aria-modal="true" aria-label="Accès protégé">
-    <div class="lock-badge"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
-    <form id="lockForm" autocomplete="off">
-      <input type="password" id="lockInput" placeholder="Mot de passe" aria-label="Mot de passe" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
-      <div class="lock-actions">
-        <button type="button" class="lock-btn lock-btn--ghost" id="lockCancel">Annuler</button>
-        <button type="submit" class="lock-btn lock-btn--go">Entrer</button>
-      </div>
-      <div class="lock-error" id="lockError" hidden>Mot de passe incorrect</div>
-    </form>
+    </a>
   </div>
 </div>
-
-<div class="toast" id="toast" hidden></div>
 
 <script>
-  (function(){
-    // Accès protégé : l'URL de destination de chaque tuile est chiffrée (AES-GCM,
-    // clé dérivée du mot de passe par PBKDF2) dans l'attribut data-enc.
-    // Ni le mot de passe ni les URLs n'apparaissent en clair dans la source.
-    var ITER    = 150000;
-    var overlay = document.getElementById('lockOverlay');
-    var input   = document.getElementById('lockInput');
-    var errorEl = document.getElementById('lockError');
-    var form    = document.getElementById('lockForm');
-    var cancel  = document.getElementById('lockCancel');
-    var tiles   = document.querySelectorAll('[data-enc]');
-    var forget  = document.getElementById('forgetPw');
-    var toastEl = document.getElementById('toast');
-    var encStr  = null;
-
-    // ---- Mémorisation sur cet appareil ---------------------------------
-    // Une fois le bon mot de passe saisi, il est conservé sur cet appareil
-    // (localStorage) et sert à ouvrir les apps SANS le redemander. Le même mot
-    // de passe déverrouille automatiquement toutes les apps qui l'utilisent.
-    // Si une app a un mot de passe différent, il est demandé une seule fois
-    // puis retenu à part — sans jamais effacer les autres. Seul le lien
-    // « Oublier » efface tout, volontairement, sur cet appareil.
-    var STORE_KEY  = 'olda_access_v2';   // { last:"...", map:{ "<enc>":"..." } }
-    var LEGACY_KEY = 'olda_access_pw';   // ancien format (un seul mot de passe)
-
-    function loadStore(){ try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(_){ return {}; } }
-    function saveStore(s){ try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch(_){} }
-    function legacyPw(){ try { return localStorage.getItem(LEGACY_KEY) || null; } catch(_){ return null; } }
-
-    // Mot de passe candidat pour une tuile : celui déjà retenu pour cette app,
-    // sinon le dernier mot de passe qui a fonctionné, sinon l'ancien format.
-    function candidateFor(enc){
-      var s = loadStore();
-      if(s.map && s.map[enc]) return s.map[enc];
-      if(s.last) return s.last;
-      return legacyPw();
-    }
-    function remember(enc, pw){
-      var s = loadStore();
-      if(!s.map) s.map = {};
-      s.map[enc] = pw;
-      s.last = pw;
-      saveStore(s);
-      refreshForget();
-    }
-    function forgetAll(){
-      try { localStorage.removeItem(STORE_KEY); } catch(_){}
-      try { localStorage.removeItem(LEGACY_KEY); } catch(_){}
-      refreshForget();
-    }
-    function hasAny(){
-      var s = loadStore();
-      var hasMap = s.map && Object.keys(s.map).length > 0;
-      return !!(s.last || hasMap || legacyPw());
-    }
-    function refreshForget(){ if(forget) forget.hidden = !hasAny(); }
-
-    function toast(msg){
-      if(!toastEl) return;
-      toastEl.textContent = msg;
-      toastEl.hidden = false;
-      toastEl.classList.remove('toast--show'); void toastEl.offsetWidth; toastEl.classList.add('toast--show');
-      clearTimeout(toast._t);
-      toast._t = setTimeout(function(){
-        toastEl.classList.remove('toast--show');
-        setTimeout(function(){ toastEl.hidden = true; }, 320);
-      }, 2600);
-    }
-
-    // ---- Modale mot de passe -------------------------------------------
-    function openLock(enc){
-      encStr = enc;
-      errorEl.hidden = true;
-      input.value = '';
-      input.classList.remove('shake');
-      overlay.hidden = false;
-      setTimeout(function(){ input.focus(); }, 60);
-    }
-    function closeLock(){ overlay.hidden = true; encStr = null; }
-
-    // ---- Déchiffrement --------------------------------------------------
-    function b64(s){ return Uint8Array.from(atob(s), function(c){ return c.charCodeAt(0); }); }
-    async function decryptUrl(enc, pw){
-      var parts = enc.split('.');           // salt.iv.ciphertext (base64)
-      var base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
-      var key  = await crypto.subtle.deriveKey(
-        {name:'PBKDF2', salt:b64(parts[0]), iterations:ITER, hash:'SHA-256'},
-        base, {name:'AES-GCM', length:256}, false, ['decrypt']);
-      var pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64(parts[1])}, key, b64(parts[2]));
-      return new TextDecoder().decode(pt);
-    }
-
-    // Ouvre l'URL dans un NOUVEL onglet, en réutilisant l'onglet pré-ouvert
-    // pendant le geste de clic pour éviter le blocage des popups.
-    function loadInTab(url, preWin){
-      if(preWin && !preWin.closed){ preWin.location.href = url; return; }
-      var w = window.open(url, '_blank');
-      if(w){ try { w.opener = null; } catch(_){} return; }
-      window.location.href = url;                    // dernier recours si les popups sont bloqués
-    }
-
-    // ---- Clic sur une tuile --------------------------------------------
-    Array.prototype.forEach.call(tiles, function(t){
-      t.addEventListener('click', async function(){
-        var enc = t.getAttribute('data-enc');
-        var pw  = candidateFor(enc);
-        if(pw){
-          // On ouvre l'onglet TOUT DE SUITE (dans le geste de clic), puis on y
-          // charge l'URL une fois déchiffrée : sinon le navigateur bloque le popup.
-          var preWin = window.open('', '_blank');
-          if(preWin){ try { preWin.opener = null; } catch(_){} }
-          try {
-            var url = await decryptUrl(enc, pw);
-            remember(enc, pw);       // conforte la mémorisation sur cet appareil
-            loadInTab(url, preWin);
-            return;
-          } catch(_){
-            // Ce mot de passe ne convient pas à CETTE app : on n'efface RIEN
-            // (les autres apps restent déverrouillées), on le demande juste.
-            if(preWin && !preWin.closed){ preWin.close(); }
-          }
-        }
-        openLock(enc);
-      });
-    });
-
-    // ---- Lien « Oublier le mot de passe sur cet appareil » -------------
-    if(forget){
-      forget.addEventListener('click', function(e){
-        e.preventDefault();
-        forgetAll();                                   // efface TOUT, pour toutes les apps
-        toast('Mot de passe oublié sur cet appareil ✓');
-      });
-    }
-    refreshForget();
-
-    cancel.addEventListener('click', closeLock);
-    overlay.addEventListener('click', function(e){ if(e.target === overlay) closeLock(); });
-    document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && !overlay.hidden) closeLock(); });
-
-    // ---- Soumission de la modale ---------------------------------------
-    form.addEventListener('submit', async function(e){
-      e.preventDefault();
-      // Onglet pré-ouvert dans le geste de soumission (évite le blocage popup).
-      var preWin = window.open('', '_blank');
-      if(preWin){ try { preWin.opener = null; } catch(_){} }
-      var dest = null;
-      if(encStr){ try { dest = await decryptUrl(encStr, input.value); } catch(_){ dest = null; } }
-      if(dest){
-        remember(encStr, input.value);   // retient pour cette app + comme dernier connu
-        closeLock();
-        loadInTab(dest, preWin);
-      } else {
-        if(preWin && !preWin.closed){ preWin.close(); }   // mauvais mot de passe → on referme l'onglet
-        errorEl.hidden = false;
-        input.classList.remove('shake'); void input.offsetWidth; input.classList.add('shake');
-        input.select();
-      }
-    });
-  })();
+  // Plus de mot de passe : on efface celui qui avait pu être mémorisé sur l'appareil.
+  try { localStorage.removeItem('olda_access_v2'); localStorage.removeItem('olda_access_pw'); } catch(_){}
 </script>
 </body>
 </html>
