@@ -167,6 +167,8 @@
   .lock-error{ font-size:13px; color:#c0392b; text-align:center; margin-top:2px; }
   .lock-error[hidden]{ display:none; }
   footer{ margin-top:40px; color:var(--muted-2); font-size:12px; text-align:center; }
+  /* le pied ne porte plus que le lien « Oublier » : caché avec lui, il ne décale pas la grille */
+  footer:has(> #forgetPw[hidden]){ display:none; }
   /* Toast de confirmation (ex. « Mot de passe oublié ✓ ») */
   .toast{
     position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(12px);
@@ -230,7 +232,7 @@
     </button>
   </div>
 
-  <footer>© <span id="y"></span> OLDA<a href="#" id="forgetPw" hidden style="color:inherit; text-decoration:underline; margin-left:8px;">Oublier le mot de passe sur cet appareil</a></footer>
+  <footer><a href="#" id="forgetPw" hidden style="color:inherit; text-decoration:underline;">Oublier le mot de passe sur cet appareil</a></footer>
 </div>
 
 <div class="lock-overlay" id="lockOverlay" hidden>
@@ -250,8 +252,6 @@
 <div class="toast" id="toast" hidden></div>
 
 <script>
-  document.getElementById('y').textContent = new Date().getFullYear();
-
   (function(){
     // Accès protégé : l'URL de destination de chaque tuile est chiffrée (AES-GCM,
     // clé dérivée du mot de passe par PBKDF2) dans l'attribut data-enc.
