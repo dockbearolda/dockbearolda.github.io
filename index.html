@@ -22,17 +22,43 @@
   html,body{ height:100%; }
   body{
     font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:
-      radial-gradient(1100px 560px at 50% -12%, rgba(74,98,116,.09), transparent 62%),
-      radial-gradient(900px 500px at 110% 115%, rgba(139,160,175,.10), transparent 60%),
-      #f4f6f8;
+    background:#f4f6f8;
     color:var(--ink);
     font-variant-numeric:tabular-nums; overflow-x:hidden;
   }
-  .wrap{ min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:56px 24px; }
+  .wrap{ position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:56px 24px; }
 
-  .bento{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; width:100%; max-width:760px; }
-  @media (max-width:760px){ .bento{ grid-template-columns:repeat(2,1fr); } }
+  /* Fond animé façon Google : quatre halos aux couleurs Google, très pâles,
+     qui dérivent lentement derrière le verre des cartes. Dégradés radiaux
+     (pas de filter:blur) : seul transform bouge, rien à recalculer. */
+  .aurora{ position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+  .orb{
+    position:absolute; width:62vmax; height:62vmax; border-radius:50%;
+    background:radial-gradient(circle, var(--c) 0%, transparent 64%);
+    will-change:transform;
+    animation:var(--path) var(--dur) ease-in-out infinite alternate;
+  }
+  .orb--blue  { --c:rgba(66,133,244,.24); --path:orbA; --dur:34s; top:-26vmax; left:-18vmax; }
+  .orb--red   { --c:rgba(234,67,53,.13);  --path:orbB; --dur:41s; top:-22vmax; right:-24vmax; }
+  .orb--yellow{ --c:rgba(251,188,5,.17);  --path:orbC; --dur:38s; bottom:-30vmax; right:-12vmax; }
+  .orb--green { --c:rgba(52,168,83,.14);  --path:orbD; --dur:46s; bottom:-28vmax; left:-22vmax; }
+  @keyframes orbA{ 0%{transform:translate(0,0) scale(1)} 50%{transform:translate(18vmax,10vmax) scale(1.12)} 100%{transform:translate(8vmax,24vmax) scale(.94)} }
+  @keyframes orbB{ 0%{transform:translate(0,0) scale(1.05)} 50%{transform:translate(-16vmax,14vmax) scale(.92)} 100%{transform:translate(-26vmax,4vmax) scale(1.1)} }
+  @keyframes orbC{ 0%{transform:translate(0,0) scale(.95)} 50%{transform:translate(-14vmax,-16vmax) scale(1.1)} 100%{transform:translate(-4vmax,-26vmax) scale(1)} }
+  @keyframes orbD{ 0%{transform:translate(0,0) scale(1.08)} 50%{transform:translate(20vmax,-8vmax) scale(.96)} 100%{transform:translate(10vmax,-20vmax) scale(1.04)} }
+  /* grain très fin : casse les bandes des dégradés, donne la matière */
+  .aurora::after{
+    content:""; position:absolute; inset:0; opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  @media (prefers-reduced-motion:reduce){ .orb{ animation:none; } }
+
+  .bento{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; width:100%; max-width:600px; }
+  @media (max-width:560px){
+    .bento{ grid-template-columns:repeat(2,1fr); }
+    /* nombre impair de tuiles : la dernière prend toute la ligne */
+    .bento > .card:last-child:nth-child(odd){ grid-column:1 / -1; }
+  }
   @media (max-width:420px){ .bento{ grid-template-columns:1fr; gap:12px; } }
 
   .card{
@@ -77,13 +103,9 @@
   .ic-planning{ --c-hi:#5ad1e6; --c-lo:#0aa6c9; --c-glow:rgba(10,166,201,.38); }
   .ic-b2c{ --c-hi:#4aa3ff; --c-lo:#0a5cff; --c-glow:rgba(10,92,255,.35); }
   .ic-b2b{ --c-hi:#8f83ff; --c-lo:#4b3fd6; --c-glow:rgba(75,63,214,.35); }
-  .ic-dtf{ --c-hi:#ff7db3; --c-lo:#e0247e; --c-glow:rgba(224,36,126,.35); }
   .ic-devis{ --c-hi:#ffc04d; --c-lo:#ff7a00; --c-glow:rgba(255,122,0,.38); }
   .ic-bat{ --c-hi:#4fd98a; --c-lo:#12a651; --c-glow:rgba(18,166,81,.35); }
-  .ic-logo{ --c-hi:#b982ff; --c-lo:#7a2fd6; --c-glow:rgba(122,47,214,.35); }
-  .ic-taille{ --c-hi:#f0abfc; --c-lo:#a21caf; --c-glow:rgba(162,28,175,.35); }
   .ic-fiverr{ --c-hi:#43e0a0; --c-lo:#12a15e; --c-glow:rgba(18,161,94,.35); }
-  .ic-maint{ --c-hi:#9fb0bf; --c-lo:#55636f; --c-glow:rgba(85,99,111,.35); }
   .card-name{ font-size:15px; font-weight:600; letter-spacing:-.005em; color:var(--duck); transition:color .3s; }
   .card:hover .card-name{ color:var(--duck-hover); }
 
@@ -93,9 +115,6 @@
   .ic-catalogue{ --c-hi:#ff8a6b; --c-lo:#e5372b; --c-glow:rgba(229,55,43,.35); }
   .ic-design2{ --c-hi:#f48be0; --c-lo:#c112a6; --c-glow:rgba(193,18,166,.35); }
   .ic-chiffrage{ --c-hi:#ffd15c; --c-lo:#e39a12; --c-glow:rgba(227,154,18,.38); }
-  .ic-heures{ --c-hi:#2fd4c4; --c-lo:#0a9d92; --c-glow:rgba(10,157,146,.35); }
-  .ic-clients{ --c-hi:#6aa6ff; --c-lo:#2f5fe0; --c-glow:rgba(47,95,224,.34); }
-  .ic-fiche{ --c-hi:#b07bff; --c-lo:#6d28d9; --c-glow:rgba(109,40,217,.35); }
 
   /* Modale d'accès par mot de passe */
   .lock-overlay{
@@ -148,6 +167,8 @@
   .lock-error{ font-size:13px; color:#c0392b; text-align:center; margin-top:2px; }
   .lock-error[hidden]{ display:none; }
   footer{ margin-top:40px; color:var(--muted-2); font-size:12px; text-align:center; }
+  /* le pied ne porte plus que le lien « Oublier » : caché avec lui, il ne décale pas la grille */
+  footer:has(> #forgetPw[hidden]){ display:none; }
   /* Toast de confirmation (ex. « Mot de passe oublié ✓ ») */
   .toast{
     position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(12px);
@@ -162,6 +183,12 @@
 </style>
 </head>
 <body>
+<div class="aurora" aria-hidden="true">
+  <span class="orb orb--blue"></span>
+  <span class="orb orb--red"></span>
+  <span class="orb orb--yellow"></span>
+  <span class="orb orb--green"></span>
+</div>
 <div class="wrap">
   <div class="bento">
     <a href="https://web-production-a63b27.up.railway.app/" target="_blank" rel="noopener" class="card">
@@ -176,10 +203,6 @@
       <div class="card-icon ic-b2b"><svg viewBox="0 0 24 24"><path d="M2 22h20"/><path d="M6 18V8l6-4 6 4v10"/><path d="M10 22V12h4v10"/></svg></div>
       <div class="card-name">Site B2B</div>
     </a>
-    <a href="https://dtfolda.up.railway.app" target="_blank" rel="noopener" class="card">
-      <div class="card-icon ic-dtf"><svg viewBox="0 0 24 24"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg></div>
-      <div class="card-name">DTF</div>
-    </a>
     <a href="https://oldaflash.up.railway.app" target="_blank" rel="noopener" class="card">
       <div class="card-icon ic-devis"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
       <div class="card-name">Devis Flash</div>
@@ -187,18 +210,6 @@
     <a href="https://bat-studio-production.up.railway.app/" target="_blank" rel="noopener" class="card">
       <div class="card-icon ic-bat"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
       <div class="card-name">Bon à Tirer</div>
-    </a>
-    <a href="https://suivi-logos-production.up.railway.app/" target="_blank" rel="noopener" class="card">
-      <div class="card-icon ic-logo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/></svg></div>
-      <div class="card-name">Logo Client</div>
-    </a>
-    <a href="https://taille-logo-app-production.up.railway.app/" target="_blank" rel="noopener" class="card">
-      <div class="card-icon ic-taille"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></div>
-      <div class="card-name">Taille Logo</div>
-    </a>
-    <a href="https://maintenance-production-3cee.up.railway.app/" target="_blank" rel="noopener" class="card">
-      <div class="card-icon ic-maint"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
-      <div class="card-name">Maintenance</div>
     </a>
     <a href="https://fr.fiverr.com/" target="_blank" rel="noopener" class="card">
       <div class="card-icon ic-fiverr"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
@@ -219,21 +230,9 @@
       <div class="card-icon ic-chiffrage"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
       <div class="card-name">Chiffrage</div>
     </button>
-    <button type="button" class="card" data-enc="mYV8l63B18ry5qAh9oc8Hg==.8VJinaKQHfphilr6.XBEtUW3KGR4DfvvOO++GTryjPkJB8SZQZuAarLXtYpgY18BSvX8jpBnM7l4+8TD5AodGZ831eeVYD2do/S7VZd16EA4ZPh1ptMF/uZkLrm4EGpI=" aria-label="Feuille d'heures — accès protégé">
-      <div class="card-icon ic-heures"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-      <div class="card-name">Feuille d'heures</div>
-    </button>
-    <button type="button" class="card" data-enc="2TEO4creWvqw7aAO6l+Hrw==.hEvdkz4WxmZ2h10k.SNyGaZM7oA2tXNh1mCBKv8SKtLiMiygss3mIPPavmo4NH/48kQgsqyG8iASWfqMs9WH6Hvpsf7eCRQM=" aria-label="Base clients — accès protégé">
-      <div class="card-icon ic-clients"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-      <div class="card-name">Base clients</div>
-    </button>
-    <button type="button" class="card" data-enc="789R3rfQ2aewbzgsTiC0Xg==.TezIIl2+aq23+0cd.5YzzCkv2wPhAmbAOPIPxqWPOvENww26/COKDWNP5UP/yopyPPnbVSEYc9cBUDk59viafx0sq2g==" aria-label="Fiche client — accès protégé">
-      <div class="card-icon ic-fiche"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg></div>
-      <div class="card-name">Fiche client</div>
-    </button>
   </div>
 
-  <footer>© <span id="y"></span> OLDA<a href="#" id="forgetPw" hidden style="color:inherit; text-decoration:underline; margin-left:8px;">Oublier le mot de passe sur cet appareil</a></footer>
+  <footer><a href="#" id="forgetPw" hidden style="color:inherit; text-decoration:underline;">Oublier le mot de passe sur cet appareil</a></footer>
 </div>
 
 <div class="lock-overlay" id="lockOverlay" hidden>
@@ -253,8 +252,6 @@
 <div class="toast" id="toast" hidden></div>
 
 <script>
-  document.getElementById('y').textContent = new Date().getFullYear();
-
   (function(){
     // Accès protégé : l'URL de destination de chaque tuile est chiffrée (AES-GCM,
     // clé dérivée du mot de passe par PBKDF2) dans l'attribut data-enc.
