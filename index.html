@@ -79,7 +79,7 @@
     transform:translateX(-130%); transition:transform .7s var(--spring);
   }
   .card:hover::after{ transform:translateX(130%); }
-  .card:nth-child(1){animation-delay:.04s} .card:nth-child(2){animation-delay:.09s} .card:nth-child(3){animation-delay:.14s} .card:nth-child(4){animation-delay:.19s} .card:nth-child(5){animation-delay:.24s} .card:nth-child(6){animation-delay:.29s} .card:nth-child(7){animation-delay:.34s} .card:nth-child(8){animation-delay:.39s} .card:nth-child(9){animation-delay:.44s} .card:nth-child(10){animation-delay:.49s} .card:nth-child(11){animation-delay:.54s}
+  .card:nth-child(1){animation-delay:.04s} .card:nth-child(2){animation-delay:.09s} .card:nth-child(3){animation-delay:.14s} .card:nth-child(4){animation-delay:.19s} .card:nth-child(5){animation-delay:.24s} .card:nth-child(6){animation-delay:.29s} .card:nth-child(7){animation-delay:.34s} .card:nth-child(8){animation-delay:.39s} .card:nth-child(9){animation-delay:.44s} .card:nth-child(10){animation-delay:.49s} .card:nth-child(11){animation-delay:.54s} .card:nth-child(12){animation-delay:.59s}
   @keyframes appear{ to{ opacity:1; transform:translateY(0); } }
   .card:hover{ transform:translateY(-5px) scale(1.02); box-shadow:var(--shadow-hover), inset 0 1px 0 rgba(255,255,255,.85); border-color:rgba(255,255,255,.9); }
   .card:active{ transform:translateY(-2px) scale(.98); }
@@ -114,6 +114,7 @@
   .ic-chiffrage{ --c-hi:#ffd15c; --c-lo:#e39a12; --c-glow:rgba(227,154,18,.38); }
   .ic-logo{ --c-hi:#7b8ba1; --c-lo:#1e293b; --c-glow:rgba(30,41,59,.34); }
   .ic-textile{ --c-hi:#6a7fd8; --c-lo:#26398f; --c-glow:rgba(38,57,143,.36); }
+  .ic-check{ --c-hi:#4fd1c5; --c-lo:#0d9488; --c-glow:rgba(13,148,136,.36); }
   /* tuile seule sur la dernière ligne à trois colonnes : elle la prend toute */
   @media (min-width:561px){ .bento > .card:last-child:nth-child(3n+1){ grid-column:1 / -1; } }
 </style>
@@ -170,6 +171,10 @@
     <a href="https://logomaker-olda.up.railway.app/" target="_blank" rel="noopener" class="card">
       <div class="card-icon ic-logo"><svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg></div>
       <div class="card-name">Logo maker</div>
+    </a>
+    <a href="https://dockbearolda.github.io/check-logo/" target="_blank" rel="noopener" class="card">
+      <div class="card-icon ic-check"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg></div>
+      <div class="card-name">Check logo</div>
     </a>
   </div>
 </div>
