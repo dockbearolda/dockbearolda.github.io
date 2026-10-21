@@ -1,0 +1,17 @@
+{
+  "rev": 1,
+  "shortcuts": [
+    { "name": "Planning", "url": "https://web-production-a63b27.up.railway.app/", "icon": "calendar", "color": "cyan" },
+    { "name": "Site B2C", "url": "https://myolda.up.railway.app/", "icon": "home", "color": "bleu" },
+    { "name": "Site B2B", "url": "https://atelierolda.up.railway.app", "icon": "building", "color": "indigo" },
+    { "name": "Devis Flash", "url": "https://oldaflash.up.railway.app", "icon": "bolt", "color": "orange" },
+    { "name": "Bon à Tirer", "url": "https://bat-studio-production.up.railway.app/", "icon": "check", "color": "vert" },
+    { "name": "Fiverr", "url": "https://fr.fiverr.com/", "icon": "bag", "color": "menthe" },
+    { "name": "Stock", "url": "https://catalogue-olda-production.up.railway.app/", "icon": "box", "color": "rouge" },
+    { "name": "Stock textiles", "url": "https://stock-textile-production.up.railway.app/", "icon": "shirt", "color": "marine" },
+    { "name": "Design", "url": "https://design-olda-production.up.railway.app/", "icon": "pen", "color": "rose" },
+    { "name": "Chiffrage", "url": "https://chiffrage-olda-production.up.railway.app/", "icon": "lock", "color": "jaune" },
+    { "name": "Logo maker", "url": "https://logomaker-olda.up.railway.app/", "icon": "brush", "color": "ardoise" },
+    { "name": "Check logo", "url": "https://dockbearolda.github.io/check-logo/", "icon": "scan", "color": "turquoise" }
+  ]
+}
