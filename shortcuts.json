@@ -12,7 +12,7 @@
     { "name": "Stock textiles", "url": "https://stock-textile-production.up.railway.app/", "icon": "shirt", "color": "marine" },
     { "name": "Design", "url": "https://design-olda-production.up.railway.app/", "icon": "pen", "color": "rose" },
     { "name": "Chiffrage", "url": "https://chiffrage-olda-production.up.railway.app/", "icon": "lock", "color": "jaune" },
-    { "name": "Tarif Laser", "url": "https://tarif-laser-production.up.railway.app/", "icon": "euro", "color": "rouge" },
+    { "name": "Tarif Laser", "url": "https://tarif-laser-production.up.railway.app/", "icon": "euro", "color": "rouge", "since": 1793030196023 },
     { "name": "Logo maker", "url": "https://logomaker-olda.up.railway.app/", "icon": "brush", "color": "ardoise" },
     { "name": "Check logo", "url": "https://dockbearolda.github.io/check-logo/", "icon": "scan", "color": "turquoise" }
   ]
