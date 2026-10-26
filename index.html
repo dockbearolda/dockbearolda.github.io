@@ -380,7 +380,7 @@
   store.del('olda_access_v2'); store.del('olda_access_pw');
 
   const grid = $('#bento');
-  let state = store.get(LS_DATA);      // { rev, shortcuts, dirty }
+  let state = store.get(LS_DATA);      // { rev, shortcuts, dirty, base } — base : rev publiée sur laquelle portent les retouches
   let editing = false;
 
   // ---------- Rendu ----------
@@ -436,7 +436,27 @@
 
   // ---------- État ----------
   function save(){ store.set(LS_DATA, state); }
-  function commit(){ state.rev = Date.now(); state.dirty = true; save(); grid.classList.add('ready'); render(); }
+  function commit(){
+    if (!state.dirty) state.base = state.rev;
+    state.rev = Date.now(); state.dirty = true; save(); grid.classList.add('ready'); render();
+  }
+  // Retouches locales + ce qui a été publié depuis : raccourcis ajoutés ou retirés ailleurs.
+  // Chaque raccourci porte « since » (date d'ajout) ; sans base (ancien format) on ne retire rien.
+  function merge(local, remote){
+    const base = local.base ?? null, from = base ?? 0;
+    const published = new Set(remote.shortcuts.map(s => s.url));
+    const out = local.shortcuts.filter(s => base === null || published.has(s.url) || (s.since || 0) > base);
+    remote.shortcuts.forEach((s, i) => {
+      if ((s.since || 0) <= from || out.some(o => o.url === s.url)) return;
+      let at = 0; // juste après le raccourci publié qui le précède et qu'on a encore
+      for (let j = i - 1; j >= 0; j--) {
+        const k = out.findIndex(o => o.url === remote.shortcuts[j].url);
+        if (k >= 0) { at = k + 1; break; }
+      }
+      out.splice(at, 0, s);
+    });
+    return { rev: local.rev, shortcuts: out, dirty: true, base: remote.rev };
+  }
   function updateDock(){
     const dirty = !!(state && state.dirty);
     $('#b-publish').hidden = !dirty;
@@ -465,6 +485,8 @@
         const first = !state;
         state = { rev: remote.rev, shortcuts: remote.shortcuts, dirty: false }; save(); render();
         if (first) settle();
+      } else if (state.dirty && remote.rev > (state.base ?? 0)) {
+        state = merge(state, remote); save(); render();
       }
     } catch (_) {
       if (!state) toast('Impossible de charger les raccourcis. Vérifie la connexion.');
@@ -585,6 +607,7 @@
     if (mode === 'site') draft.img = favicon(url);
     const s = { name, url, icon: draft.icon || null, color: draft.color };
     if (draft.img) s.img = draft.img;
+    s.since = index >= 0 && url === draft.url && draft.since ? draft.since : Date.now();
     if (index >= 0) state.shortcuts[index] = s; else state.shortcuts.push(s);
     sheet.close(); commit();
     toast(index >= 0 ? 'Raccourci modifié' : `« ${name} » ajouté`);
@@ -631,7 +654,13 @@
     try {
       const cur = await fetch(api + '?ref=main', { headers, cache: 'no-store' });
       if (cur.status === 401) throw Object.assign(new Error('auth'), { auth: true });
-      const sha = cur.ok ? (await cur.json()).sha : undefined;
+      let sha;
+      if (cur.ok) {
+        const f = await cur.json(); sha = f.sha;
+        // Publié ailleurs entre-temps : on fusionne au lieu d'écraser
+        const live = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(f.content.replace(/\s/g, '')), c => c.charCodeAt(0))));
+        if (live.rev > (state.base ?? 0)) state = merge(state, live);
+      }
       const body = { rev: Date.now(), shortcuts: state.shortcuts };
       const res = await fetch(api, { method: 'PUT', headers, body: JSON.stringify({
         message: 'Portail : raccourcis mis à jour depuis la page', branch: 'main', sha,
