@@ -1,5 +1,5 @@
 {
-  "rev": 1793030196023,
+  "rev": 1793618018484,
   "shortcuts": [
     { "name": "Planning", "url": "https://web-production-a63b27.up.railway.app/", "icon": "calendar", "color": "cyan" },
     { "name": "Site B2C", "url": "https://myolda.com/", "icon": "home", "color": "bleu" },
@@ -10,6 +10,7 @@
     { "name": "Fiverr", "url": "https://fr.fiverr.com/", "icon": "bag", "color": "menthe" },
     { "name": "Stock", "url": "https://catalogue-olda-production.up.railway.app/", "icon": "box", "color": "rouge" },
     { "name": "Stock textiles", "url": "https://stock-textile-production.up.railway.app/", "icon": "shirt", "color": "marine" },
+    { "name": "Pressage", "url": "https://pressage-production.up.railway.app/", "icon": "printer", "color": "orange", "since": 1793618018484 },
     { "name": "Design", "url": "https://design-olda-production.up.railway.app/", "icon": "pen", "color": "rose" },
     { "name": "Chiffrage", "url": "https://chiffrage-olda-production.up.railway.app/", "icon": "lock", "color": "jaune" },
     { "name": "Tarif Laser", "url": "https://tarif-laser-production.up.railway.app/", "icon": "euro", "color": "rouge", "since": 1793030196023 },
