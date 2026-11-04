@@ -1,9 +1,9 @@
 {
-  "rev": 1793818563010,
+  "rev": 1793830315000,
   "shortcuts": [
     { "name": "Site B2C", "url": "https://myolda.com/", "icon": "home", "color": "bleu" },
-    { "name": "Site B2B", "url": "https://atelierolda.up.railway.app", "icon": "building", "color": "indigo" },
-    { "name": "OLDA Pro", "url": "https://olda-pro.up.railway.app/", "icon": "briefcase", "color": "ardoise" },
+    { "name": "Site B2B", "url": "https://b2b.77.42.85.236.sslip.io", "icon": "building", "color": "indigo" },
+    { "name": "OLDA Pro", "url": "https://pro.77.42.85.236.sslip.io/", "icon": "briefcase", "color": "ardoise" },
     { "name": "Bon à Tirer", "url": "https://bat-studio.dockbear.workers.dev/", "icon": "check", "color": "vert" },
     { "name": "Pressage", "url": "https://pressage.dockbear.workers.dev/", "icon": "press", "color": "orange", "since": 1793618018484 },
     { "name": "Design", "url": "https://design-olda-production.up.railway.app/", "icon": "pen", "color": "rose" },
