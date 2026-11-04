@@ -225,6 +225,7 @@
     opacity:0; pointer-events:none; transition:opacity .25s, transform .35s var(--spring);
   }
   .toast.show{ opacity:1; transform:translate(-50%,0); pointer-events:auto; }
+  #update{ bottom:calc(136px + var(--safe-b)); }
   .toast button{ min-height:40px; padding:0 14px; border:0; border-radius:12px; background:none; color:#9fd0ff; font-weight:700; }
   .toast span{ padding:8px 14px 8px 0; }
 
@@ -324,6 +325,7 @@
 </dialog>
 
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button type="button" id="toast-act" hidden></button></div>
+<div class="toast" id="update" role="status" aria-live="polite"><span>Nouvelle version disponible</span><button type="button" id="update-act">Recharger</button></div>
 
 <script>
 (() => {
@@ -695,6 +697,24 @@
     t.classList.add('show');
     clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), action ? 6000 : 3000);
   }
+
+  // ---------- Nouvelle version : la page (comparée par ETag) ou les raccourcis publiés ; jamais de rechargement tout seul ----------
+  const pageTag = cache => fetch(location.pathname, { cache }).then(r => r.ok ? r.headers.get('etag') || r.headers.get('last-modified') : null).catch(() => null);
+  let pageSeen = null, checkedAt = 0, outdated = false;
+  async function checkUpdate(){
+    if (outdated || document.hidden || !navigator.onLine || Date.now() - checkedAt < 60000) return;
+    checkedAt = Date.now();
+    const now = await pageTag('no-cache');
+    let fresh = !!(pageSeen && now && now !== pageSeen);
+    if (!fresh && state && !state.dirty) {
+      try { const r = await fetch(FILE, { cache: 'no-cache' }); fresh = r.ok && (await r.json()).rev > state.rev; } catch (_) {}
+    }
+    if (fresh) { outdated = true; $('#update').classList.add('show'); }
+  }
+  pageTag('force-cache').then(t => { pageSeen = t; });
+  $('#update-act').onclick = () => location.reload();
+  setInterval(checkUpdate, 5 * 60000);
+  document.addEventListener('visibilitychange', checkUpdate);
 
   load();
 })();
