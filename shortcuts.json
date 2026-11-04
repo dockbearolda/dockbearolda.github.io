@@ -1,11 +1,11 @@
 {
-  "rev": 1793798294761,
+  "rev": 1793798364000,
   "shortcuts": [
     { "name": "Site B2C", "url": "https://myolda.com/", "icon": "home", "color": "bleu" },
     { "name": "Site B2B", "url": "https://atelierolda.up.railway.app", "icon": "building", "color": "indigo" },
     { "name": "OLDA Pro", "url": "https://olda-pro.up.railway.app/", "icon": "briefcase", "color": "ardoise" },
-    { "name": "Bon à Tirer", "url": "https://bat-studio-production.up.railway.app/", "icon": "check", "color": "vert" },
-    { "name": "Pressage", "url": "https://pressage-production.up.railway.app/", "icon": "press", "color": "orange", "since": 1793618018484 },
+    { "name": "Bon à Tirer", "url": "https://bat-studio.dockbear.workers.dev/", "icon": "check", "color": "vert" },
+    { "name": "Pressage", "url": "https://pressage.dockbear.workers.dev/", "icon": "press", "color": "orange", "since": 1793618018484 },
     { "name": "Design", "url": "https://design-olda-production.up.railway.app/", "icon": "pen", "color": "rose" },
     { "name": "Chiffrage", "url": "https://chiffrage-olda-production.up.railway.app/", "icon": "lock", "color": "jaune" },
     { "name": "Tarif Laser", "url": "https://tarif-laser-production.up.railway.app/", "icon": "euro", "color": "rouge", "since": 1793030196023 },
