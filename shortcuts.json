@@ -1,5 +1,5 @@
 {
-  "rev": 1793818369860,
+  "rev": 1793818563010,
   "shortcuts": [
     { "name": "Site B2C", "url": "https://myolda.com/", "icon": "home", "color": "bleu" },
     { "name": "Site B2B", "url": "https://atelierolda.up.railway.app", "icon": "building", "color": "indigo" },
@@ -7,7 +7,7 @@
     { "name": "Bon à Tirer", "url": "https://bat-studio.dockbear.workers.dev/", "icon": "check", "color": "vert" },
     { "name": "Pressage", "url": "https://pressage.dockbear.workers.dev/", "icon": "press", "color": "orange", "since": 1793618018484 },
     { "name": "Design", "url": "https://design-olda-production.up.railway.app/", "icon": "pen", "color": "rose" },
-    { "name": "Chiffrage", "url": "https://chiffrage-olda-production.up.railway.app/", "icon": "lock", "color": "jaune" },
+    { "name": "Chiffrage", "url": "https://chiffrage-olda.dockbear.workers.dev/", "icon": "lock", "color": "jaune" },
     { "name": "Tarif Laser", "url": "https://tarif-laser.dockbear.workers.dev/", "icon": "euro", "color": "rouge", "since": 1793030196023 },
     { "name": "Logo maker", "url": "https://logo-maker.dockbear.workers.dev/", "icon": "brush", "color": "ardoise" }
   ]
