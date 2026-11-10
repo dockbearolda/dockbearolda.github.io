@@ -1,5 +1,5 @@
 {
-  "rev": 1793901116418,
+  "rev": 1794312634885,
   "shortcuts": [
     {
       "name": "Site B2C",
@@ -63,6 +63,13 @@
       "icon": "box",
       "color": "turquoise",
       "since": 1793901116418
+    },
+    {
+      "name": "Stock",
+      "url": "https://stock-olda.dockbear.workers.dev/",
+      "icon": "box",
+      "color": "orange",
+      "since": 1794312634885
     }
   ]
 }
