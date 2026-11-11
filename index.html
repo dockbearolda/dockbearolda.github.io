@@ -30,7 +30,7 @@
   [hidden]{ display:none !important; }
   button,input{ font:inherit; color:inherit; }
   button{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
-  .wrap{ position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:56px max(24px,env(safe-area-inset-right)) calc(96px + var(--safe-b)) max(24px,env(safe-area-inset-left)); }
+  .wrap{ position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:max(32px,calc(env(safe-area-inset-top) + 16px)) max(16px,env(safe-area-inset-right)) calc(96px + var(--safe-b)) max(16px,env(safe-area-inset-left)); }
 
   /* Fond animé façon Google : quatre halos aux couleurs Google, très pâles,
      qui dérivent lentement derrière le verre des cartes. Dégradés radiaux
@@ -56,20 +56,108 @@
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
+  /* Sans planning : simple grille. Avec planning (.has-hub) : le planning au centre, les apps autour. */
   .bento{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; width:100%; max-width:600px; }
   @media (max-width:560px){
-    .bento{ grid-template-columns:repeat(2,1fr); }
+    .bento:not(.has-hub){ grid-template-columns:repeat(2,1fr); }
     /* nombre impair de tuiles : la dernière prend toute la ligne */
-    .bento > .tile:last-child:nth-child(odd){ grid-column:1 / -1; }
+    .bento:not(.has-hub) > .tile:last-child:nth-child(odd){ grid-column:1 / -1; }
   }
-  @media (max-width:420px){ .bento{ grid-template-columns:1fr; gap:12px; } }
+  @media (max-width:420px){ .bento:not(.has-hub){ grid-template-columns:1fr; gap:12px; } }
   /* tuile seule sur la dernière ligne à trois colonnes : elle la prend toute */
-  @media (min-width:561px){ .bento > .tile:last-child:nth-child(3n+1){ grid-column:1 / -1; } }
+  @media (min-width:561px){ .bento:not(.has-hub) > .tile:last-child:nth-child(3n+1){ grid-column:1 / -1; } }
+
+  /* Téléphone : le planning en tête, les apps en deux colonnes dessous */
+  .bento.has-hub{ grid-template-columns:repeat(2,1fr); gap:12px; max-width:560px; }
+  .has-hub > .tile--hub{ grid-column:1 / -1; }
+  .has-hub > .tile:last-child:nth-child(even){ grid-column:1 / -1; } /* le planning est le 1er enfant */
+  /* Tablette, petit écran : planning en direct sur toute la largeur, les apps dessous */
+  @media (min-width:700px){
+    .bento.has-hub{ grid-template-columns:repeat(4,1fr); gap:14px; max-width:1040px; }
+    .has-hub > .tile:last-child:nth-child(even){ grid-column:auto; }
+  }
+  /* Grand écran : le planning au cœur, les apps en orbite à gauche et à droite */
+  @media (min-width:1100px){
+    .wrap.hubbed{ justify-content:flex-start; padding-top:max(20px,env(safe-area-inset-top)); padding-bottom:calc(76px + var(--safe-b)); }
+    .bento.has-hub{
+      max-width:1720px; height:calc(100dvh - 96px - var(--safe-b)); min-height:600px;
+      grid-template-columns:232px minmax(0,1fr) 232px; grid-template-rows:repeat(var(--rows,6),minmax(0,1fr)); gap:14px 18px;
+    }
+    .has-hub > .tile--hub{ grid-column:2; grid-row:1 / span var(--rows,6); }
+    .has-hub > .tile:not(.tile--hub) .card{ flex-direction:row; align-items:center; justify-content:flex-start; gap:12px; padding:12px 14px; border-radius:18px; }
+    .has-hub > .tile:not(.tile--hub) .card-icon{ width:42px; height:42px; border-radius:13px; }
+    .has-hub > .tile:not(.tile--hub) .card-icon svg{ width:22px; height:22px; }
+    /* à l'ouverture, les apps sortent du planning vers leur côté */
+    .has-hub > .tile.l{ --fx:30px; --fy:0px; }
+    .has-hub > .tile.r{ --fx:-30px; --fy:0px; }
+  }
 
   /* La tuile porte l'apparition, la carte porte le survol : les deux transform ne se battent pas. */
-  .tile{ position:relative; display:flex; animation:appear .6s var(--spring) backwards; }
+  .tile{ position:relative; display:flex; min-width:0; animation:appear .6s var(--spring) backwards; }
   .bento.ready .tile{ animation:none; }
-  @keyframes appear{ from{ opacity:0; transform:translateY(20px); } }
+  @keyframes appear{ from{ opacity:0; transform:translate(var(--fx,0px),var(--fy,20px)) scale(.97); } }
+
+  /* ---------- Le planning, au cœur ---------- */
+  .tile--hub{ --fy:10px; view-transition-name:hub; }
+  .hub{
+    position:relative; flex:1; min-width:0; min-height:0; display:flex; flex-direction:column;
+    border-radius:28px; overflow:hidden; isolation:isolate;
+    background:var(--glass); -webkit-backdrop-filter:blur(18px) saturate(170%); backdrop-filter:blur(18px) saturate(170%);
+    box-shadow:0 1px 2px rgba(32,41,48,.05), 0 34px 80px -28px rgba(10,166,201,.42), 0 12px 30px rgba(74,98,116,.10), inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  /* anneau dégradé : c'est lui qui désigne le cœur */
+  .hub::after{
+    content:""; position:absolute; inset:0; z-index:4; pointer-events:none; border-radius:inherit; padding:1.5px;
+    background:linear-gradient(135deg,#5ad1e6,#4aa3ff 45%,#8f83ff 80%,#5ad1e6);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+  }
+  .editing .hub::after{ background:none; border:1.5px dashed rgba(74,98,116,.4); padding:0; -webkit-mask:none; mask:none; }
+  .hub-head{ display:flex; align-items:center; gap:8px; padding:10px 10px 10px 12px; }
+  .hub-id{ flex:1; min-width:0; min-height:48px; display:flex; align-items:center; gap:12px; padding:4px; border:0; border-radius:16px; background:none; text-align:left; }
+  .hub-id:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:2px; }
+  .hub-id .card-icon{ width:42px; height:42px; border-radius:13px; }
+  .hub-id .card-icon svg{ width:22px; height:22px; }
+  .hub-txt{ display:grid; min-width:0; }
+  .hub-txt b{ font-size:17px; font-weight:700; letter-spacing:-.01em; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .hub-txt small{ font-size:13px; color:var(--muted); }
+  .hub-txt small::first-letter{ text-transform:uppercase; }
+  .hub-acts{ display:flex; align-items:center; gap:4px; flex-shrink:0; }
+  .hub-acts .icon-btn{ color:var(--duck); }
+  .hub-acts .btn svg{ transition:transform .35s var(--spring); }
+  .hub-frame{ position:relative; flex:1; min-height:0; background:#f8fafd; border-top:1px solid rgba(32,41,48,.07); }
+  .hub-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; display:block; opacity:0; transition:opacity .45s ease; }
+  .hub-frame iframe.on{ opacity:1; }
+  .hub-wait{ position:absolute; inset:0; display:grid; place-content:center; justify-items:center; gap:14px; font-size:14px; color:var(--muted); }
+  .hub-wait::before{ content:""; width:26px; height:26px; border-radius:50%; border:2.5px solid rgba(10,166,201,.18); border-top-color:#0aa6c9; animation:turn .8s linear infinite; }
+  @keyframes turn{ to{ transform:rotate(360deg); } }
+  @media (min-width:700px) and (max-width:1099px){ .hub-frame{ flex:none; height:clamp(440px,62dvh,780px); } }
+  /* Téléphone : la tuile du planning est une grande carte, le planning s'ouvre en plein écran au toucher */
+  @media (max-width:699px){
+    .tile--hub:not(.is-max) .hub-frame,
+    .tile--hub:not(.is-max) .hub-tab{ display:none; }
+    .tile--hub:not(.is-max) .hub-head{ padding:14px 10px 14px 14px; }
+    .tile--hub:not(.is-max) .hub-id .card-icon{ width:56px; height:56px; border-radius:17px; }
+    .tile--hub:not(.is-max) .hub-id .card-icon svg{ width:28px; height:28px; }
+    .tile--hub:not(.is-max) .hub-txt b{ font-size:21px; }
+    .tile--hub:not(.is-max) .hub-txt small{ font-size:14px; }
+    .hub-grow span{ display:none; }
+    .hub-grow{ width:44px; padding:0; }
+  }
+  /* Plein écran : le planning prend toute la place, sans recharger */
+  .tile--hub.is-max{ position:fixed; inset:0; z-index:30; animation:none; }
+  .tile--hub.is-max .hub{ border-radius:0; background:#fff; padding-bottom:var(--safe-b); }
+  .tile--hub.is-max .hub::after{ display:none; }
+  .tile--hub.is-max .hub-head{ padding-top:calc(10px + env(safe-area-inset-top,0px)); padding-left:max(12px,env(safe-area-inset-left)); padding-right:max(10px,env(safe-area-inset-right)); }
+  .tile--hub.is-max .hub-frame{ display:block; flex:1; height:auto; }
+  @media (min-width:700px){
+    .tile--hub.is-max{ inset:14px; }
+    .tile--hub.is-max .hub{ border-radius:24px; box-shadow:0 30px 90px rgba(32,41,48,.28); }
+  }
+  .hub-max{ overflow:hidden; }
+  .hub-max .bento > .tile:not(.tile--hub), .hub-max .dock{ opacity:0; pointer-events:none; }
+  ::view-transition-group(hub){ animation-duration:.5s; animation-timing-function:cubic-bezier(.2,.9,.25,1); }
+  ::view-transition-old(hub),::view-transition-new(hub){ height:100%; object-fit:cover; }
 
   .card{
     position:relative; flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:14px;
@@ -153,7 +241,7 @@
   .btn--ghost{ background:transparent; color:var(--duck); border-color:var(--line); }
   .btn--danger{ background:transparent; color:var(--danger); padding:0 12px; }
   .btn[disabled]{ opacity:.55; pointer-events:none; }
-  .btn svg{ width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .btn svg{ width:18px; height:18px; flex-shrink:0; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   .fab{ width:44px; padding:0; opacity:.6; }
   .fab:hover,.fab:focus-visible{ opacity:1; }
   .editing .fab{ width:auto; padding:0 18px; opacity:1; background:var(--duck); color:#fff; border-color:transparent; }
@@ -217,8 +305,29 @@
   .file-btn input{ position:absolute; inset:0; opacity:0; cursor:pointer; }
 
   /* ---------- Toast ---------- */
+  /* ---------- Lanceur rapide (⌘K ou taper une lettre) ---------- */
+  .pal{ width:min(560px, calc(100% - 32px)); margin:12vh auto auto; }
+  @media (max-width:560px){ .pal{ margin:auto 0 0; } }
+  .pal-field{ display:flex; align-items:center; gap:12px; height:62px; padding:0 18px; border-bottom:1px solid #edf0f3; }
+  .pal-field svg{ width:20px; height:20px; flex-shrink:0; stroke:var(--muted); fill:none; stroke-width:2; stroke-linecap:round; }
+  .pal-field input{ flex:1; min-width:0; height:100%; border:0; outline:0; background:none; font-size:18px; }
+  .pal-list{ list-style:none; max-height:min(440px,58dvh); overflow-y:auto; overscroll-behavior:contain; padding:8px; }
+  .pal-list li{ display:flex; align-items:center; gap:12px; min-height:54px; padding:6px 10px; border-radius:14px; cursor:pointer; }
+  .pal-list li[aria-selected="true"]{ background:#eef3f7; }
+  .pal-list .card-icon{ width:38px; height:38px; border-radius:12px; }
+  .pal-list .card-icon svg{ width:20px; height:20px; }
+  .pal-list .card-letter{ font-size:17px; }
+  .pal-txt{ display:grid; min-width:0; }
+  .pal-txt b{ font-size:15px; font-weight:600; }
+  .pal-txt small{ font-size:13px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pal-list li.pal-empty{ cursor:default; justify-content:center; color:var(--muted); font-size:14px; }
+  .pal-foot{ display:flex; flex-wrap:wrap; gap:6px 14px; padding:10px 18px; border-top:1px solid #edf0f3; font-size:12px; color:var(--muted); }
+  @media (hover:none){ .pal-foot,#b-find{ display:none; } }
+  kbd{ display:inline-block; min-width:20px; padding:3px 5px; border-radius:6px; border:1px solid var(--line); border-bottom-width:2px; background:#f7f9fa; font:600 11px/1 inherit; text-align:center; color:var(--ink); }
+  .btn kbd{ background:rgba(255,255,255,.6); }
+
   .toast{
-    position:fixed; z-index:20; left:50%; bottom:calc(76px + var(--safe-b)); transform:translate(-50%,16px);
+    position:fixed; z-index:40; left:50%; bottom:calc(76px + var(--safe-b)); transform:translate(-50%,16px);
     display:flex; align-items:center; gap:4px; max-width:calc(100% - 32px);
     padding:4px 4px 4px 18px; min-height:48px; border-radius:16px;
     background:var(--ink); color:#fff; font-size:14px; box-shadow:0 12px 30px rgba(32,41,48,.3);
@@ -231,7 +340,8 @@
 
   @media (prefers-reduced-motion:reduce){
     .orb,.tile,dialog[open]{ animation:none; }
-    .card,.card::after,.card-icon,.toast{ transition:none; }
+    .card,.card::after,.card-icon,.toast,.hub-frame iframe{ transition:none; }
+    ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){ animation:none !important; }
   }
 </style>
 </head>
@@ -244,10 +354,50 @@
 </div>
 <main class="wrap">
   <h1 hidden>Portail OLDA</h1>
-  <div class="bento" id="bento"></div>
+  <div class="bento" id="bento">
+    <div class="tile tile--hub" id="hub" hidden>
+      <section class="hub" aria-labelledby="hub-name">
+        <header class="hub-head">
+          <button type="button" class="hub-id" id="hub-id">
+            <span id="hub-icon"></span>
+            <span class="hub-txt"><b id="hub-name">Planning</b><small id="hub-date"></small></span>
+          </button>
+          <div class="hub-acts">
+            <a class="icon-btn hub-tab" id="hub-tab" target="_blank" rel="noopener" aria-label="Ouvrir dans un nouvel onglet" title="Ouvrir dans un nouvel onglet">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+            </a>
+            <button type="button" class="btn btn--primary hub-grow" id="hub-grow" aria-label="Agrandir le planning">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+              <span>Agrandir</span>
+            </button>
+            <button type="button" class="btn btn--primary" id="hub-edit" hidden>Modifier</button>
+          </div>
+        </header>
+        <div class="hub-frame">
+          <div class="hub-wait">Chargement du planning…</div>
+          <iframe id="hub-frame" title="Planning" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+        </div>
+      </section>
+    </div>
+  </div>
 </main>
 
+<dialog id="pal" class="pal" aria-label="Ouvrir une app">
+  <div class="sheet">
+    <label class="pal-field">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="pal-q" type="search" placeholder="Ouvrir une app…" autocomplete="off" spellcheck="false" enterkeyhint="go"
+        role="combobox" aria-expanded="true" aria-controls="pal-list" aria-autocomplete="list" />
+    </label>
+    <ul class="pal-list" id="pal-list" role="listbox" aria-label="Apps"></ul>
+    <footer class="pal-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> choisir</span><span><kbd>Entrée</kbd> ouvrir</span><span><kbd>Échap</kbd> fermer</span></footer>
+  </div>
+</dialog>
+
 <div class="dock">
+  <button type="button" class="btn btn--glass" id="b-find" aria-label="Ouvrir une app (⌘K)" title="Ouvrir une app">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><kbd id="b-find-key">⌘K</kbd>
+  </button>
   <button type="button" class="btn btn--glass" id="b-revert" hidden>Annuler mes modifs</button>
   <button type="button" class="btn btn--glass" id="b-publish" hidden><span class="dot" aria-hidden="true"></span>Publier</button>
   <button type="button" class="btn btn--glass fab" id="b-edit" aria-pressed="false" aria-label="Modifier les raccourcis">
@@ -405,11 +555,23 @@
     const name = el('div', 'card-name'); name.textContent = s.name || 'Sans nom';
     card.replaceChildren(iconEl(s), name);
   }
+  // Le cœur : le raccourci marqué « hub », sinon celui qui s'appelle Planning.
+  function hubIndex(){
+    const l = state.shortcuts, i = l.findIndex(s => s.hub);
+    return i >= 0 ? i : l.findIndex(s => /planning/i.test(s.name || ''));
+  }
   function render(){
+    const h = hubIndex();
+    grid.classList.toggle('has-hub', h >= 0); grid.parentElement.classList.toggle('hubbed', h >= 0);
+    hubTile.hidden = h < 0;
+    if (h >= 0) syncHub(state.shortcuts[h]); else if (maxed) setMax(false);
     const frag = document.createDocumentFragment();
+    let n = 0;
     state.shortcuts.forEach((s, i) => {
-      const tile = el('div', 'tile'); tile.dataset.i = i;
-      tile.style.animationDelay = (.04 + i * .05).toFixed(2) + 's';
+      if (i === h) return;
+      const tile = el('div', 'tile ' + (n % 2 ? 'r' : 'l')); tile.dataset.i = i;
+      tile.style.animationDelay = (.12 + Math.floor(n / 2) * .06).toFixed(2) + 's';
+      n++;
       const card = el(editing ? 'button' : 'a', 'card');
       if (editing) { card.type = 'button'; card.setAttribute('aria-label', 'Modifier ' + s.name); card.onclick = () => openSheet(i); }
       else { card.href = s.url; card.target = '_blank'; card.rel = 'noopener'; }
@@ -426,15 +588,65 @@
       frag.append(tile);
     });
     if (editing) {
-      const tile = el('div', 'tile tile--add');
+      const tile = el('div', 'tile tile--add ' + (n % 2 ? 'r' : 'l')); n++;
       const add = el('button', 'card card--add'); add.type = 'button';
       add.innerHTML = '<div class="card-icon">' + SVG('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>') + '</div><div class="card-name">Ajouter</div>';
       add.onclick = () => openSheet(-1);
       tile.append(add); frag.append(tile);
     }
-    grid.replaceChildren(frag);
+    grid.style.setProperty('--rows', Math.max(1, Math.ceil(n / 2)));
+    // Le planning reste en place (sortir l'iframe du DOM la rechargerait) : on ne remplace que les apps.
+    grid.querySelectorAll(':scope > .tile:not(.tile--hub)').forEach(t => t.remove());
+    grid.append(frag);
     updateDock();
   }
+
+  // ---------- Le planning en direct ----------
+  const hubTile = $('#hub'), frame = $('#hub-frame'), wide = matchMedia('(min-width:700px)');
+  const reduced = matchMedia('(prefers-reduced-motion:reduce)');
+  let maxed = false;
+  frame.addEventListener('load', () => { if (frame.src) frame.classList.add('on'); });
+  function syncHub(s){
+    const ic = iconEl(s); ic.id = 'hub-icon'; $('#hub-icon').replaceWith(ic);
+    $('#hub-name').textContent = s.name || 'Planning';
+    $('#hub-tab').href = s.url;
+    $('#hub-date').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    $('#hub-grow').hidden = editing; $('#hub-edit').hidden = !editing;
+    hubTile.dataset.url = s.url;
+    loadFrame();
+  }
+  // Sur téléphone, le planning ne se charge qu'à la première ouverture.
+  function loadFrame(){
+    const url = hubTile.dataset.url;
+    if (!url || hubTile.hidden || !(wide.matches || maxed) || frame.dataset.src === url) return;
+    frame.classList.remove('on'); frame.dataset.src = url; frame.src = url;
+  }
+  wide.addEventListener('change', loadFrame);
+  function applyMax(on){
+    const go = () => {
+      maxed = on;
+      hubTile.classList.toggle('is-max', on); document.body.classList.toggle('hub-max', on);
+      const g = $('#hub-grow');
+      g.setAttribute('aria-label', on ? 'Réduire le planning' : 'Agrandir le planning');
+      g.querySelector('span').textContent = on ? 'Réduire' : 'Agrandir';
+      g.querySelector('svg').innerHTML = on
+        ? '<path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/>'
+        : '<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/>';
+      loadFrame();
+    };
+    if (document.startViewTransition && !reduced.matches) document.startViewTransition(go); else go();
+  }
+  // Plein écran = une étape d'historique : le geste « retour » du téléphone le referme.
+  function setMax(on){
+    if (on === maxed) return;
+    if (on) { history.pushState({ hub: 1 }, ''); applyMax(true); }
+    else if (history.state?.hub) history.back();
+    else applyMax(false);
+  }
+  addEventListener('popstate', () => { if (maxed) applyMax(false); });
+  $('#hub-grow').onclick = () => setMax(!maxed);
+  $('#hub-edit').onclick = () => openSheet(hubIndex());
+  $('#hub-id').onclick = () => { if (editing) openSheet(hubIndex()); else if (!maxed) setMax(true); };
   function settle(){ requestAnimationFrame(() => setTimeout(() => grid.classList.add('ready'), 1200)); }
 
   // ---------- État ----------
@@ -515,7 +727,7 @@
   let drag = null, justDragged = false;
   grid.addEventListener('pointerdown', e => {
     if (!editing || e.button > 0) return;
-    const tile = e.target.closest('.tile:not(.tile--add)');
+    const tile = e.target.closest('.tile:not(.tile--add):not(.tile--hub)');
     if (!tile || e.target.closest('.del')) return;
     if (e.pointerType !== 'mouse' && !e.target.closest('.grip')) return;
     drag = { tile, from: +tile.dataset.i, x: e.clientX, y: e.clientY, on: false, over: null };
@@ -529,7 +741,7 @@
     }
     e.preventDefault();
     drag.tile.style.transform = `translate(${dx}px,${dy}px)`;
-    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.tile:not(.tile--add):not(.dragging)');
+    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.tile:not(.tile--add):not(.tile--hub):not(.dragging)');
     if (over !== drag.over) { drag.over?.classList.remove('drop'); over?.classList.add('drop'); drag.over = over; }
   }, { passive: false });
   const endDrag = e => {
@@ -581,7 +793,7 @@
     swatches.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.color === draft.color));
     const n = state.shortcuts.length;
     $('#b-del').hidden = index < 0;
-    $('#b-left').hidden = $('#b-right').hidden = index < 0;
+    $('#b-left').hidden = $('#b-right').hidden = index < 0 || index === hubIndex();
     $('#b-left').disabled = index <= 0; $('#b-right').disabled = index >= n - 1;
   }
 
@@ -610,6 +822,7 @@
     if (mode === 'site') draft.img = favicon(url);
     const s = { name, url, icon: draft.icon || null, color: draft.color };
     if (draft.img) s.img = draft.img;
+    if (draft.hub) s.hub = true;
     s.since = index >= 0 && url === draft.url && draft.since ? draft.since : Date.now();
     if (index >= 0) state.shortcuts[index] = s; else state.shortcuts.push(s);
     sheet.close(); commit();
@@ -686,6 +899,72 @@
     if (!t) return $('#f-token').focus();
     store.set(LS_TOKEN, t); pub.close(); publish(t);
   };
+
+  // ---------- Lanceur rapide : ⌘K, ou taper n'importe quelle lettre ----------
+  const pal = $('#pal'), palQ = $('#pal-q'), palList = $('#pal-list');
+  let palItems = [], palAt = 0;
+  const norm = t => (t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (_) { return u; } };
+  function palRank(s, q){
+    const n = norm(s.name);
+    if (n.startsWith(q)) return 0;
+    if (n.split(/[\s-]+/).some(w => w.startsWith(q))) return 1;
+    if (n.includes(q)) return 2;
+    if (n.split(/[\s-]+/).map(w => w[0]).join('').startsWith(q)) return 3;
+    return norm(host(s.url)).includes(q) ? 4 : -1;
+  }
+  function palRender(){
+    const q = norm(palQ.value.trim()), h = hubIndex();
+    palItems = state.shortcuts.map((s, i) => ({ s, i, r: q ? palRank(s, q) : (i === h ? -0.5 : 0) }))
+      .filter(x => x.r !== -1).sort((a, b) => a.r - b.r);
+    palAt = Math.min(palAt, Math.max(0, palItems.length - 1));
+    if (!palItems.length) {
+      const li = el('li', 'pal-empty'); li.textContent = 'Aucune app ne correspond à « ' + palQ.value.trim() + ' »';
+      palList.replaceChildren(li); palQ.removeAttribute('aria-activedescendant'); return;
+    }
+    palList.replaceChildren(...palItems.map((x, k) => {
+      const li = el('li'); li.id = 'pal-' + k; li.setAttribute('role', 'option'); li.setAttribute('aria-selected', k === palAt);
+      const t = el('span', 'pal-txt'), b = el('b'), sm = el('small');
+      b.textContent = x.s.name; sm.textContent = x.i === h ? 'Ouvrir ici, en plein écran' : host(x.s.url);
+      t.append(b, sm); li.append(iconEl(x.s), t);
+      li.onpointermove = () => { if (palAt !== k) { palAt = k; palMark(); } };
+      li.onclick = () => palGo(k);
+      return li;
+    }));
+    palMark();
+  }
+  function palMark(){
+    [...palList.children].forEach((li, k) => li.setAttribute('aria-selected', k === palAt));
+    const cur = palList.children[palAt];
+    if (cur && cur.id) { palQ.setAttribute('aria-activedescendant', cur.id); cur.scrollIntoView({ block: 'nearest' }); }
+  }
+  function palGo(k){
+    const x = palItems[k]; if (!x) return;
+    pal.close();
+    if (x.i === hubIndex()) setMax(true);
+    else window.open(x.s.url, '_blank', 'noopener');
+  }
+  function palOpen(seed){
+    if (!state || pal.open) return;
+    palQ.value = seed || ''; palAt = 0; palRender(); pal.showModal();
+    palQ.focus(); palQ.setSelectionRange(palQ.value.length, palQ.value.length);
+  }
+  palQ.oninput = () => { palAt = 0; palRender(); };
+  palQ.onkeydown = e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault(); if (!palItems.length) return;
+      palAt = (palAt + (e.key === 'ArrowDown' ? 1 : -1) + palItems.length) % palItems.length; palMark();
+    } else if (e.key === 'Enter') { e.preventDefault(); palGo(palAt); }
+  };
+  $('#b-find').onclick = () => palOpen();
+  if (!/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) $('#b-find-key').textContent = 'Ctrl K';
+  document.addEventListener('keydown', e => {
+    const typing = e.target.closest?.('input,textarea,select,[contenteditable]');
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); pal.open ? pal.close() : palOpen(); return; }
+    if (e.key === 'Escape' && maxed && !document.querySelector('dialog[open]')) { setMax(false); return; }
+    if (typing || editing || maxed || document.querySelector('dialog[open]')) return;
+    if (e.key.length === 1 && /\S/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); palOpen(e.key); }
+  });
 
   // ---------- Toast ----------
   let toastTimer;

@@ -1,5 +1,5 @@
 {
-  "rev": 1794435665009,
+  "rev": 1794436179626,
   "shortcuts": [
     {
       "name": "Site B2C",
@@ -76,7 +76,8 @@
       "url": "https://planning-olda.dockbear.workers.dev/",
       "icon": "calendar",
       "color": "cyan",
-      "since": 1794435665009
+      "since": 1794435665009,
+      "hub": true
     }
   ]
 }
