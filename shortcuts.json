@@ -1,17 +1,43 @@
 {
-  "rev": 1794436179626,
+  "rev": 1794488483659,
   "shortcuts": [
     {
       "name": "Site B2C",
       "url": "https://myolda.com/",
       "icon": "home",
-      "color": "bleu"
+      "color": "bleu",
+      "side": "left"
     },
     {
       "name": "Site B2B",
       "url": "https://b2b.77.42.85.236.sslip.io",
       "icon": "building",
-      "color": "indigo"
+      "color": "indigo",
+      "side": "left"
+    },
+    {
+      "name": "Pressage",
+      "url": "https://pressage.dockbear.workers.dev/",
+      "icon": "press",
+      "color": "orange",
+      "since": 1793618018484,
+      "side": "left"
+    },
+    {
+      "name": "Stock",
+      "url": "https://stock-olda.dockbear.workers.dev/",
+      "icon": "box",
+      "color": "orange",
+      "since": 1794312634885,
+      "side": "left"
+    },
+    {
+      "name": "Consommables",
+      "url": "https://consommables-olda.dockbear.workers.dev/",
+      "icon": "box",
+      "color": "turquoise",
+      "since": 1793901116418,
+      "side": "left"
     },
     {
       "name": "OLDA Pro",
@@ -24,13 +50,6 @@
       "url": "https://bat-studio.dockbear.workers.dev/",
       "icon": "check",
       "color": "vert"
-    },
-    {
-      "name": "Pressage",
-      "url": "https://pressage.dockbear.workers.dev/",
-      "icon": "press",
-      "color": "orange",
-      "since": 1793618018484
     },
     {
       "name": "Design",
@@ -56,20 +75,6 @@
       "url": "https://logo-maker.dockbear.workers.dev/",
       "icon": "brush",
       "color": "ardoise"
-    },
-    {
-      "name": "Consommables",
-      "url": "https://consommables-olda.dockbear.workers.dev/",
-      "icon": "box",
-      "color": "turquoise",
-      "since": 1793901116418
-    },
-    {
-      "name": "Stock",
-      "url": "https://stock-olda.dockbear.workers.dev/",
-      "icon": "box",
-      "color": "orange",
-      "since": 1794312634885
     },
     {
       "name": "Planning",
