@@ -1,5 +1,5 @@
 {
-  "rev": 1794488483659,
+  "rev": 1794488714826,
   "shortcuts": [
     {
       "name": "Site B2C",
@@ -13,6 +13,13 @@
       "url": "https://b2b.77.42.85.236.sslip.io",
       "icon": "building",
       "color": "indigo",
+      "side": "left"
+    },
+    {
+      "name": "OLDA Pro",
+      "url": "https://pro.77.42.85.236.sslip.io/",
+      "icon": "briefcase",
+      "color": "ardoise",
       "side": "left"
     },
     {
@@ -38,12 +45,6 @@
       "color": "turquoise",
       "since": 1793901116418,
       "side": "left"
-    },
-    {
-      "name": "OLDA Pro",
-      "url": "https://pro.77.42.85.236.sslip.io/",
-      "icon": "briefcase",
-      "color": "ardoise"
     },
     {
       "name": "Bon à Tirer",
