@@ -178,11 +178,7 @@
   @media (hover:hover){
     .card:hover::after{ transform:translateX(130%); }
     .card:hover{ transform:translateY(-5px) scale(1.02); box-shadow:var(--shadow-hover), inset 0 1px 0 rgba(255,255,255,.85); border-color:rgba(255,255,255,.9); }
-    .card:hover .card-icon{
-      transform:scale(1.1) translateY(-1px);
-      box-shadow:0 14px 28px var(--c-glow), inset 0 1px 0 rgba(255,255,255,.7), inset 0 0 0 1px rgba(255,255,255,.28);
-    }
-    .card:hover .card-icon svg{ transform:scale(1.06); }
+    .card:hover .card-icon{ background:#e9edf0; }
     .card:hover .card-name{ color:var(--duck-hover); }
   }
   .card:active{ transform:translateY(-2px) scale(.98); }
@@ -190,20 +186,18 @@
 
   .card-icon{
     --c-hi:#8ba0af; --c-lo:#4a6274;
-    --c-glow:color-mix(in srgb, var(--c-lo) 36%, transparent);
+    /* façon SumUp : pictogramme monochrome, trait sombre sur fond gris neutre, sans couleur */
+    --c-ink:var(--ink);
     position:relative; z-index:1;
     width:48px; height:48px; border-radius:15px; flex-shrink:0;
     display:flex; align-items:center; justify-content:center; overflow:hidden;
-    background:linear-gradient(155deg, var(--c-hi), var(--c-lo));
-    box-shadow:0 8px 18px var(--c-glow), inset 0 1px 0 rgba(255,255,255,.55), inset 0 0 0 1px rgba(255,255,255,.16);
-    transition:transform .35s var(--spring), box-shadow .3s;
+    background:#f1f3f5;
+    transition:background-color .25s;
   }
-  .card-icon::before{ content:""; position:absolute; left:0; right:0; top:0; height:55%; background:linear-gradient(to bottom, rgba(255,255,255,.55), rgba(255,255,255,0)); pointer-events:none; }
-  .card-icon svg{ position:relative; z-index:1; width:25px; height:25px; stroke:#fff; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.22)); transition:transform .35s var(--spring); }
-  .card-letter{ position:relative; z-index:1; color:#fff; font-size:21px; font-weight:700; text-shadow:0 1px 1.5px rgba(0,0,0,.22); }
-  /* logo image : fond blanc, l'image entière, pas de reflet coloré */
-  .card-icon.is-img{ background:#fff; --c-glow:rgba(74,98,116,.22); box-shadow:0 8px 18px var(--c-glow), inset 0 0 0 1px rgba(32,41,48,.08); }
-  .card-icon.is-img::before{ display:none; }
+  .card-icon svg{ position:relative; z-index:1; width:24px; height:24px; stroke:var(--c-ink); fill:none; stroke-width:1.75; stroke-linecap:round; stroke-linejoin:round; }
+  .card-letter{ position:relative; z-index:1; color:var(--c-ink); font-size:20px; font-weight:650; }
+  /* logo image : fond blanc, l'image entière */
+  .card-icon.is-img{ background:#fff; box-shadow:inset 0 0 0 1px rgba(32,41,48,.08); }
   .card-icon img{ width:100%; height:100%; object-fit:contain; padding:6px; }
   .card-name{ font-size:15px; font-weight:600; letter-spacing:-.005em; color:var(--duck); transition:color .3s; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
@@ -222,9 +216,8 @@
   .tile.dragging .card{ transition:none; box-shadow:var(--shadow-hover); transform:scale(1.04); }
   .tile.drop .card{ border-color:var(--duck-focus); border-style:solid; box-shadow:0 0 0 3px rgba(107,129,145,.28),var(--shadow); }
   .card--add{ align-items:center; color:var(--duck); background:rgba(255,255,255,.35); cursor:pointer; min-height:120px; }
-  .card--add .card-icon{ background:none; box-shadow:inset 0 0 0 2px rgba(74,98,116,.35); }
-  .card--add .card-icon::before{ display:none; }
-  .card--add svg{ stroke:var(--duck); filter:none; }
+  .card--add .card-icon{ background:none; box-shadow:inset 0 0 0 1.5px rgba(74,98,116,.35); }
+  .card--add svg{ stroke:var(--duck); }
 
   /* ---------- Barre d'action (coin bas droit) ---------- */
   .dock{ position:fixed; z-index:5; right:max(16px,env(safe-area-inset-right)); bottom:calc(16px + var(--safe-b)); display:flex; align-items:center; gap:8px; }
@@ -293,10 +286,6 @@
   .icon-grid button{ height:44px; border-radius:12px; border:1px solid var(--line); background:#fff; display:grid; place-items:center; color:var(--ink); font-weight:700; font-size:15px; }
   .icon-grid svg{ width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   .icon-grid button[aria-pressed="true"]{ background:var(--duck); border-color:var(--duck); color:#fff; }
-  .swatches{ display:flex; flex-wrap:wrap; gap:2px; }
-  .swatches button{ width:44px; height:44px; border:0; background:none; display:grid; place-items:center; }
-  .swatches span{ width:30px; height:30px; border-radius:50%; background:linear-gradient(155deg,var(--c-hi),var(--c-lo)); transition:transform .2s var(--spring); }
-  .swatches button[aria-pressed="true"] span{ box-shadow:0 0 0 2px #fff, 0 0 0 4px var(--c-lo); transform:scale(.9); }
   .hint{ font-size:13px; line-height:1.45; color:var(--muted); }
   .hint a{ color:var(--duck); font-weight:600; }
   .steps{ font-size:14px; line-height:1.5; color:var(--ink); padding-left:20px; display:grid; gap:4px; }
@@ -425,7 +414,6 @@
         </div>
         <div class="pane" data-pane="icon">
           <div class="icon-grid" id="icon-grid"></div>
-          <div class="swatches" id="swatches" aria-label="Couleur"></div>
         </div>
         <div class="pane" data-pane="site" hidden>
           <p class="hint">Le logo est récupéré tout seul à partir du lien. S'il est flou ou absent, prends « Mon image ».</p>
@@ -765,10 +753,6 @@
   iconGrid.innerHTML = '<button type="button" data-icon="" aria-label="Initiale">Aa</button>' +
     Object.keys(ICONS).map(k => `<button type="button" data-icon="${k}" aria-label="${k}">${SVG(ICONS[k])}</button>`).join('');
   iconGrid.onclick = e => { const b = e.target.closest('button'); if (!b) return; draft.icon = b.dataset.icon || null; syncSheet(); };
-  const swatches = $('#swatches');
-  swatches.innerHTML = Object.entries(COLORS).map(([k, c]) =>
-    `<button type="button" data-color="${k}" aria-label="${k}" style="--c-hi:${c[0]};--c-lo:${c[1]}"><span></span></button>`).join('');
-  swatches.onclick = e => { const b = e.target.closest('button'); if (!b) return; draft.color = b.dataset.color; syncSheet(); };
 
   function normUrl(v){
     v = v.trim(); if (!v) return null;
@@ -790,7 +774,6 @@
     document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-selected', b.dataset.mode === mode));
     document.querySelectorAll('[data-pane]').forEach(p => p.hidden = p.dataset.pane !== mode);
     iconGrid.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', (b.dataset.icon || null) === (draft.icon || null)));
-    swatches.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.color === draft.color));
     const n = state.shortcuts.length;
     $('#b-del').hidden = index < 0;
     $('#b-left').hidden = $('#b-right').hidden = index < 0 || index === hubIndex();
