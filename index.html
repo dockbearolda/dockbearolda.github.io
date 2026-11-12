@@ -74,11 +74,10 @@
   /* Téléphone : le planning en tête, les apps en deux colonnes dessous */
   .bento.has-hub{ grid-template-columns:repeat(2,1fr); gap:12px; max-width:560px; }
   .has-hub > .tile--hub{ grid-column:1 / -1; }
-  .has-hub > .tile:last-child:nth-child(even){ grid-column:1 / -1; } /* le planning est le 1er enfant */
+  @media (max-width:699px){ .has-hub > .tile:last-child:nth-child(even){ grid-column:1 / -1; } } /* le planning est le 1er enfant */
   /* Tablette, petit écran : planning en direct sur toute la largeur, les apps dessous */
   @media (min-width:700px){
     .bento.has-hub{ grid-template-columns:repeat(4,1fr); gap:14px; max-width:1040px; }
-    .has-hub > .tile:last-child:nth-child(even){ grid-column:auto; }
   }
   /* Grand écran : le planning au cœur, les apps en orbite à gauche et à droite */
   @media (min-width:1100px){
@@ -92,8 +91,9 @@
     .has-hub > .tile:not(.tile--hub) .card-icon{ width:42px; height:42px; border-radius:13px; }
     .has-hub > .tile:not(.tile--hub) .card-icon svg{ width:22px; height:22px; }
     /* à l'ouverture, les apps sortent du planning vers leur côté */
-    .has-hub > .tile.l{ --fx:30px; --fy:0px; }
-    .has-hub > .tile.r{ --fx:-30px; --fy:0px; }
+    .bento.has-hub{ grid-auto-flow:row dense; }
+    .has-hub > .tile.l{ grid-column:1; --fx:30px; --fy:0px; }
+    .has-hub > .tile.r{ grid-column:3; --fx:-30px; --fy:0px; }
   }
 
   /* La tuile porte l'apparition, la carte porte le survol : les deux transform ne se battent pas. */
@@ -558,12 +558,17 @@
     hubTile.hidden = h < 0;
     if (h >= 0) syncHub(state.shortcuts[h]); else if (maxed) setMax(false);
     const frag = document.createDocumentFragment();
-    let n = 0;
-    state.shortcuts.forEach((s, i) => {
-      if (i === h) return;
-      const tile = el('div', 'tile ' + (n % 2 ? 'r' : 'l')); tile.dataset.i = i;
-      tile.style.animationDelay = (.12 + Math.floor(n / 2) * .06).toFixed(2) + 's';
-      n++;
+    // Chaque app a son côté (« side »: "left") ; sans côté elle va à droite.
+    // Ancien format sans aucun côté : on alterne gauche / droite.
+    const apps = state.shortcuts.map((s, i) => ({ s, i })).filter(x => x.i !== h);
+    const sided = apps.some(x => x.s.side);
+    apps.forEach((x, k) => { x.left = sided ? x.s.side === 'left' : k % 2 === 0; });
+    const left = apps.filter(x => x.left), right = apps.filter(x => !x.left);
+    let nl = 0, nr = 0;
+    [...left, ...right].forEach(({ s, i, left: isLeft }) => {
+      const k = isLeft ? nl++ : nr++;
+      const tile = el('div', 'tile ' + (isLeft ? 'l' : 'r')); tile.dataset.i = i;
+      tile.style.animationDelay = (.12 + k * .06).toFixed(2) + 's';
       const card = el(editing ? 'button' : 'a', 'card');
       if (editing) { card.type = 'button'; card.setAttribute('aria-label', 'Modifier ' + s.name); card.onclick = () => openSheet(i); }
       else { card.href = s.url; card.target = '_blank'; card.rel = 'noopener'; }
@@ -580,13 +585,13 @@
       frag.append(tile);
     });
     if (editing) {
-      const tile = el('div', 'tile tile--add ' + (n % 2 ? 'r' : 'l')); n++;
+      const tile = el('div', 'tile tile--add r'); nr++;
       const add = el('button', 'card card--add'); add.type = 'button';
       add.innerHTML = '<div class="card-icon">' + SVG('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>') + '</div><div class="card-name">Ajouter</div>';
       add.onclick = () => openSheet(-1);
       tile.append(add); frag.append(tile);
     }
-    grid.style.setProperty('--rows', Math.max(1, Math.ceil(n / 2)));
+    grid.style.setProperty('--rows', Math.max(1, nl, nr));
     // Le planning reste en place (sortir l'iframe du DOM la rechargerait) : on ne remplace que les apps.
     grid.querySelectorAll(':scope > .tile:not(.tile--hub)').forEach(t => t.remove());
     grid.append(frag);
@@ -743,7 +748,12 @@
     justDragged = true; setTimeout(() => justDragged = false, 50);
     d.tile.classList.remove('dragging'); d.tile.style.transform = '';
     d.over?.classList.remove('drop');
-    if (e.type === 'pointerup' && d.over) move(d.from, +d.over.dataset.i);
+    // déposée sur une app de l'autre colonne : elle prend ce côté
+    if (e.type === 'pointerup' && d.over) {
+      const side = state.shortcuts[+d.over.dataset.i].side, s = state.shortcuts[d.from];
+      if (side) s.side = side; else delete s.side;
+      move(d.from, +d.over.dataset.i);
+    }
   };
   window.addEventListener('pointerup', endDrag);
   window.addEventListener('pointercancel', endDrag);
@@ -810,6 +820,7 @@
     const s = { name, url, icon: draft.icon || null, color: draft.color };
     if (draft.img) s.img = draft.img;
     if (draft.hub) s.hub = true;
+    if (draft.side) s.side = draft.side;
     s.since = index >= 0 && url === draft.url && draft.since ? draft.since : Date.now();
     if (index >= 0) state.shortcuts[index] = s; else state.shortcuts.push(s);
     sheet.close(); commit();
