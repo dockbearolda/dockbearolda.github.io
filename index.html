@@ -1111,8 +1111,12 @@
     const p = me();
     if (!x.lu) { x.lu = new Date().toISOString(); fetch(`${BAT}/api/notifs/${encodeURIComponent(x.id)}/lu`, { method: 'POST' }).catch(() => {}); }
     majCloche(); remplirBoite(); $('#ring').classList.remove('show');
-    const lien = BAT + (x.lien || '/') + (x.lien && x.lien.includes('?') ? '&' : '?') + 'poste=' + encodeURIComponent(p ? p.id : '');
-    window.open(lien, '_blank', 'noopener');
+    // Le lien ne mène que chez BAT Studio, quoi qu'il contienne.
+    let u;
+    try { u = new URL(x.lien || '/', BAT + '/'); } catch (_) { return; }
+    if (u.origin !== new URL(BAT).origin) return;
+    u.searchParams.set('poste', p ? p.id : '');
+    window.open(u.toString(), '_blank', 'noopener');
   }
   function remplirBoite(){
     const l = $('#inbox-list');
