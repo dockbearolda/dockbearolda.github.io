@@ -297,6 +297,26 @@
   .file-btn{ justify-self:start; position:relative; overflow:hidden; }
   .file-btn input{ position:absolute; inset:0; opacity:0; cursor:pointer; }
 
+  /* ---------- Qui est au poste ? ---------- */
+  .avatar{
+    --a:66,133,244; width:64px; height:64px; border-radius:50%; flex-shrink:0;
+    display:grid; place-items:center; font-size:26px; font-weight:650; letter-spacing:-.01em;
+    color:rgb(var(--a)); background:rgba(var(--a),.14); box-shadow:inset 0 0 0 1px rgba(var(--a),.22);
+  }
+  .avatar--sm{ width:30px; height:30px; font-size:13px; }
+  .who-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  @media (min-width:561px){ #who{ width:min(560px, calc(100% - 32px)); } .who-grid{ grid-template-columns:repeat(4,1fr); } }
+  .who-grid button{
+    min-height:132px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+    border:1px solid var(--line); border-radius:18px; background:#fff; font-size:16px; font-weight:600; color:var(--ink);
+    transition:transform .25s var(--spring), border-color .2s, box-shadow .2s;
+  }
+  .who-grid button:active{ transform:scale(.96); }
+  .who-grid button:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:2px; }
+  @media (hover:hover){ .who-grid button:hover{ border-color:var(--duck-focus); box-shadow:var(--shadow); } }
+  .who-grid button[aria-pressed="true"]{ border-color:var(--duck); box-shadow:0 0 0 2px var(--duck) inset; }
+  .who-chip{ padding:0 16px 0 7px; }
+
   /* ---------- Toast ---------- */
   /* ---------- Lanceur rapide (⌘K ou taper une lettre) ---------- */
   .pal{ width:min(560px, calc(100% - 32px)); margin:12vh auto auto; }
@@ -333,7 +353,7 @@
 
   @media (prefers-reduced-motion:reduce){
     .orb,.tile,dialog[open]{ animation:none; }
-    .card,.card::after,.card-icon,.toast,.hub-frame iframe{ transition:none; }
+    .who-grid button,.card,.card::after,.card-icon,.toast,.hub-frame iframe{ transition:none; }
     ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){ animation:none !important; }
   }
 </style>
@@ -388,6 +408,9 @@
 </dialog>
 
 <div class="dock">
+  <button type="button" class="btn btn--glass who-chip" id="b-who" hidden>
+    <span class="avatar avatar--sm" id="b-who-av" aria-hidden="true"></span><span class="who-name" id="b-who-name"></span>
+  </button>
   <button type="button" class="btn btn--glass" id="b-find" aria-label="Ouvrir une app (⌘K)" title="Ouvrir une app">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><kbd id="b-find-key">⌘K</kbd>
   </button>
@@ -440,6 +463,19 @@
       <button type="submit" class="btn btn--primary">Enregistrer</button>
     </footer>
   </form>
+</dialog>
+
+<dialog id="who" aria-labelledby="who-title">
+  <div class="sheet">
+    <header class="sheet-head">
+      <h2 id="who-title">Qui est au poste ?</h2>
+      <button type="button" class="icon-btn" data-close id="who-x" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </header>
+    <div class="sheet-body">
+      <div class="who-grid" id="who-grid"></div>
+      <p class="hint">Retenu sur cet appareil. Pour changer, touche ton prénom en bas de l'écran.</p>
+    </div>
+  </div>
 </dialog>
 
 <dialog id="pub" aria-labelledby="pub-title">
@@ -854,7 +890,7 @@
 
   // Fermeture : croix, bouton « Plus tard », clic sur le fond
   document.querySelectorAll('dialog').forEach(d => {
-    d.addEventListener('click', e => { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
+    d.addEventListener('click', e => { if (!d.dataset.locked && (e.target === d || e.target.closest('[data-close]'))) d.close(); });
   });
 
   // ---------- Publication (écrit shortcuts.json dans le dépôt via l'API GitHub) ----------
@@ -963,6 +999,43 @@
     if (typing || editing || maxed || document.querySelector('dialog[open]')) return;
     if (e.key.length === 1 && /\S/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey) { e.preventDefault(); palOpen(e.key); }
   });
+
+  // ---------- Qui est au poste ? Un humain derrière chaque poste, retenu sur l'appareil ----------
+  const PROFILES = [
+    { id: 'loic',    name: 'Loïc',   tint: '66,133,244' },
+    { id: 'charlie', name: 'Charlie', tint: '217,48,37' },
+    { id: 'melina',  name: 'Mélina',  tint: '227,116,0' },
+    { id: 'julien',  name: 'Julien',  tint: '24,128,56' }
+  ];
+  const LS_WHO = 'olda_poste', who = $('#who'), whoGrid = $('#who-grid');
+  const avatar = (p, cls) => { const a = el('span', 'avatar' + (cls ? ' ' + cls : '')); a.style.setProperty('--a', p.tint); a.textContent = p.name.charAt(0); a.setAttribute('aria-hidden', 'true'); return a; };
+  const me = () => PROFILES.find(p => p.id === store.raw(LS_WHO));
+  function syncWho(){
+    const p = me(), b = $('#b-who');
+    b.hidden = !p; if (!p) return;
+    const av = avatar(p, 'avatar--sm'); av.id = 'b-who-av'; $('#b-who-av').replaceWith(av);
+    $('#b-who-name').textContent = p.name;
+    b.setAttribute('aria-label', `Au poste : ${p.name}. Changer de profil`);
+  }
+  function openWho(){
+    const p = me();
+    who.dataset.locked = p ? '' : '1'; $('#who-x').hidden = !p;
+    whoGrid.replaceChildren(...PROFILES.map(x => {
+      const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', x === p);
+      const n = el('span'); n.textContent = x.name;
+      b.append(avatar(x), n);
+      b.onclick = () => { store.set(LS_WHO, x.id); who.close(); syncWho(); if (x !== p) toast(`Bonjour ${x.name} 👋`); };
+      return b;
+    }));
+    if (!who.open) who.showModal();
+  }
+  // Premier passage : on choisit avant tout, impossible de fermer sans choisir.
+  // (Chrome laisse parfois Échap fermer malgré tout : on rouvre aussitôt.)
+  who.addEventListener('cancel', e => { if (who.dataset.locked) e.preventDefault(); });
+  who.addEventListener('close', () => { if (!me()) openWho(); });
+  $('#b-who').onclick = openWho;
+  syncWho();
+  if (!me()) openWho();
 
   // ---------- Toast ----------
   let toastTimer;
