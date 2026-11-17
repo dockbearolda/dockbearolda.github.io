@@ -317,6 +317,30 @@
   .who-grid button[aria-pressed="true"]{ border-color:var(--duck); box-shadow:0 0 0 2px var(--duck) inset; }
   .who-chip{ padding:0 16px 0 7px; }
 
+  /* ---------- Notifications (BAT Studio) : la cloche, la boîte ---------- */
+  .bell{ position:relative; width:44px; padding:0; }
+  .bell .n{ position:absolute; top:-4px; right:-4px; min-width:20px; height:20px; padding:0 5px; border-radius:10px;
+    background:var(--danger); color:#fff; font-size:12px; font-weight:700; line-height:20px; text-align:center; box-shadow:0 0 0 2px #fff; }
+  .bell .n[hidden]{ display:none; }
+  .bell.ring svg{ animation:ring 1s ease-in-out 3; transform-origin:50% 10%; }
+  @keyframes ring{ 0%,100%{ transform:rotate(0); } 15%{ transform:rotate(16deg); } 30%{ transform:rotate(-14deg); } 45%{ transform:rotate(10deg); } 60%{ transform:rotate(-6deg); } 75%{ transform:rotate(3deg); } }
+  #inbox{ width:min(520px, calc(100% - 32px)); }
+  .inbox-list{ list-style:none; display:grid; gap:8px; }
+  .inbox-list li button{ width:100%; display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:start; text-align:left;
+    min-height:64px; padding:12px 14px; border:1px solid var(--line); border-radius:16px; background:#fff; color:var(--ink); }
+  .inbox-list li button:active{ transform:scale(.98); }
+  .inbox-list .pt{ width:10px; height:10px; margin-top:5px; border-radius:50%; background:transparent; grid-row:span 2; }
+  .inbox-list .neuf .pt{ background:var(--danger); }
+  .inbox-list b{ font-size:15px; font-weight:600; }
+  .inbox-list .neuf b{ font-weight:700; }
+  .inbox-list small{ font-size:13px; color:var(--muted); }
+  .inbox-vide{ text-align:center; padding:24px 0; }
+  #ring{ top:calc(16px + env(safe-area-inset-top,0px)); bottom:auto; transform:translate(-50%,-16px); background:var(--danger); }
+  #ring.show{ transform:translate(-50%,0); }
+  #ring{ width:min(560px, calc(100% - 32px)); }
+  #ring span{ flex:1; min-width:0; font-weight:600; }
+  #ring button{ color:#fff; text-decoration:underline; white-space:nowrap; padding:0 10px; }
+
   /* ---------- Toast ---------- */
   /* ---------- Lanceur rapide (⌘K ou taper une lettre) ---------- */
   .pal{ width:min(560px, calc(100% - 32px)); margin:12vh auto auto; }
@@ -408,6 +432,10 @@
 </dialog>
 
 <div class="dock">
+  <button type="button" class="btn btn--glass bell" id="b-bell" hidden aria-label="Notifications" title="Notifications">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    <span class="n" id="b-bell-n" hidden></span>
+  </button>
   <button type="button" class="btn btn--glass who-chip" id="b-who" hidden>
     <span class="avatar avatar--sm" id="b-who-av" aria-hidden="true"></span><span class="who-name" id="b-who-name"></span>
   </button>
@@ -502,6 +530,16 @@
   </form>
 </dialog>
 
+<dialog id="inbox" aria-labelledby="inbox-title">
+  <div class="sheet">
+    <header class="sheet-head">
+      <h2 id="inbox-title">Notifications</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </header>
+    <div class="sheet-body"><ul class="inbox-list" id="inbox-list"></ul></div>
+  </div>
+</dialog>
+<div class="toast" id="ring" role="alert"><span id="ring-msg"></span><button type="button" id="ring-act">Ouvrir</button><button type="button" id="ring-x" aria-label="Plus tard">Plus tard</button></div>
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button type="button" id="toast-act" hidden></button></div>
 <div class="toast" id="update" role="status" aria-live="polite"><span>Nouvelle version disponible</span><button type="button" id="update-act">Recharger</button></div>
 
@@ -1024,7 +1062,7 @@
       const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', x === p);
       const n = el('span'); n.textContent = x.name;
       b.append(avatar(x), n);
-      b.onclick = () => { store.set(LS_WHO, x.id); who.close(); syncWho(); if (x !== p) toast(`Bonjour ${x.name} 👋`); };
+      b.onclick = () => { store.set(LS_WHO, x.id); who.close(); syncWho(); if (x !== p) { toast(`Bonjour ${x.name} 👋`); boite = []; relever(); } };
       return b;
     }));
     if (!who.open) who.showModal();
@@ -1036,6 +1074,95 @@
   $('#b-who').onclick = openWho;
   syncWho();
   if (!me()) openWho();
+
+  // ---------- Notifications de BAT Studio : la boîte de la personne au poste ----------
+  // BAT Studio garde une boîte par prénom (BAT validé, BAT atelier envoyé). Le portail la relève, sonne
+  // et fait trembler la cloche quand il y a du neuf ; toucher une notification ouvre le BAT atelier.
+  // En local (essais), « ?bat=http://localhost:3000 » pointe vers un BAT Studio de développement.
+  const BAT = (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && new URLSearchParams(location.search).get('bat')) || 'https://bat-studio.dockbear.workers.dev';
+  const LS_VUS = 'olda_notifs_vus';
+  let boite = [], audio = null;
+  const vus = new Set(store.get(LS_VUS) || []);
+  // Le son ne part qu'après un premier geste sur la page (règle des navigateurs) : on prépare
+  // l'audio au premier toucher, ensuite il peut sonner tout seul.
+  const debloquer = () => { try { audio ||= new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); } catch (_) {} };
+  addEventListener('pointerdown', debloquer, { passive: true });
+  debloquer();   // certains navigateurs l'autorisent d'emblée (site déjà utilisé) : autant essayer
+  addEventListener('keydown', debloquer);
+  function sonner(){
+    if (!audio || audio.state !== 'running') return;
+    const t0 = audio.currentTime + .02;
+    // Ding-dong, deux fois : s'entend dans l'atelier sans être agressif.
+    [[880, 0], [659, .22], [880, .7], [659, .92]].forEach(([f, d]) => {
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0, t0 + d); g.gain.linearRampToValueAtTime(.32, t0 + d + .02); g.gain.exponentialRampToValueAtTime(.001, t0 + d + .6);
+      o.connect(g).connect(audio.destination); o.start(t0 + d); o.stop(t0 + d + .65);
+    });
+  }
+  const quand = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
+  function majCloche(){
+    const p = me(), n = boite.filter(x => !x.lu).length;
+    $('#b-bell').hidden = !p;
+    const c = $('#b-bell-n'); c.hidden = !n; c.textContent = n > 9 ? '9+' : String(n);
+    $('#b-bell').setAttribute('aria-label', n ? `Notifications : ${n} non lue${n > 1 ? 's' : ''}` : 'Notifications');
+  }
+  function ouvrirNotif(x){
+    const p = me();
+    if (!x.lu) { x.lu = new Date().toISOString(); fetch(`${BAT}/api/notifs/${encodeURIComponent(x.id)}/lu`, { method: 'POST' }).catch(() => {}); }
+    majCloche(); remplirBoite(); $('#ring').classList.remove('show');
+    const lien = BAT + (x.lien || '/') + (x.lien && x.lien.includes('?') ? '&' : '?') + 'poste=' + encodeURIComponent(p ? p.id : '');
+    window.open(lien, '_blank', 'noopener');
+  }
+  function remplirBoite(){
+    const l = $('#inbox-list');
+    if (!boite.length) { l.innerHTML = '<li class="hint inbox-vide">Rien pour l’instant.</li>'; return; }
+    l.replaceChildren(...boite.map(x => {
+      const li = el('li'), b = el('button', x.lu ? '' : 'neuf'); b.type = 'button';
+      const pt = el('span', 'pt'), t = el('b'), m = el('small');
+      t.textContent = x.titre; m.textContent = [x.texte, quand(x.at)].filter(Boolean).join(' · ');
+      b.append(pt, t, m); b.onclick = () => { $('#inbox').close(); ouvrirNotif(x); };
+      li.append(b); return li;
+    }));
+  }
+  function annoncer(x){
+    $('#ring-msg').textContent = '🔔 ' + x.titre;
+    $('#ring-act').onclick = () => ouvrirNotif(x);
+    $('#ring-x').onclick = () => $('#ring').classList.remove('show');
+    $('#ring').classList.add('show');
+    const b = $('#b-bell'); b.classList.remove('ring'); void b.offsetWidth; b.classList.add('ring');
+    sonner();
+    // Écran éteint ou autre onglet : la notification du système, quand le navigateur la permet.
+    if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+      try { const n = new Notification(x.titre, { body: x.texte, tag: x.id }); n.onclick = () => { window.focus(); ouvrirNotif(x); }; } catch (_) {}
+    }
+  }
+  let relevee = 0, enCours = false;
+  async function relever(){
+    const p = me();
+    if (!p || enCours || !navigator.onLine) { majCloche(); return; }
+    enCours = true; relevee = Date.now();
+    try {
+      const r = await fetch(`${BAT}/api/notifs?pour=${p.id}`, { cache: 'no-store' });
+      if (!r.ok) return;
+      const { notifs } = await r.json();
+      if (me() !== p) return;
+      boite = Array.isArray(notifs) ? notifs : [];
+      const neuves = boite.filter(x => !x.lu && !vus.has(x.id));
+      neuves.forEach(x => vus.add(x.id));
+      if (neuves.length) { store.set(LS_VUS, [...vus].slice(-300)); annoncer(neuves[0]); }
+      majCloche(); if ($('#inbox').open) remplirBoite();
+    } catch (_) { /* hors-ligne passager : on retentera */ }
+    finally { enCours = false; }
+  }
+  $('#b-bell').onclick = () => {
+    if ('Notification' in window && Notification.permission === 'default') { try { Notification.requestPermission(); } catch (_) {} }
+    remplirBoite(); $('#inbox').showModal(); relever();
+  };
+  // Toutes les 20 s quand le portail est affiché, toutes les minutes sinon.
+  setInterval(() => { if (Date.now() - relevee > (document.hidden ? 60000 : 20000)) relever(); }, 5000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) relever(); });
+  relever();
 
   // ---------- Toast ----------
   let toastTimer;
