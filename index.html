@@ -441,9 +441,98 @@
   .toast button{ min-height:40px; padding:0 14px; border:0; border-radius:12px; background:none; color:#9fd0ff; font-weight:700; }
   .toast span{ padding:8px 14px 8px 0; }
 
+  /* ---------- La bulle : on se parle en direct, flottante au-dessus de tout ---------- */
+  .chat{
+    --chat-glass:rgba(255,255,255,.36); --chat-edge:rgba(255,255,255,.7);
+    position:fixed; z-index:35; left:0; top:0; will-change:transform;
+    touch-action:none; user-select:none; -webkit-user-select:none;
+  }
+  .chat-orb{
+    position:relative; width:64px; height:64px; border-radius:50%; border:0; padding:0;
+    display:grid; place-items:center;
+    background:linear-gradient(145deg,rgba(255,255,255,.78),rgba(255,255,255,.38));
+    -webkit-backdrop-filter:blur(22px) saturate(180%); backdrop-filter:blur(22px) saturate(180%);
+    box-shadow:inset 0 0 0 1px var(--chat-edge), inset 0 1px 0 rgba(255,255,255,.9), 0 2px 6px rgba(32,41,48,.08), 0 18px 40px rgba(74,98,116,.24);
+    transition:transform .35s var(--spring), box-shadow .25s; cursor:grab;
+  }
+  .chat-orb:hover{ transform:scale(1.05); }
+  .chat-orb:active{ cursor:grabbing; }
+  .chat-orb svg{ width:26px; height:26px; fill:none; stroke:var(--duck); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .chat-orb .chat-n{
+    position:absolute; top:-2px; right:-2px; min-width:22px; height:22px; padding:0 6px; border-radius:11px;
+    display:grid; place-items:center; background:var(--danger); color:#fff; font-size:12px; font-weight:700;
+    box-shadow:0 0 0 2px #fff; animation:chatPop .45s var(--spring);
+  }
+  .chat-orb.is-live::after{ content:""; position:absolute; bottom:5px; right:5px; width:12px; height:12px; border-radius:50%; background:#1e9e5a; box-shadow:0 0 0 2px #fff; }
+  .chat-panel{
+    position:absolute; left:0; top:0; width:min(372px, calc(100vw - 24px)); height:min(520px, calc(100dvh - 24px));
+    display:flex; flex-direction:column; overflow:hidden; border-radius:26px;
+    background:var(--chat-glass);
+    -webkit-backdrop-filter:blur(26px) saturate(200%) brightness(1.04); backdrop-filter:blur(26px) saturate(200%) brightness(1.04);
+    box-shadow:inset 0 0 0 1px var(--chat-edge), inset 0 1px 0 rgba(255,255,255,.95), 0 2px 8px rgba(32,41,48,.06), 0 30px 70px rgba(42,58,72,.26);
+    transform-origin:var(--ox,0) var(--oy,0); animation:chatOpen .42s var(--spring);
+    user-select:text; -webkit-user-select:text;
+  }
+  .chat.is-min .chat-panel{ display:none; }
+  .chat:not(.is-min) .chat-orb{ display:none; }
+  @keyframes chatOpen{ from{ opacity:0; transform:scale(.6); } to{ opacity:1; transform:none; } }
+  @keyframes chatPop{ from{ transform:scale(.4); } to{ transform:none; } }
+  .chat-head{
+    display:flex; align-items:center; gap:10px; padding:10px 8px 10px 16px; min-height:60px;
+    cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
+    border-bottom:1px solid rgba(255,255,255,.55);
+    background:linear-gradient(to bottom,rgba(255,255,255,.45),rgba(255,255,255,0));
+  }
+  .chat-head:active{ cursor:grabbing; }
+  .chat-grip{ position:absolute; left:50%; top:5px; width:36px; height:4px; margin-left:-18px; border-radius:2px; background:rgba(74,98,116,.22); }
+  .chat-title{ flex:1; min-width:0; display:grid; }
+  .chat-title b{ font-size:16px; font-weight:700; letter-spacing:-.015em; }
+  .chat-title small{ font-size:12.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-height:16px; }
+  .chat-title small.tape{ color:var(--duck); font-weight:600; }
+  .chat-pres{ display:flex; }
+  .chat-pres .avatar{ width:28px; height:28px; font-size:12px; margin-left:-6px; background:#fff; box-shadow:inset 0 0 0 1px rgba(var(--a),.3), 0 0 0 2px rgba(255,255,255,.9); position:relative; }
+  .chat-pres .avatar.on::after{ content:""; position:absolute; right:-1px; bottom:-1px; width:9px; height:9px; border-radius:50%; background:#1e9e5a; box-shadow:0 0 0 2px #fff; }
+  .chat-pres .avatar:not(.on){ opacity:.4; }
+  .chat-x{ width:44px; height:44px; flex-shrink:0; display:grid; place-items:center; border:0; border-radius:50%; background:none; }
+  .chat-x:hover{ background:rgba(74,98,116,.1); }
+  .chat-x svg{ width:20px; height:20px; fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round; }
+  .chat-list{ flex:1; overflow-y:auto; overscroll-behavior:contain; padding:14px 12px 6px; display:flex; flex-direction:column; gap:2px; scrollbar-width:thin; }
+  .chat-day{ align-self:center; margin:10px 0 6px; padding:3px 10px; border-radius:999px; font-size:11.5px; font-weight:600; color:var(--muted); background:rgba(255,255,255,.55); }
+  .chat-vide{ margin:auto; max-width:240px; text-align:center; color:var(--muted); font-size:14px; line-height:1.45; }
+  .chat-m{ display:flex; align-items:flex-end; gap:8px; max-width:86%; }
+  .chat-m.neuf{ animation:chatIn .32s var(--spring); }
+  @keyframes chatIn{ from{ opacity:0; transform:translateY(8px) scale(.97); } to{ opacity:1; transform:none; } }
+  .chat-m .avatar{ width:28px; height:28px; font-size:12px; background:#fff; visibility:hidden; }
+  .chat-m.fin .avatar{ visibility:visible; }
+  .chat-m.debut{ margin-top:8px; }
+  .chat-b{ min-width:0; padding:8px 12px; border-radius:18px; font-size:15px; line-height:1.38; white-space:pre-line; overflow-wrap:anywhere;
+    background:rgba(255,255,255,.86); box-shadow:0 1px 2px rgba(32,41,48,.06); color:var(--ink); }
+  .chat-b small{ display:block; margin-bottom:1px; font-size:12px; font-weight:700; color:rgb(var(--a)); }
+  .chat-b time{ float:right; margin:6px 0 -4px 10px; font-size:11px; opacity:.55; }
+  .chat-m.moi{ align-self:flex-end; flex-direction:row-reverse; }
+  .chat-m.moi .avatar{ display:none; }
+  .chat-m.moi .chat-b{ background:rgb(var(--a)); color:#fff; box-shadow:0 4px 14px rgba(var(--a),.28); }
+  .chat-m.wait .chat-b{ opacity:.6; }
+  .chat-m.rate .chat-b{ box-shadow:0 0 0 2px var(--danger); }
+  .chat-form{ display:flex; align-items:flex-end; gap:8px; padding:8px 8px calc(8px + var(--safe-b)) 12px; border-top:1px solid rgba(255,255,255,.55); }
+  .chat-form textarea{
+    flex:1; min-height:44px; max-height:132px; padding:11px 14px; border-radius:22px; resize:none;
+    border:1px solid rgba(74,98,116,.16); background:rgba(255,255,255,.8); font:inherit; font-size:16px; line-height:1.3; color:var(--ink); outline:none;
+    transition:border-color .2s, box-shadow .2s;
+  }
+  .chat-form textarea:focus{ border-color:var(--duck-focus); box-shadow:0 0 0 3px rgba(74,98,116,.14); }
+  .chat-send{ width:44px; height:44px; flex-shrink:0; display:grid; place-items:center; border:0; border-radius:50%; background:var(--duck); transition:transform .25s var(--spring), opacity .2s; }
+  .chat-send:disabled{ opacity:.35; }
+  .chat-send:not(:disabled):active{ transform:scale(.9); }
+  .chat-send svg{ width:20px; height:20px; fill:none; stroke:#fff; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
+  .chat.drag .chat-panel, .chat.drag .chat-orb{ box-shadow:inset 0 0 0 1px var(--chat-edge), 0 34px 80px rgba(42,58,72,.34); }
+  .chat.drag .chat-orb{ transform:scale(1.08); }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .chat{ --chat-glass:rgba(250,251,252,.96); } }
+
   @media (prefers-reduced-motion:reduce){
     .orb,.tile,.note,dialog[open]{ animation:none; }
-    .who-grid button,.card,.card::after,.card-icon,.toast,.hub-frame iframe{ transition:none; }
+    .who-grid button,.card,.card::after,.card-icon,.toast,.hub-frame iframe,.chat-orb{ transition:none; }
+    .chat-panel,.chat-m,.chat-n{ animation:none; }
     ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){ animation:none !important; }
   }
 </style>
@@ -642,6 +731,29 @@
     <div class="sheet-body"><ul class="inbox-list" id="inbox-list"></ul></div>
   </div>
 </dialog>
+<div class="chat is-min" id="chat" hidden>
+  <button type="button" class="chat-orb" id="chat-orb" aria-label="Ouvrir la discussion de l'équipe">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/></svg>
+    <span class="chat-n" id="chat-n" hidden></span>
+  </button>
+  <section class="chat-panel" id="chat-panel" aria-label="Discussion de l'équipe">
+    <header class="chat-head" id="chat-head">
+      <span class="chat-grip" aria-hidden="true"></span>
+      <div class="chat-title"><b>L'équipe</b><small id="chat-etat" aria-live="polite"></small></div>
+      <div class="chat-pres" id="chat-pres"></div>
+      <button type="button" class="chat-x" id="chat-x" aria-label="Réduire la discussion" title="Réduire (Échap)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>
+      </button>
+    </header>
+    <div class="chat-list" id="chat-list" role="log" aria-live="polite"></div>
+    <form class="chat-form" id="chat-form" autocomplete="off">
+      <textarea id="chat-txt" rows="1" maxlength="1000" placeholder="Écrire à l'équipe…" enterkeyhint="send" aria-label="Message"></textarea>
+      <button type="submit" class="chat-send" id="chat-send" aria-label="Envoyer" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+      </button>
+    </form>
+  </section>
+</div>
 <div class="toast" id="ring" role="alert"><span id="ring-msg"></span><button type="button" id="ring-act">Ouvrir</button><button type="button" id="ring-x" aria-label="Plus tard">Plus tard</button></div>
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button type="button" id="toast-act" hidden></button></div>
 <div class="toast" id="update" role="status" aria-live="polite"><span>Nouvelle version disponible</span><button type="button" id="update-act">Recharger</button></div>
@@ -1150,7 +1262,7 @@
       const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', x === p);
       const n = el('span'); n.textContent = x.name;
       b.append(avatar(x), n);
-      b.onclick = () => { store.set(LS_WHO, x.id); who.close(); syncWho(); if (x !== p) { toast(`Bonjour ${x.name} 👋`); boite = []; mots = null; relever(); releverMots(); } };
+      b.onclick = () => { store.set(LS_WHO, x.id); who.close(); syncWho(); if (x !== p) { toast(`Bonjour ${x.name} 👋`); boite = []; mots = null; relever(); releverMots(); chatRelancer(); } };
       return b;
     }));
     if (!who.open) who.showModal();
@@ -1443,6 +1555,254 @@
   $('#update-act').onclick = () => location.reload();
   setInterval(checkUpdate, 5 * 60000);
   document.addEventListener('visibilitychange', checkUpdate);
+
+  // ---------- La bulle : l'équipe se parle en direct (BAT Studio, /api/chat) ----------
+  // Une seule conversation pour tous. En ligne, BAT Studio pousse chaque message par WebSocket
+  // (et dit qui est là, qui écrit) ; si le WebSocket ne passe pas (BAT Studio local), on relève.
+  // La bulle se déplace d'un doigt (par son en-tête, ou la pastille réduite) et garde sa place sur l'appareil.
+  const LS_CHAT = 'olda_chat', LS_CHAT_POS = 'olda_chat_pos', LS_CHAT_VU = 'olda_chat_vu';
+  const chat = $('#chat'), chatOrb = $('#chat-orb'), chatPanel = $('#chat-panel'), chatList = $('#chat-list');
+  const chatTxt = $('#chat-txt'), chatSend = $('#chat-send'), chatEtat = $('#chat-etat');
+  const ORB = 64, MARGE = 12;
+  let msgs = [], chatWs = null, chatEssais = 0, chatSonde = null, chatRetry = null, chatMode = 'ws';
+  let presents = [], tapeurs = new Map(), derniereTape = 0, chatAffiches = new Set();
+  let chatVu = store.raw(LS_CHAT_VU) || '';
+  { const c = store.get(LS_CHAT); if (Array.isArray(c)) msgs = c; }
+
+  // --- Place à l'écran : une position (coin haut-gauche), bornée à la fenêtre ---
+  const chatPos = Object.assign({ x: null, y: null, ouvert: true }, store.get(LS_CHAT_POS) || {});
+  const taille = () => chatPos.ouvert ? { w: chatPanel.offsetWidth || 372, h: chatPanel.offsetHeight || 520 } : { w: ORB, h: ORB };
+  function borner(){
+    const { w, h } = taille(), vw = innerWidth, vh = innerHeight;
+    if (chatPos.x == null) { chatPos.x = vw - w - 24; chatPos.y = vh - h - 92; }
+    chatPos.x = Math.min(Math.max(MARGE, chatPos.x), Math.max(MARGE, vw - w - MARGE));
+    chatPos.y = Math.min(Math.max(MARGE, chatPos.y), Math.max(MARGE, vh - h - MARGE));
+  }
+  function placer(){ borner(); chat.style.transform = `translate3d(${Math.round(chatPos.x)}px,${Math.round(chatPos.y)}px,0)`; }
+  const garderPos = () => store.set(LS_CHAT_POS, chatPos);
+  // Ouvrir / réduire : le panneau pousse vers le milieu de l'écran depuis la pastille, et inversement.
+  function basculer(ouvrir){
+    if (ouvrir === chatPos.ouvert) return;
+    const vw = innerWidth, vh = innerHeight;
+    if (ouvrir) {
+      const droite = chatPos.x + ORB / 2 > vw / 2, bas = chatPos.y + ORB / 2 > vh / 2;
+      chatPos.ouvert = true; chat.classList.remove('is-min');
+      const { w, h } = taille();
+      chatPanel.style.setProperty('--ox', droite ? '100%' : '0'); chatPanel.style.setProperty('--oy', bas ? '100%' : '0');
+      chatPos.x = droite ? chatPos.x + ORB - w : chatPos.x; chatPos.y = bas ? chatPos.y + ORB - h : chatPos.y;
+      placer(); lireTout();
+      if (matchMedia('(hover:hover)').matches) chatTxt.focus({ preventScroll: true });
+      chatList.scrollTop = chatList.scrollHeight;
+    } else {
+      const { w, h } = taille();
+      const droite = chatPos.x + w / 2 > vw / 2, bas = chatPos.y + h / 2 > vh / 2;
+      chatPos.ouvert = false; chat.classList.add('is-min');
+      chatPos.x = droite ? chatPos.x + w - ORB : chatPos.x; chatPos.y = bas ? chatPos.y + h - ORB : chatPos.y;
+      placer();
+    }
+    garderPos();
+  }
+
+  // --- Glisser : au-delà de 5 px c'est un déplacement, sinon un simple toucher ---
+  let glisse = null, vientDeGlisser = false;
+  function prise(e){
+    if (e.button > 0 || e.target.closest('.chat-x')) return;
+    glisse = { id: e.pointerId, x0: e.clientX, y0: e.clientY, px: chatPos.x, py: chatPos.y, bouge: false, cible: e.currentTarget };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function deplacer(e){
+    if (!glisse || e.pointerId !== glisse.id) return;
+    const dx = e.clientX - glisse.x0, dy = e.clientY - glisse.y0;
+    if (!glisse.bouge && Math.hypot(dx, dy) < 5) return;
+    if (!glisse.bouge) { glisse.bouge = true; chat.classList.add('drag'); chat.style.transition = 'none'; }
+    chatPos.x = glisse.px + dx; chatPos.y = glisse.py + dy;
+    requestAnimationFrame(placer);
+  }
+  function lacher(e){
+    if (!glisse || e.pointerId !== glisse.id) return;
+    const bouge = glisse.bouge; glisse = null; chat.classList.remove('drag');
+    if (!bouge) return;
+    vientDeGlisser = true; setTimeout(() => { vientDeGlisser = false; }, 0);
+    // Réduite, la pastille vient se ranger contre le bord le plus proche, comme sur iPhone.
+    if (!chatPos.ouvert) {
+      chatPos.x = chatPos.x + ORB / 2 < innerWidth / 2 ? MARGE : innerWidth - ORB - MARGE;
+      if (!reduced.matches) chat.style.transition = 'transform .45s cubic-bezier(.34,1.4,.64,1)';
+    }
+    placer(); garderPos();
+  }
+  for (const poignee of [chatOrb, $('#chat-head')]) {
+    poignee.addEventListener('pointerdown', prise);
+    poignee.addEventListener('pointermove', deplacer);
+    poignee.addEventListener('pointerup', lacher);
+    poignee.addEventListener('pointercancel', lacher);
+  }
+  chat.addEventListener('transitionend', () => { chat.style.transition = ''; });
+  chatOrb.onclick = () => { if (!vientDeGlisser) basculer(true); };
+  $('#chat-x').onclick = () => basculer(false);
+  chatPanel.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); basculer(false); chatOrb.focus(); } });
+  addEventListener('resize', () => { if (!chat.hidden) placer(); });
+
+  // --- Affichage ---
+  const heure = iso => new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  const jour = iso => {
+    const d = new Date(iso), a = new Date(); a.setHours(0, 0, 0, 0);
+    const j = Math.round((a - new Date(d).setHours(0, 0, 0, 0)) / 864e5);
+    return j === 0 ? 'Aujourd’hui' : j === 1 ? 'Hier' : d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  };
+  const profilDe = id => PROFILES.find(x => x.id === id);
+  function renderChat(){
+    const p = me(); if (!p) return;
+    const enBas = chatList.scrollHeight - chatList.scrollTop - chatList.clientHeight < 80;
+    const out = []; let jourAvant = '';
+    msgs.forEach((m, i) => {
+      const j = jour(m.at);
+      if (j !== jourAvant) { const d = el('div', 'chat-day'); d.textContent = j; out.push(d); jourAvant = j; }
+      const av = msgs[i - 1], ap = msgs[i + 1], proche = (a, b) => a && b && a.de === b.de && Math.abs(Date.parse(b.at) - Date.parse(a.at)) < 5 * 60000 && jour(a.at) === jour(b.at);
+      const de = profilDe(m.de), moi = m.de === p.id;
+      const row = el('div', 'chat-m' + (moi ? ' moi' : '') + (proche(av, m) ? '' : ' debut') + (proche(m, ap) ? '' : ' fin') + (m.wait ? ' wait' : '') + (m.rate ? ' rate' : '') + (chatAffiches.has(m.id) ? '' : ' neuf'));
+      row.style.setProperty('--a', de ? de.tint : '91,107,120');
+      const b = el('div', 'chat-b');
+      if (!moi && !proche(av, m)) { const n = el('small'); n.textContent = de ? de.name : '?'; b.append(n); }
+      const t = el('time'); t.dateTime = m.at; t.textContent = m.rate ? 'Non envoyé · toucher pour réessayer' : heure(m.at);
+      b.append(document.createTextNode(m.texte), t);
+      if (m.rate) { row.style.cursor = 'pointer'; row.onclick = () => { msgs = msgs.filter(x => x !== m); envoyer(m.texte); }; }
+      row.append(de ? avatar(de) : el('span', 'avatar'), b);
+      out.push(row);
+    });
+    if (!msgs.length) { const v = el('p', 'chat-vide'); v.textContent = 'Ici, on se parle en direct. Le premier message part à toute l’équipe.'; out.push(v); }
+    chatList.replaceChildren(...out);
+    chatAffiches = new Set(msgs.map(m => m.id));
+    if (enBas || msgs.at(-1)?.de === p.id) chatList.scrollTop = chatList.scrollHeight;
+    majEtat(); majNonLus();
+  }
+  function majEtat(){
+    const p = me(); if (!p) return;
+    const autres = PROFILES.filter(x => x.id !== p.id);
+    $('#chat-pres').replaceChildren(...autres.map(x => { const a = avatar(x); a.classList.toggle('on', presents.includes(x.id)); a.title = x.name + (presents.includes(x.id) ? ' est là' : ''); return a; }));
+    const ecrit = [...tapeurs.keys()].filter(id => id !== p.id).map(id => profilDe(id)?.name).filter(Boolean);
+    chatEtat.classList.toggle('tape', !!ecrit.length);
+    if (ecrit.length) { chatEtat.textContent = `${ecrit.join(' et ')} ${ecrit.length > 1 ? 'écrivent' : 'écrit'}…`; return; }
+    const la = autres.filter(x => presents.includes(x.id)).map(x => x.name);
+    chatEtat.textContent = chatMode === 'coupe' ? 'Reconnexion…'
+      : chatMode === 'sonde' ? 'Toute l’équipe'
+      : !la.length ? 'Personne d’autre en ce moment'
+      : la.length === 1 ? `${la[0]} est là` : `${la.slice(0, -1).join(', ')} et ${la.at(-1)} sont là`;
+    chatOrb.classList.toggle('is-live', la.length > 0);
+  }
+  function majNonLus(){
+    const p = me(); if (!p) return;
+    const i = msgs.findIndex(m => m.id === chatVu);
+    const n = msgs.slice(i + 1).filter(m => m.de !== p.id && !m.wait).length;
+    const c = $('#chat-n'); c.hidden = !n || chatPos.ouvert; c.textContent = n > 9 ? '9+' : String(n);
+    chatOrb.setAttribute('aria-label', n ? `Discussion de l'équipe : ${n} message${n > 1 ? 's' : ''} non lu${n > 1 ? 's' : ''}` : 'Ouvrir la discussion de l’équipe');
+  }
+  function lireTout(){
+    const dernier = msgs.filter(m => !m.wait).at(-1);
+    if (dernier && chatPos.ouvert && !document.hidden) { chatVu = dernier.id; store.set(LS_CHAT_VU, chatVu); }
+    majNonLus();
+  }
+  const garderChat = () => store.set(LS_CHAT, msgs.filter(m => !m.wait && !m.rate).slice(-80));
+  // Un « toc » discret, différent du ding-dong des notifications.
+  function toc(){
+    if (!audio || audio.state !== 'running') return;
+    const t0 = audio.currentTime + .01, o = audio.createOscillator(), g = audio.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(740, t0); o.frequency.exponentialRampToValueAtTime(1110, t0 + .09);
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.14, t0 + .015); g.gain.exponentialRampToValueAtTime(.001, t0 + .28);
+    o.connect(g).connect(audio.destination); o.start(t0); o.stop(t0 + .3);
+  }
+
+  // --- Recevoir ---
+  function recevoir(m){
+    const p = me();
+    const k = m.cle ? msgs.findIndex(x => x.wait && x.cle === m.cle) : -1;
+    if (k >= 0) { msgs[k] = m; chatAffiches.add(m.id); }
+    else if (!msgs.some(x => x.id === m.id)) {
+      msgs.push(m);
+      if (p && m.de !== p.id) { tapeurs.delete(m.de); if (!chatPos.ouvert || document.hidden) toc(); }
+    }
+    msgs = msgs.slice(-200); garderChat(); renderChat(); lireTout();
+  }
+  function fusionner(liste){
+    const enAttente = msgs.filter(m => m.wait || m.rate);
+    msgs = [...liste, ...enAttente.filter(m => !liste.some(x => x.cle && x.cle === m.cle))];
+    garderChat(); renderChat(); lireTout();
+  }
+  function connecter(){
+    const p = me(); if (!p) return;
+    clearTimeout(chatRetry); clearInterval(chatSonde); chatSonde = null;
+    if (chatWs) { chatWs.onclose = null; chatWs.close(); chatWs = null; }
+    let ws;
+    try { ws = new WebSocket(BAT.replace(/^http/, 'ws') + '/api/chat/ws?qui=' + encodeURIComponent(p.id)); } catch (_) { return sonder(); }
+    chatWs = ws; let ouvert = false;
+    ws.onopen = () => { ouvert = true; chatEssais = 0; chatMode = 'ws'; majEtat(); };
+    ws.onmessage = ev => {
+      let e; try { e = JSON.parse(ev.data); } catch (_) { return; }
+      if (e.type === 'tout') { presents = e.presents || []; fusionner(e.messages || []); }
+      else if (e.type === 'msg') recevoir(e.msg);
+      else if (e.type === 'presents') { presents = e.presents || []; majEtat(); }
+      else if (e.type === 'tape') { clearTimeout(tapeurs.get(e.de)); tapeurs.set(e.de, setTimeout(() => { tapeurs.delete(e.de); majEtat(); }, 4000)); majEtat(); }
+      else if (e.type === 'refus') { const m = msgs.find(x => x.cle === e.cle); if (m) { m.wait = false; m.rate = true; renderChat(); } }
+    };
+    ws.onclose = () => {
+      if (chatWs !== ws) return;
+      chatWs = null; presents = [];
+      // Jamais ouvert : pas de WebSocket ici (BAT Studio local) → on relève. Sinon on se reconnecte, de plus en plus calmement.
+      if (!ouvert && chatEssais === 0) return sonder();
+      chatMode = 'coupe'; majEtat();
+      chatRetry = setTimeout(connecter, Math.min(15000, 1000 * 2 ** chatEssais++));
+    };
+  }
+  async function relire(){
+    try {
+      const dernier = msgs.filter(m => !m.wait && !m.rate).at(-1);
+      const r = await fetch(`${BAT}/api/chat${dernier ? '?depuis=' + encodeURIComponent(dernier.id) : ''}`, { cache: 'no-store' });
+      if (!r.ok) return;
+      const { messages = [] } = await r.json();
+      messages.forEach(recevoir);
+    } catch (_) {}
+  }
+  function sonder(){
+    chatMode = 'sonde'; majEtat(); relire();
+    chatSonde = setInterval(() => { if (!document.hidden || Date.now() % 15000 < 2500) relire(); }, 2500);
+  }
+
+  // --- Écrire ---
+  function envoyer(texte){
+    const p = me(); texte = texte.trim(); if (!p || !texte) return;
+    const cle = 'k' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const m = { id: cle, cle, de: p.id, texte, at: new Date().toISOString(), wait: true };
+    msgs.push(m); renderChat();
+    if (chatWs && chatWs.readyState === 1) {
+      chatWs.send(JSON.stringify({ type: 'msg', texte, cle }));
+      setTimeout(() => { if (m.wait) { m.wait = false; m.rate = true; renderChat(); } }, 10000);
+      return;
+    }
+    fetch(`${BAT}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ de: p.id, texte, cle }) })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(({ msg }) => recevoir(msg))
+      .catch(() => { m.wait = false; m.rate = true; renderChat(); });
+  }
+  const ajuster = () => { chatTxt.style.height = 'auto'; chatTxt.style.height = Math.min(132, chatTxt.scrollHeight + 2) + 'px'; chatSend.disabled = !chatTxt.value.trim(); };
+  chatTxt.addEventListener('input', () => {
+    ajuster();
+    if (chatTxt.value.trim() && chatWs?.readyState === 1 && Date.now() - derniereTape > 2500) { derniereTape = Date.now(); chatWs.send('{"type":"tape"}'); }
+  });
+  // Entrée envoie, Maj+Entrée va à la ligne (au doigt, le bouton envoie).
+  chatTxt.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && matchMedia('(hover:hover)').matches) { e.preventDefault(); $('#chat-form').requestSubmit(); } });
+  $('#chat-form').onsubmit = e => { e.preventDefault(); const t = chatTxt.value; chatTxt.value = ''; ajuster(); envoyer(t); };
+  chatList.addEventListener('scroll', () => { if (chatList.scrollHeight - chatList.scrollTop - chatList.clientHeight < 40) lireTout(); }, { passive: true });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    lireTout();
+    if (!chatWs && chatMode !== 'sonde' && me()) connecter();
+  });
+
+  function chatRelancer(){
+    const p = me(); chat.hidden = !p; if (!p) return;
+    chat.classList.toggle('is-min', !chatPos.ouvert);
+    renderChat(); placer(); connecter();
+  }
+  chatRelancer();
 
   load();
 })();
