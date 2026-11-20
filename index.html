@@ -476,6 +476,31 @@
   .chat-ic svg{ width:20px; height:20px; fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   .chat-mic{ background:rgba(255,255,255,.8) !important; box-shadow:inset 0 0 0 1px rgba(74,98,116,.18); }
   .chat-mic svg{ stroke:var(--duck) !important; }
+  /* Urgent : le bouton du message, et sa marque dans la bulle */
+  .chat-urg{ width:44px; height:44px; flex-shrink:0; display:grid; place-items:center; border:0; border-radius:50%; background:none; color:var(--muted); transition:background-color .2s, color .2s; }
+  .chat-urg:hover{ background:rgba(74,98,116,.1); }
+  .chat-urg svg{ width:21px; height:21px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .chat-urg[aria-pressed="true"]{ background:var(--danger); color:#fff; box-shadow:0 4px 12px rgba(217,48,37,.3); }
+  .chat.urgent .chat-form textarea{ border-color:rgba(217,48,37,.6) !important; box-shadow:0 0 0 3px rgba(217,48,37,.14) !important; }
+  .chat-tag{ display:inline-block; margin:0 6px 2px 0; padding:1px 7px; border-radius:999px; background:var(--danger); color:#fff; font-size:11px; font-weight:700; vertical-align:1px; }
+  .chat-m.moi .chat-tag{ background:#fff; color:var(--danger); }
+  /* Ne pas déranger */
+  .chat-dnd{ width:44px; height:44px; flex-shrink:0; display:grid; place-items:center; border:0; border-radius:50%; background:none; }
+  .chat-dnd:hover{ background:rgba(74,98,116,.1); }
+  .chat-dnd svg{ width:19px; height:19px; fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .chat-dnd[aria-pressed="true"]{ background:#3d3a8c; }
+  .chat-dnd[aria-pressed="true"] svg{ stroke:#fff; fill:#fff; }
+  .chat-menu{ position:absolute; z-index:2; top:58px; right:10px; min-width:230px; padding:6px; border-radius:16px; background:rgba(255,255,255,.96);
+    box-shadow:inset 0 0 0 1px rgba(74,98,116,.12), 0 18px 40px rgba(42,58,72,.22); animation:chatPop .25s var(--spring); }
+  .chat-menu p{ padding:8px 10px 6px; font-size:12.5px; color:var(--muted); line-height:1.35; }
+  .chat-menu button{ display:block; width:100%; min-height:44px; padding:0 12px; border:0; border-radius:10px; background:none; text-align:left; font-size:15px; font-weight:600; }
+  .chat-menu button:hover{ background:rgba(74,98,116,.09); }
+  .chat-menu button.fin{ color:var(--danger); }
+  .chat-title small.pause{ color:#3d3a8c; font-weight:600; }
+  .chat-pour button.en-pause .avatar{ opacity:.45; }
+  .chat-lune{ position:absolute; bottom:2px; left:2px; width:22px; height:22px; border-radius:50%; display:grid; place-items:center; background:#3d3a8c; box-shadow:0 0 0 2px #fff; }
+  .chat-lune svg{ width:12px; height:12px; fill:#fff; stroke:none; }
+
   /* Note vocale dans une bulle */
   .chat-voc{ display:flex; align-items:center; gap:10px; min-width:210px; padding:2px 0; }
   .chat-play{ width:40px; height:40px; flex-shrink:0; display:grid; place-items:center; border:0; border-radius:50%; background:rgb(var(--a)); transition:transform .2s var(--spring); }
@@ -699,16 +724,21 @@
   <button type="button" class="chat-orb" id="chat-orb" aria-label="Ouvrir la discussion de l'équipe">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/></svg>
     <span class="chat-n" id="chat-n" hidden></span>
+    <span class="chat-lune" id="chat-lune" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></span>
   </button>
   <section class="chat-panel" id="chat-panel" aria-label="Discussion de l'équipe">
     <header class="chat-head" id="chat-head">
       <span class="chat-grip" aria-hidden="true"></span>
       <div class="chat-title"><b id="chat-nom">L'équipe</b><small id="chat-etat" aria-live="polite"></small></div>
       <div class="chat-pres" id="chat-pres"></div>
+      <button type="button" class="chat-dnd" id="chat-dnd" aria-pressed="false" aria-haspopup="true" aria-label="Ne pas déranger" title="Ne pas déranger">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+      </button>
       <button type="button" class="chat-x" id="chat-x" aria-label="Réduire la discussion" title="Réduire (Échap)">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>
       </button>
     </header>
+    <div class="chat-menu" id="chat-menu" role="menu" hidden></div>
     <nav class="chat-pour" id="chat-pour" role="tablist" aria-label="Conversations"></nav>
     <div class="chat-list" id="chat-list" role="log" aria-live="polite"></div>
     <form class="chat-form" id="chat-form" autocomplete="off">
@@ -719,6 +749,9 @@
         <span class="chat-rec-dot" aria-hidden="true"></span><span id="chat-rec-t">0:00</span>
         <span class="chat-rec-onde" id="chat-rec-onde" aria-hidden="true"></span>
       </div>
+      <button type="button" class="chat-urg" id="chat-urg" aria-pressed="false" hidden title="Urgent : il devra confirmer « J'ai lu » avant de continuer" aria-label="Marquer urgent">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0-6 6c0 5-2 6.5-2 6.5h16S18 14 18 9a6 6 0 0 0-6-6z"/><path d="M10.3 19.5a2 2 0 0 0 3.4 0"/><path d="M12 7.5v3.5"/><path d="M12 13.4v.1"/></svg>
+      </button>
       <textarea id="chat-txt" rows="1" maxlength="1000" placeholder="Écrire à l'équipe…" enterkeyhint="send" aria-label="Message"></textarea>
       <button type="button" class="chat-send chat-mic" id="chat-mic" aria-label="Enregistrer une note vocale" title="Note vocale">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
@@ -1392,6 +1425,8 @@
   const ORB = 64, MARGE = 12;
   let msgs = [], chatWs = null, chatEssais = 0, chatSonde = null, chatRetry = null, chatMode = 'ws';
   let presents = [], tapeurs = new Map(), derniereTape = 0, chatAffiches = new Set();
+  let pauses = {}, chatUrgent = false;   // qui est en « Ne pas déranger » (jusqu'à quand) ; le prochain message est-il urgent ?
+  const enPause = id => !!id && Date.parse(pauses[id]) > Date.now();
   // Le dernier message vu, conversation par conversation ({ tous: id, julien: id, … }).
   let chatVu = (() => { const v = store.get(LS_CHAT_VU); return v && typeof v === 'object' ? v : {}; })();
   let chatPour = 'tous';   // à qui part le prochain message : l'équipe, ou une seule personne
@@ -1501,11 +1536,12 @@
       const t = el('time'); t.dateTime = m.at; t.textContent = m.rate ? 'Non envoyé · toucher pour réessayer' : heure(m.at);
       // Mon message privé : l'autre l'a-t-il lu ?
       if (moi && prive && !m.wait && !m.rate) { const v = el('span', m.lu ? 'vu' : ''); v.textContent = m.lu ? ` · ✓✓ Lu ${heure(m.lu)}` : ' · ✓ Pas encore lu'; t.append(v); }
+      if (m.urgent) { const u = el('span', 'chat-tag'); u.textContent = 'Urgent'; b.append(u); }
       if (m.vocal) b.append(lecteurVocal(m), t);
       else b.append(document.createTextNode(m.texte), t);
       if (m.rate) {
         row.style.cursor = 'pointer';
-        row.onclick = () => { msgs = msgs.filter(x => x !== m); m.vocal ? envoyerVocal(m._blob, m.vocal.duree, m.pour) : envoyer(m.texte, m.pour); };
+        row.onclick = () => { msgs = msgs.filter(x => x !== m); m.vocal ? envoyerVocal(m._blob, m.vocal.duree, m.pour, !!m.urgent) : envoyer(m.texte, m.pour, !!m.urgent); };
       }
       row.append(de ? avatar(de) : el('span', 'avatar'), b);
       out.push(row);
@@ -1534,6 +1570,9 @@
     const la = autres.filter(x => presents.includes(x.id)).map(x => x.name);
     chatOrb.classList.toggle('is-live', la.length > 0);
     if (ecrit.length) { chatEtat.textContent = `${ecrit.join(' et ')} ${ecrit.length > 1 ? 'écrivent' : 'écrit'}…`; return; }
+    chatEtat.classList.toggle('pause', enPause(p.id) || (!!dest && enPause(dest.id)));
+    if (enPause(p.id)) { chatEtat.textContent = `Ne pas déranger · jusqu’à ${heure(pauses[p.id])}`; return; }
+    if (dest && enPause(dest.id)) { chatEtat.textContent = `En pause jusqu’à ${heure(pauses[dest.id])}`; return; }
     if (dest) { chatEtat.textContent = chatMode === 'coupe' ? 'Reconnexion…' : presents.includes(dest.id) ? 'En ligne' : 'Pas sur le portail en ce moment'; return; }
     chatEtat.textContent = chatMode === 'coupe' ? 'Reconnexion…'
       : chatMode === 'sonde' ? 'Toute l’équipe'
@@ -1556,8 +1595,20 @@
   }
   function lireTout(){
     const dernier = msgs.filter(m => !m.wait && filDe(m) === chatPour).at(-1);
-    if (dernier && chatPos.ouvert && !document.hidden) { chatVu[chatPour] = dernier.id; store.set(LS_CHAT_VU, chatVu); }
+    if (dernier && chatPos.ouvert && !document.hidden) {
+      chatVu[chatPour] = dernier.id; store.set(LS_CHAT_VU, chatVu);
+      // Un message privé discret est « Lu » dès que sa conversation est sous mes yeux (l'urgent, lui, se confirme).
+      const p = me();
+      msgs.filter(m => filDe(m) === chatPour && m.pour === p?.id && m.lu === null && !m.urgent && !m.wait).forEach(confirmerLu);
+    }
     majNonLus();
+  }
+  function confirmerLu(m){
+    const p = me(); if (!p) return;
+    m.lu = new Date().toISOString();   // aussitôt chez moi ; le serveur confirme et prévient l'auteur
+    garderChat();
+    if (chatWs?.readyState === 1) chatWs.send(JSON.stringify({ type: 'lu', id: m.id }));
+    else fetch(`${BAT}/api/chat/lu/${encodeURIComponent(m.id)}?qui=${encodeURIComponent(p.id)}`, { method: 'POST' }).catch(() => {});
   }
   const garderChat = () => store.set(LS_CHAT, { qui: me()?.id, msgs: msgs.filter(m => !m.wait && !m.rate).slice(-200) });
   // Un « toc » discret, différent du ding-dong des notifications.
@@ -1576,7 +1627,7 @@
     if (k >= 0) { msgs[k] = m; chatAffiches.add(m.id); }
     else if (!msgs.some(x => x.id === m.id)) {
       msgs.push(m);
-      if (p && m.de !== p.id) { clearTimeout(tapeurs.get(m.de)?.t); tapeurs.delete(m.de); if (!chatPos.ouvert || document.hidden || filDe(m) !== chatPour) toc(); }
+      if (p && m.de !== p.id) { clearTimeout(tapeurs.get(m.de)?.t); tapeurs.delete(m.de); if ((!chatPos.ouvert || document.hidden || filDe(m) !== chatPour) && !enPause(p.id) && !m.urgent) toc(); }
     }
     msgs = msgs.slice(-200); garderChat(); renderChat(); lireTout(); aLire();
   }
@@ -1595,7 +1646,8 @@
     ws.onopen = () => { ouvert = true; chatEssais = 0; chatMode = 'ws'; majEtat(); };
     ws.onmessage = ev => {
       let e; try { e = JSON.parse(ev.data); } catch (_) { return; }
-      if (e.type === 'tout') { presents = e.presents || []; fusionner(e.messages || []); }
+      if (e.type === 'tout') { presents = e.presents || []; pauses = e.pauses || {}; fusionner(e.messages || []); }
+      else if (e.type === 'pauses') { pauses = e.pauses || {}; majPause(); }
       else if (e.type === 'msg') recevoir(e.msg);
       else if (e.type === 'presents') { presents = e.presents || []; majEtat(); renderPour(); }
       else if (e.type === 'tape') { clearTimeout(tapeurs.get(e.de)?.t); tapeurs.set(e.de, { prive: !!e.prive, t: setTimeout(() => { tapeurs.delete(e.de); majEtat(); }, 4000) }); majEtat(); }
@@ -1616,7 +1668,8 @@
       const dernier = msgs.filter(m => !m.wait && !m.rate).at(-1);
       const r = await fetch(`${BAT}/api/chat?qui=${encodeURIComponent(me()?.id || '')}${dernier ? '&depuis=' + encodeURIComponent(dernier.id) : ''}`, { cache: 'no-store' });
       if (!r.ok) return;
-      const { messages = [] } = await r.json();
+      const { messages = [], pauses: pz } = await r.json();
+      if (pz && JSON.stringify(pz) !== JSON.stringify(pauses)) { pauses = pz; majPause(); }
       messages.forEach(recevoir);
     } catch (_) {}
   }
@@ -1637,7 +1690,7 @@
     const p = me(); if (!p) return;
     const choix = [{ id: 'tous', name: 'Équipe', tint: '74,98,116' }, ...PROFILES.filter(x => x.id !== p.id)];
     $('#chat-pour').replaceChildren(...choix.map(x => {
-      const b = el('button', (x.id === 'tous' ? 'tous' : '') + (presents.includes(x.id) ? ' en-ligne' : '')); b.type = 'button'; b.setAttribute('role', 'tab');
+      const b = el('button', (x.id === 'tous' ? 'tous' : '') + (presents.includes(x.id) ? ' en-ligne' : '') + (enPause(x.id) ? ' en-pause' : '')); b.type = 'button'; b.setAttribute('role', 'tab');
       b.setAttribute('aria-checked', String(chatPour === x.id)); b.setAttribute('aria-selected', String(chatPour === x.id));
       b.style.setProperty('--a', x.tint);
       const n = nonLus(x.id);
@@ -1654,7 +1707,10 @@
     const dest = profilDe(chatPour);
     chat.classList.toggle('prive', !!dest);
     if (dest) chat.style.setProperty('--a', dest.tint); else chat.style.removeProperty('--a');
-    chatTxt.placeholder = dest ? `Écrire à ${dest.name} seulement…` : 'Écrire à l’équipe…';
+    if (!dest) chatUrgent = false;
+    $('#chat-urg').hidden = !dest; $('#chat-urg').setAttribute('aria-pressed', String(chatUrgent));
+    chat.classList.toggle('urgent', chatUrgent);
+    chatTxt.placeholder = !dest ? 'Écrire à l’équipe…' : chatUrgent ? `Urgent pour ${dest.name}…` : `Écrire à ${dest.name}…`;
   }
 
   // --- Envoyer (texte ou note vocale) ---
@@ -1671,24 +1727,33 @@
       .then(({ msg }) => recevoir(msg))
       .catch(() => { m.wait = false; m.rate = true; renderChat(); });
   }
-  function envoyer(texte, pour = chatPour){
+  // Urgent : une fois parti, le bouton se relâche (le suivant redevient discret).
+  function prendreUrgent(pour){
+    const u = chatUrgent && pour !== 'tous';
+    if (chatUrgent) { chatUrgent = false; renderPour(); }
+    if (u && enPause(pour)) toast(`${profilDe(pour)?.name} est en pause jusqu’à ${heure(pauses[pour])} : ton message urgent s’affichera à la fin.`);
+    return u;
+  }
+  function envoyer(texte, pour = chatPour, urgent = prendreUrgent(pour)){
     const p = me(); texte = texte.trim(); if (!p || !texte) return;
     const cle = nouvelleCle();
     const m = { id: cle, cle, de: p.id, pour, texte, at: new Date().toISOString(), wait: true };
+    if (urgent) m.urgent = true;
     msgs.push(m); renderChat();
-    partir(m, { texte, pour });
+    partir(m, { texte, pour, urgent });
   }
-  async function envoyerVocal(blob, duree, pour = chatPour){
+  async function envoyerVocal(blob, duree, pour = chatPour, urgent = prendreUrgent(pour)){
     const p = me(); if (!p || !blob) return;
     const cle = nouvelleCle(), local = URL.createObjectURL(blob);
     const m = { id: cle, cle, de: p.id, pour, texte: '', vocal: { id: null, duree, url: local }, _blob: blob, at: new Date().toISOString(), wait: true };
+    if (urgent) m.urgent = true;
     msgs.push(m); renderChat();
     try {
       const r = await fetch(`${BAT}/api/chat/vocal`, { method: 'POST', headers: { 'Content-Type': blob.type || 'audio/webm' }, body: blob });
       if (!r.ok) throw 0;
       const { id } = await r.json();
       sons.set(id, local);   // déjà là : on ne la retélécharge pas
-      partir(m, { texte: '', pour, vocal: { id, duree } });
+      partir(m, { texte: '', pour, urgent, vocal: { id, duree } });
     } catch (_) { m.wait = false; m.rate = true; renderChat(); }
   }
 
@@ -1817,7 +1882,7 @@
   lireDlg.addEventListener('cancel', e => e.preventDefault());
   lecteur.addEventListener('play', () => { dernierJoue = enLecture?.m; });
   lecteur.addEventListener('ended', () => { if (lireCourant && dernierJoue === lireCourant.id) { lireOk.disabled = false; lireOk.textContent = 'J’ai écouté'; } });
-  const enAttenteDeMoi = () => { const p = me(); return p ? msgs.filter(m => m.pour === p.id && m.de !== p.id && m.lu === null && !m.wait) : []; };
+  const enAttenteDeMoi = () => { const p = me(); return p && !enPause(p.id) ? msgs.filter(m => m.urgent && m.pour === p.id && m.de !== p.id && m.lu === null && !m.wait) : []; };
   function aLire(){
     const file = enAttenteDeMoi();
     if (lireCourant && !file.some(m => m.id === lireCourant.id)) lireCourant = null;
@@ -1828,7 +1893,7 @@
     lireDlg.style.setProperty('--a', de ? de.tint : '74,98,116');
     const av = de ? avatar(de) : el('span', 'avatar'); av.id = 'lire-av'; $('#lire-av').replaceWith(av);
     $('#lire-de').textContent = `${de ? de.name : '?'} t’écrit`;
-    $('#lire-quand').textContent = `Pour toi seulement · ${heure(m.at)}`;
+    $("#lire-quand").textContent = `Urgent · pour toi seulement · ${heure(m.at)}`;
     const box = $('#lire-txt');
     if (m.vocal) { box.replaceChildren(lecteurVocal(m)); lireOk.disabled = true; lireOk.textContent = 'Écoute la note jusqu’au bout'; }
     else { box.textContent = m.texte; lireOk.disabled = false; lireOk.textContent = 'J’ai lu'; }
@@ -1841,12 +1906,54 @@
   lireOk.onclick = () => {
     const m = lireCourant, p = me(); if (!m || !p) return;
     if (enLecture?.m === m.id) lecteur.pause();
-    m.lu = new Date().toISOString();   // aussitôt chez moi ; le serveur confirme et prévient l'auteur
-    lireCourant = null; garderChat(); choisirPour(m.de);   // on retombe dans sa conversation, prêt à répondre
-    if (chatWs?.readyState === 1) chatWs.send(JSON.stringify({ type: 'lu', id: m.id }));
-    else fetch(`${BAT}/api/chat/lu/${encodeURIComponent(m.id)}?qui=${encodeURIComponent(p.id)}`, { method: 'POST' }).catch(() => {});
+    confirmerLu(m);
+    lireCourant = null; choisirPour(m.de);   // on retombe dans sa conversation, prêt à répondre
     aLire();
   };
+
+  $('#chat-urg').onclick = () => { chatUrgent = !chatUrgent; renderPour(); chatTxt.focus({ preventScroll: true }); };
+
+  // --- Ne pas déranger : ni son ni fenêtre chez moi, les autres voient jusqu'à quand ---
+  const menu = $('#chat-menu'), dnd = $('#chat-dnd');
+  const dansMs = ms => new Date(Date.now() + ms).toISOString();
+  const demainMatin = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(7, 30, 0, 0); return d.toISOString(); };
+  function pauser(jusqua){
+    const p = me(); if (!p) return;
+    if (jusqua) pauses[p.id] = jusqua; else delete pauses[p.id];
+    majPause(); menu.hidden = true;
+    if (chatWs?.readyState === 1) chatWs.send(JSON.stringify({ type: 'pause', jusqua }));
+    else fetch(`${BAT}/api/chat/pause?qui=${encodeURIComponent(p.id)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jusqua }) }).catch(() => {});
+    toast(jusqua ? `Ne pas déranger jusqu’à ${heure(jusqua)}. Les messages urgents attendront.` : 'Tu reçois à nouveau tout.');
+  }
+  dnd.onclick = e => {
+    e.stopPropagation();
+    if (!menu.hidden) { menu.hidden = true; return; }
+    const p = me(), actif = enPause(p?.id);
+    const ligne = (txt, fn, cls) => { const b = el('button', cls || ''); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.textContent = txt; b.onclick = fn; return b; };
+    const info = el('p'); info.textContent = actif ? `En pause jusqu’à ${heure(pauses[p.id])}.` : 'Ni son ni fenêtre. Les messages urgents s’afficheront à la fin de la pause.';
+    menu.replaceChildren(info,
+      ...(actif ? [ligne('Reprendre maintenant', () => pauser(null), 'fin')] : []),
+      ligne('30 minutes', () => pauser(dansMs(30 * 60000))),
+      ligne('1 heure', () => pauser(dansMs(3600000))),
+      ligne('2 heures', () => pauser(dansMs(2 * 3600000))),
+      ligne('Jusqu’à demain matin', () => pauser(demainMatin())));
+    menu.hidden = false;
+    menu.querySelector('button')?.focus();
+  };
+  document.addEventListener('pointerdown', e => { if (!menu.hidden && !menu.contains(e.target) && e.target !== dnd && !dnd.contains(e.target)) menu.hidden = true; });
+  menu.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); menu.hidden = true; dnd.focus(); } });
+  let pauseVue = '';
+  function majPause(){
+    const p = me(); if (!p) return;
+    const moi = enPause(p.id);
+    dnd.setAttribute('aria-pressed', String(moi));
+    dnd.title = moi ? `Ne pas déranger jusqu’à ${heure(pauses[p.id])}` : 'Ne pas déranger';
+    $('#chat-lune').hidden = !moi;
+    pauseVue = JSON.stringify(Object.keys(pauses).filter(enPause));
+    majEtat(); renderPour(); aLire();
+  }
+  // Une pause finit toute seule : on regarde chaque demi-minute (les urgents en attente s'affichent alors).
+  setInterval(() => { if (JSON.stringify(Object.keys(pauses).filter(enPause)) !== pauseVue) majPause(); }, 30000);
 
   function chatRelancer(){
     const p = me(); chat.hidden = !p; if (!p) return;
@@ -1854,7 +1961,7 @@
     // Un autre prénom au poste : on repart de sa conversation à lui (ses messages privés ne sont pas ceux d'avant).
     const c = store.get(LS_CHAT); msgs = c && c.qui === p.id && Array.isArray(c.msgs) ? c.msgs : [];
     chatPour = 'tous'; renderPour(); modeSaisie();
-    lireCourant = null; renderChat(); placer(); connecter(); aLire();
+    lireCourant = null; chatUrgent = false; renderChat(); placer(); connecter(); majPause();
   }
   chatRelancer();
 
