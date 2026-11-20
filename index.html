@@ -63,6 +63,7 @@
   /* Le tableau de bord de chacun. Téléphone : bonjour, planning, puis les apps en grille.
      Grand écran (≥ 900 px) : les apps en barre à gauche, le planning à droite ; la bulle de discussion flotte au-dessus. */
   .dash{ display:flex; flex-direction:column; gap:16px; width:100%; max-width:600px; margin:0 auto; }
+  .side-tirer{ display:none; }
   .side,.main{ display:contents; }
   .me-row{ order:1; }
   .tile--hub{ order:3; }
@@ -74,6 +75,16 @@
     .dash{ display:grid; grid-template-columns:240px minmax(0,1fr); gap:18px; max-width:1800px; height:100%; }
     .side{ display:flex; flex-direction:column; gap:10px; min-height:0; padding-bottom:64px; }
     .editing .side{ padding-bottom:118px; }
+    /* Double-clic sur la barre du planning : les apps se rangent, le planning prend la largeur */
+    .dash{ transition:grid-template-columns .45s cubic-bezier(.2,.9,.25,1), gap .45s; }
+    .side{ transition:opacity .25s, transform .45s cubic-bezier(.2,.9,.25,1); }
+    .side-rangee .dash{ grid-template-columns:0 minmax(0,1fr); gap:0; }
+    .side-rangee .side{ opacity:0; transform:translateX(-24px); pointer-events:none; overflow:hidden; }
+    .side-rangee .dock{ opacity:0; pointer-events:none; transition:opacity .25s; }   /* elle suit les apps */
+    .side-rangee .side-tirer{ display:grid; position:fixed; z-index:6; left:0; top:50%; transform:translateY(-50%); width:28px; height:88px; place-items:center; border:0; border-radius:0 14px 14px 0;
+      background:rgba(255,255,255,.85); box-shadow:inset 0 0 0 1px rgba(74,98,116,.14), 0 6px 18px rgba(42,58,72,.14); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); }
+    .side-tirer:hover{ background:#fff; }
+    .side-tirer svg{ width:18px; height:18px; fill:none; stroke:var(--duck); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
     .main{ display:flex; flex-direction:column; gap:14px; min-width:0; min-height:0; }
     .bento{ display:flex; flex-direction:column; gap:8px; flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; margin:-6px; padding:6px; scrollbar-width:thin; }
     .bento > .tile{ flex:none; --fx:-16px; --fy:0px; }
@@ -378,21 +389,24 @@
 
   /* ---------- La bulle : on se parle en direct, flottante au-dessus de tout ---------- */
   .chat{
-    --chat-glass:rgba(255,255,255,.36); --chat-edge:rgba(255,255,255,.7);
+    --chat-glass:rgba(255,255,255,.66); --chat-edge:rgba(255,255,255,.85);
     position:fixed; z-index:35; left:0; top:0; will-change:transform;
     touch-action:none; user-select:none; -webkit-user-select:none;
   }
   .chat-orb{
     position:relative; width:64px; height:64px; border-radius:50%; border:0; padding:0;
     display:grid; place-items:center;
-    background:linear-gradient(145deg,rgba(255,255,255,.78),rgba(255,255,255,.38));
-    -webkit-backdrop-filter:blur(22px) saturate(180%); backdrop-filter:blur(22px) saturate(180%);
-    box-shadow:inset 0 0 0 1px var(--chat-edge), inset 0 1px 0 rgba(255,255,255,.9), 0 2px 6px rgba(32,41,48,.08), 0 18px 40px rgba(74,98,116,.24);
+    /* Pleine, couleur de la maison : on la trouve d'un coup d'œil, sur le planning comme sur le fond */
+    background:radial-gradient(120% 120% at 30% 20%, #6b8497 0%, var(--duck) 55%, #33475a 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(255,255,255,.12), 0 0 0 4px rgba(255,255,255,.75), 0 10px 24px rgba(42,58,72,.32), 0 2px 6px rgba(32,41,48,.18);
     transition:transform .35s var(--spring), box-shadow .25s; cursor:grab;
   }
   .chat-orb:hover{ transform:scale(1.05); }
   .chat-orb:active{ cursor:grabbing; }
-  .chat-orb svg{ width:26px; height:26px; fill:none; stroke:var(--duck); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .chat-orb svg{ width:26px; height:26px; fill:none; stroke:#fff; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  /* Du neuf : un halo qui respire doucement, sans clignoter */
+  .chat-orb.has-new::before{ content:""; position:absolute; inset:-4px; border-radius:50%; box-shadow:0 0 0 0 rgba(217,48,37,.45); animation:chatHalo 2.4s ease-out infinite; pointer-events:none; }
+  @keyframes chatHalo{ 0%{ box-shadow:0 0 0 0 rgba(217,48,37,.4); } 70%,100%{ box-shadow:0 0 0 14px rgba(217,48,37,0); } }
   .chat-orb .chat-n{
     position:absolute; top:-2px; right:-2px; min-width:22px; height:22px; padding:0 6px; border-radius:11px;
     display:grid; place-items:center; background:var(--danger); color:#fff; font-size:12px; font-weight:700;
@@ -404,7 +418,7 @@
     display:flex; flex-direction:column; overflow:hidden; border-radius:26px;
     background:var(--chat-glass);
     -webkit-backdrop-filter:blur(26px) saturate(200%) brightness(1.04); backdrop-filter:blur(26px) saturate(200%) brightness(1.04);
-    box-shadow:inset 0 0 0 1px var(--chat-edge), inset 0 1px 0 rgba(255,255,255,.95), 0 2px 8px rgba(32,41,48,.06), 0 30px 70px rgba(42,58,72,.26);
+    box-shadow:inset 0 0 0 1px var(--chat-edge), inset 0 1px 0 rgba(255,255,255,.95), 0 0 0 1px rgba(74,98,116,.14), 0 2px 8px rgba(32,41,48,.08), 0 30px 70px rgba(42,58,72,.3);
     transform-origin:var(--ox,0) var(--oy,0); animation:chatOpen .42s var(--spring);
     user-select:text; -webkit-user-select:text;
   }
@@ -449,7 +463,7 @@
   .chat-m.moi .chat-b{ background:rgb(var(--a)); color:#fff; box-shadow:0 4px 14px rgba(var(--a),.28); }
   .chat-m.wait .chat-b{ opacity:.6; }
   .chat-m.rate .chat-b{ box-shadow:0 0 0 2px var(--danger); }
-  /* À qui : l'équipe, ou une seule personne (elle seule verra le message) */
+  /* Les conversations : l'équipe, puis une par personne */
   .chat-pour{ display:flex; gap:2px; padding:2px 8px; border-bottom:1px solid rgba(255,255,255,.55); overflow-x:auto; scrollbar-width:none; }
   .chat-pour button{ position:relative; min-height:44px; padding:0 2px; border:0; background:none; display:grid; place-items:center; flex-shrink:0; }
   .chat-pour .fil-n{ position:absolute; top:2px; right:-2px; min-width:18px; height:18px; padding:0 5px; border-radius:9px; display:grid; place-items:center;
@@ -535,7 +549,6 @@
   .lire > .avatar{ width:72px; height:72px; font-size:30px; background:#fff; box-shadow:inset 0 0 0 1px rgba(var(--a),.3), 0 0 0 6px rgba(var(--a),.12); }
   .lire-de{ font-size:19px; font-weight:700; letter-spacing:-.015em; }
   .lire-sous{ display:inline-flex; align-items:center; gap:5px; margin-top:2px; font-size:13px; font-weight:600; color:rgb(var(--a)); }
-  .lire-sous svg{ width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
   .lire-txt{ align-self:stretch; max-height:40dvh; overflow-y:auto; padding:16px 18px; border-radius:20px; background:#fff; box-shadow:inset 0 0 0 1.5px rgba(var(--a),.35);
     font-size:18px; line-height:1.45; text-align:left; white-space:pre-line; overflow-wrap:anywhere; }
   .lire-txt .chat-voc{ min-width:0; }
@@ -549,7 +562,7 @@
   @media (prefers-reduced-motion:reduce){
     .orb,.tile,dialog[open]{ animation:none; }
     .who-grid button,.card,.card::after,.card-icon,.toast,.hub-frame iframe,.chat-orb{ transition:none; }
-    .chat-panel,.chat-m,.chat-n{ animation:none; }
+    .chat-panel,.chat-m,.chat-n,.chat-orb.has-new::before{ animation:none; }
     ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){ animation:none !important; }
   }
 </style>
@@ -564,6 +577,9 @@
 <main class="wrap">
   <h1 hidden>Portail OLDA</h1>
   <div class="dash" id="dash">
+    <button type="button" class="side-tirer" id="side-tirer" aria-label="Montrer les apps" title="Montrer les apps (ou double-clic sur la barre du planning)">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
     <aside class="side" aria-label="Mes apps">
       <div class="me-row">
         <button type="button" class="me" id="b-who" hidden>
@@ -765,7 +781,7 @@
 <dialog id="lire" aria-labelledby="lire-de" aria-describedby="lire-txt">
   <div class="lire">
     <span class="avatar" id="lire-av" aria-hidden="true"></span>
-    <div><div class="lire-de" id="lire-de"></div><div class="lire-sous"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span id="lire-quand"></span></div></div>
+    <div><div class="lire-de" id="lire-de"></div><div class="lire-sous"><span id="lire-quand"></span></div></div>
     <div class="lire-txt" id="lire-txt"></div>
     <button type="button" class="lire-ok" id="lire-ok">J'ai lu</button>
     <div class="lire-n" id="lire-n"></div>
@@ -938,7 +954,18 @@
   addEventListener('popstate', () => { if (maxed) applyMax(false); });
   $('#hub-grow').onclick = () => setMax(!maxed);
   $('#hub-edit').onclick = () => openSheet(hubIndex());
-  $('#hub-id').onclick = () => { if (editing) openSheet(hubIndex()); else if (!maxed) setMax(true); };
+  // Grand écran : un clic sur le titre ne fait rien de plus (le double-clic range les apps) ; téléphone : le toucher ouvre en plein écran.
+  const large = matchMedia('(min-width:900px)');
+  $('#hub-id').onclick = () => { if (editing) openSheet(hubIndex()); else if (!maxed && !large.matches) setMax(true); };
+  const LS_SIDE = 'olda_side_rangee';
+  function rangerApps(on){ document.body.classList.toggle('side-rangee', on); store.set(LS_SIDE, on ? '1' : '0'); }
+  if (store.raw(LS_SIDE) === '1') document.body.classList.add('side-rangee');
+  $('.hub-head').addEventListener('dblclick', e => {
+    if (!large.matches || maxed || editing || e.target.closest('a,button:not(.hub-id)')) return;
+    window.getSelection()?.removeAllRanges();
+    rangerApps(!document.body.classList.contains('side-rangee'));
+  });
+  $('#side-tirer').onclick = () => rangerApps(false);
   function settle(){ requestAnimationFrame(() => setTimeout(() => grid.classList.add('ready'), 1200)); }
 
   // ---------- État ----------
@@ -1548,7 +1575,7 @@
     });
     if (!liste.length) {
       const v = el('p', 'chat-vide'), dest = profilDe(chatPour);
-      v.textContent = dest ? `Rien encore avec ${dest.name}. Ce que vous vous écrivez ici, vous seuls le voyez ; ${dest.name} devra confirmer l’avoir lu.` : 'Ici, on se parle en direct. Ce qui s’écrit ici, toute l’équipe le voit.';
+      v.textContent = dest ? `Aucun message avec ${dest.name} pour l’instant.` : 'Aucun message pour l’instant.';
       out.push(v);
     }
     const filAvant = chatList.dataset.fil;
@@ -1591,6 +1618,7 @@
     const n = ['tous', ...PROFILES.filter(x => x.id !== p.id).map(x => x.id)].reduce((t, f) => t + nonLus(f), 0);
     renderPour();
     const c = $('#chat-n'); c.hidden = !n || chatPos.ouvert; c.textContent = n > 9 ? '9+' : String(n);
+    chatOrb.classList.toggle('has-new', !!n);
     chatOrb.setAttribute('aria-label', n ? `Discussion de l'équipe : ${n} message${n > 1 ? 's' : ''} non lu${n > 1 ? 's' : ''}` : 'Ouvrir la discussion de l’équipe');
   }
   function lireTout(){
@@ -1694,7 +1722,7 @@
       b.setAttribute('aria-checked', String(chatPour === x.id)); b.setAttribute('aria-selected', String(chatPour === x.id));
       b.style.setProperty('--a', x.tint);
       const n = nonLus(x.id);
-      b.title = (x.id === 'tous' ? 'La conversation de toute l’équipe' : `Ta conversation avec ${x.name} (vous seuls)`) + (n ? ` · ${n} non lu${n > 1 ? 's' : ''}` : '');
+      b.title = (x.id === 'tous' ? 'L’équipe' : x.name) + (n ? ` · ${n} non lu${n > 1 ? 's' : ''}` : '');
       const s = el('span');
       if (x.id === 'tous') s.innerHTML = SVG('<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 4.5a3.2 3.2 0 0 1 0 6.2"/><path d="M18 14.5a6 6 0 0 1 3 5.5"/>');
       else s.append(avatar(x));
@@ -1893,7 +1921,7 @@
     lireDlg.style.setProperty('--a', de ? de.tint : '74,98,116');
     const av = de ? avatar(de) : el('span', 'avatar'); av.id = 'lire-av'; $('#lire-av').replaceWith(av);
     $('#lire-de').textContent = `${de ? de.name : '?'} t’écrit`;
-    $("#lire-quand").textContent = `Urgent · pour toi seulement · ${heure(m.at)}`;
+    $("#lire-quand").textContent = `Urgent · ${heure(m.at)}`;
     const box = $('#lire-txt');
     if (m.vocal) { box.replaceChildren(lecteurVocal(m)); lireOk.disabled = true; lireOk.textContent = 'Écoute la note jusqu’au bout'; }
     else { box.textContent = m.texte; lireOk.disabled = false; lireOk.textContent = 'J’ai lu'; }
