@@ -450,8 +450,11 @@
   .chat-m.wait .chat-b{ opacity:.6; }
   .chat-m.rate .chat-b{ box-shadow:0 0 0 2px var(--danger); }
   /* À qui : l'équipe, ou une seule personne (elle seule verra le message) */
-  .chat-pour{ display:flex; gap:2px; padding:4px 8px 0; border-top:1px solid rgba(255,255,255,.55); overflow-x:auto; scrollbar-width:none; }
-  .chat-pour button{ min-height:44px; padding:0 2px; border:0; background:none; display:grid; place-items:center; flex-shrink:0; }
+  .chat-pour{ display:flex; gap:2px; padding:2px 8px; border-bottom:1px solid rgba(255,255,255,.55); overflow-x:auto; scrollbar-width:none; }
+  .chat-pour button{ position:relative; min-height:44px; padding:0 2px; border:0; background:none; display:grid; place-items:center; flex-shrink:0; }
+  .chat-pour .fil-n{ position:absolute; top:2px; right:-2px; min-width:18px; height:18px; padding:0 5px; border-radius:9px; display:grid; place-items:center;
+    background:var(--danger); color:#fff; font-size:11px; font-weight:700; box-shadow:0 0 0 2px #fff; }
+  .chat-pour .en-ligne .avatar{ box-shadow:0 0 0 2px #1e9e5a; }
   .chat-pour span{ display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 12px 0 4px; border-radius:999px; font-size:13.5px; font-weight:600; color:var(--muted);
     background:rgba(255,255,255,.5); box-shadow:inset 0 0 0 1px rgba(74,98,116,.12); transition:background-color .2s, color .2s, box-shadow .2s; }
   .chat-pour .tous span{ padding-left:12px; }
@@ -459,6 +462,7 @@
   .chat-pour button[aria-checked="true"] span{ color:#fff; background:rgb(var(--a)); box-shadow:0 4px 12px rgba(var(--a),.3); }
   .chat-pour button[aria-checked="true"] svg{ stroke:#fff; }
   .chat-pour svg{ width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+  .chat.prive .chat-pres{ display:none; }
   .chat.prive .chat-form textarea{ border-color:rgba(var(--a),.55); box-shadow:0 0 0 3px rgba(var(--a),.12); }
   .chat-form{ position:relative; display:flex; align-items:flex-end; gap:8px; padding:6px 8px calc(8px + var(--safe-b)) 12px; }
   /* Note vocale en cours d'enregistrement */
@@ -472,11 +476,7 @@
   .chat-ic svg{ width:20px; height:20px; fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   .chat-mic{ background:rgba(255,255,255,.8) !important; box-shadow:inset 0 0 0 1px rgba(74,98,116,.18); }
   .chat-mic svg{ stroke:var(--duck) !important; }
-  /* Message privé, note vocale dans une bulle */
-  .chat-prive{ display:flex; align-items:center; gap:4px; margin-bottom:2px; font-size:11.5px; font-weight:700; opacity:.75; }
-  .chat-prive svg{ width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
-  .chat-m.prive:not(.moi) .chat-b{ box-shadow:inset 0 0 0 1.5px rgba(var(--a),.45), 0 1px 2px rgba(32,41,48,.06); cursor:pointer; }
-  .chat-m.prive.moi .chat-b{ background:linear-gradient(135deg,rgb(var(--a)),rgba(var(--a),.78)); box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.45), 0 4px 14px rgba(var(--a),.28); }
+  /* Note vocale dans une bulle */
   .chat-voc{ display:flex; align-items:center; gap:10px; min-width:210px; padding:2px 0; }
   .chat-play{ width:40px; height:40px; flex-shrink:0; display:grid; place-items:center; border:0; border-radius:50%; background:rgb(var(--a)); transition:transform .2s var(--spring); }
   .chat-play:active{ transform:scale(.9); }
@@ -703,14 +703,14 @@
   <section class="chat-panel" id="chat-panel" aria-label="Discussion de l'équipe">
     <header class="chat-head" id="chat-head">
       <span class="chat-grip" aria-hidden="true"></span>
-      <div class="chat-title"><b>L'équipe</b><small id="chat-etat" aria-live="polite"></small></div>
+      <div class="chat-title"><b id="chat-nom">L'équipe</b><small id="chat-etat" aria-live="polite"></small></div>
       <div class="chat-pres" id="chat-pres"></div>
       <button type="button" class="chat-x" id="chat-x" aria-label="Réduire la discussion" title="Réduire (Échap)">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>
       </button>
     </header>
+    <nav class="chat-pour" id="chat-pour" role="tablist" aria-label="Conversations"></nav>
     <div class="chat-list" id="chat-list" role="log" aria-live="polite"></div>
-    <div class="chat-pour" id="chat-pour" role="radiogroup" aria-label="À qui"></div>
     <form class="chat-form" id="chat-form" autocomplete="off">
       <div class="chat-rec" id="chat-rec" hidden>
         <button type="button" class="chat-ic" id="chat-rec-x" aria-label="Annuler la note vocale" title="Annuler">
@@ -1392,11 +1392,11 @@
   const ORB = 64, MARGE = 12;
   let msgs = [], chatWs = null, chatEssais = 0, chatSonde = null, chatRetry = null, chatMode = 'ws';
   let presents = [], tapeurs = new Map(), derniereTape = 0, chatAffiches = new Set();
-  let chatVu = store.raw(LS_CHAT_VU) || '';
+  // Le dernier message vu, conversation par conversation ({ tous: id, julien: id, … }).
+  let chatVu = (() => { const v = store.get(LS_CHAT_VU); return v && typeof v === 'object' ? v : {}; })();
   let chatPour = 'tous';   // à qui part le prochain message : l'équipe, ou une seule personne
   // Le cache est rangé au nom de la personne au poste : un message privé ne s'affiche jamais chez un autre prénom.
   { const c = store.get(LS_CHAT); if (c && c.qui === store.raw(LS_WHO) && Array.isArray(c.msgs)) msgs = c.msgs; }
-  const CADENAS = '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>';
 
   // --- Place à l'écran : une position (coin haut-gauche), bornée à la fenêtre ---
   const chatPos = Object.assign({ x: null, y: null, ouvert: true }, store.get(LS_CHAT_POS) || {});
@@ -1479,11 +1479,15 @@
     return j === 0 ? 'Aujourd’hui' : j === 1 ? 'Hier' : d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   };
   const profilDe = id => PROFILES.find(x => x.id === id);
+  // Comme WhatsApp : la conversation d'équipe, puis une conversation par personne.
+  // Un message appartient au fil « tous », ou au fil de l'autre personne (qu'il vienne d'elle ou de moi).
+  const filDe = m => { const p = me(); return !m.pour || m.pour === 'tous' ? 'tous' : m.de === p?.id ? m.pour : m.de; };
   function renderChat(){
     const p = me(); if (!p) return;
     const enBas = chatList.scrollHeight - chatList.scrollTop - chatList.clientHeight < 80;
     const out = []; let jourAvant = '';
-    msgs.forEach((m, i) => {
+    const liste = msgs.filter(m => filDe(m) === chatPour);
+    liste.forEach((m, i, msgs) => {
       const j = jour(m.at);
       if (j !== jourAvant) { const d = el('div', 'chat-day'); d.textContent = j; out.push(d); jourAvant = j; }
       const av = msgs[i - 1], ap = msgs[i + 1], proche = (a, b) => a && b && a.de === b.de && Math.abs(Date.parse(b.at) - Date.parse(a.at)) < 5 * 60000 && jour(a.at) === jour(b.at);
@@ -1491,15 +1495,9 @@
       const row = el('div', 'chat-m' + (moi ? ' moi' : '') + (proche(av, m) ? '' : ' debut') + (proche(m, ap) ? '' : ' fin') + (m.wait ? ' wait' : '') + (m.rate ? ' rate' : '') + (chatAffiches.has(m.id) ? '' : ' neuf'));
       row.style.setProperty('--a', de ? de.tint : '91,107,120');
       const prive = m.pour && m.pour !== 'tous';
-      if (prive) row.classList.add('prive');
       const b = el('div', 'chat-b');
-      if (!moi && !proche(av, m)) { const n = el('small'); n.textContent = de ? de.name : '?'; b.append(n); }
-      if (prive) {
-        const l = el('span', 'chat-prive'); l.innerHTML = SVG(CADENAS);
-        l.append(moi ? `À ${profilDe(m.pour)?.name || '?'} seulement` : 'Pour toi seulement'); b.append(l);
-        // Toucher un message reçu en privé : on lui répond en privé.
-        if (!moi) b.onclick = e => { if (!e.target.closest('.chat-play')) choisirPour(m.de); };
-      }
+      // Le prénom au-dessus des bulles, seulement dans la conversation d'équipe.
+      if (!moi && !prive && !proche(av, m)) { const n = el('small'); n.textContent = de ? de.name : '?'; b.append(n); }
       const t = el('time'); t.dateTime = m.at; t.textContent = m.rate ? 'Non envoyé · toucher pour réessayer' : heure(m.at);
       // Mon message privé : l'autre l'a-t-il lu ?
       if (moi && prive && !m.wait && !m.rate) { const v = el('span', m.lu ? 'vu' : ''); v.textContent = m.lu ? ` · ✓✓ Lu ${heure(m.lu)}` : ' · ✓ Pas encore lu'; t.append(v); }
@@ -1512,39 +1510,56 @@
       row.append(de ? avatar(de) : el('span', 'avatar'), b);
       out.push(row);
     });
-    if (!msgs.length) { const v = el('p', 'chat-vide'); v.textContent = 'Ici, on se parle en direct. Le premier message part à toute l’équipe.'; out.push(v); }
+    if (!liste.length) {
+      const v = el('p', 'chat-vide'), dest = profilDe(chatPour);
+      v.textContent = dest ? `Rien encore avec ${dest.name}. Ce que vous vous écrivez ici, vous seuls le voyez ; ${dest.name} devra confirmer l’avoir lu.` : 'Ici, on se parle en direct. Ce qui s’écrit ici, toute l’équipe le voit.';
+      out.push(v);
+    }
+    const filAvant = chatList.dataset.fil;
     chatList.replaceChildren(...out);
+    chatList.dataset.fil = chatPour;
     chatAffiches = new Set(msgs.map(m => m.id));
-    if (enBas || msgs.at(-1)?.de === p.id) chatList.scrollTop = chatList.scrollHeight;
+    if (enBas || filAvant !== chatPour || liste.at(-1)?.de === p.id) chatList.scrollTop = chatList.scrollHeight;
     majEtat(); majNonLus();
   }
   function majEtat(){
     const p = me(); if (!p) return;
     const autres = PROFILES.filter(x => x.id !== p.id);
     $('#chat-pres').replaceChildren(...autres.map(x => { const a = avatar(x); a.classList.toggle('on', presents.includes(x.id)); a.title = x.name + (presents.includes(x.id) ? ' est là' : ''); return a; }));
-    const ecrit = [...tapeurs.keys()].filter(id => id !== p.id).map(id => profilDe(id)?.name).filter(Boolean);
+    // « écrit… » : dans l'équipe, ceux qui écrivent à l'équipe ; en privé, seulement l'autre, s'il m'écrit.
+    const dest = profilDe(chatPour);
+    $('#chat-nom').textContent = dest ? dest.name : 'L’équipe';
+    const ecrit = [...tapeurs.entries()].filter(([id, t]) => id !== p.id && (dest ? id === dest.id && t.prive : !t.prive)).map(([id]) => profilDe(id)?.name).filter(Boolean);
     chatEtat.classList.toggle('tape', !!ecrit.length);
-    if (ecrit.length) { chatEtat.textContent = `${ecrit.join(' et ')} ${ecrit.length > 1 ? 'écrivent' : 'écrit'}…`; return; }
     const la = autres.filter(x => presents.includes(x.id)).map(x => x.name);
+    chatOrb.classList.toggle('is-live', la.length > 0);
+    if (ecrit.length) { chatEtat.textContent = `${ecrit.join(' et ')} ${ecrit.length > 1 ? 'écrivent' : 'écrit'}…`; return; }
+    if (dest) { chatEtat.textContent = chatMode === 'coupe' ? 'Reconnexion…' : presents.includes(dest.id) ? 'En ligne' : 'Pas sur le portail en ce moment'; return; }
     chatEtat.textContent = chatMode === 'coupe' ? 'Reconnexion…'
       : chatMode === 'sonde' ? 'Toute l’équipe'
       : !la.length ? 'Personne d’autre en ce moment'
       : la.length === 1 ? `${la[0]} est là` : `${la.slice(0, -1).join(', ')} et ${la.at(-1)} sont là`;
     chatOrb.classList.toggle('is-live', la.length > 0);
   }
+  // Non lus d'une conversation : les messages des autres après le dernier vu de ce fil.
+  function nonLus(fil){
+    const p = me(), l = msgs.filter(m => filDe(m) === fil && !m.wait);
+    const i = l.findIndex(m => m.id === chatVu[fil]);
+    return l.slice(i + 1).filter(m => m.de !== p.id).length;
+  }
   function majNonLus(){
     const p = me(); if (!p) return;
-    const i = msgs.findIndex(m => m.id === chatVu);
-    const n = msgs.slice(i + 1).filter(m => m.de !== p.id && !m.wait).length;
+    const n = ['tous', ...PROFILES.filter(x => x.id !== p.id).map(x => x.id)].reduce((t, f) => t + nonLus(f), 0);
+    renderPour();
     const c = $('#chat-n'); c.hidden = !n || chatPos.ouvert; c.textContent = n > 9 ? '9+' : String(n);
     chatOrb.setAttribute('aria-label', n ? `Discussion de l'équipe : ${n} message${n > 1 ? 's' : ''} non lu${n > 1 ? 's' : ''}` : 'Ouvrir la discussion de l’équipe');
   }
   function lireTout(){
-    const dernier = msgs.filter(m => !m.wait).at(-1);
-    if (dernier && chatPos.ouvert && !document.hidden) { chatVu = dernier.id; store.set(LS_CHAT_VU, chatVu); }
+    const dernier = msgs.filter(m => !m.wait && filDe(m) === chatPour).at(-1);
+    if (dernier && chatPos.ouvert && !document.hidden) { chatVu[chatPour] = dernier.id; store.set(LS_CHAT_VU, chatVu); }
     majNonLus();
   }
-  const garderChat = () => store.set(LS_CHAT, { qui: me()?.id, msgs: msgs.filter(m => !m.wait && !m.rate).slice(-80) });
+  const garderChat = () => store.set(LS_CHAT, { qui: me()?.id, msgs: msgs.filter(m => !m.wait && !m.rate).slice(-200) });
   // Un « toc » discret, différent du ding-dong des notifications.
   function toc(){
     if (!audio || audio.state !== 'running') return;
@@ -1561,7 +1576,7 @@
     if (k >= 0) { msgs[k] = m; chatAffiches.add(m.id); }
     else if (!msgs.some(x => x.id === m.id)) {
       msgs.push(m);
-      if (p && m.de !== p.id) { tapeurs.delete(m.de); if (!chatPos.ouvert || document.hidden) toc(); }
+      if (p && m.de !== p.id) { clearTimeout(tapeurs.get(m.de)?.t); tapeurs.delete(m.de); if (!chatPos.ouvert || document.hidden || filDe(m) !== chatPour) toc(); }
     }
     msgs = msgs.slice(-200); garderChat(); renderChat(); lireTout(); aLire();
   }
@@ -1582,8 +1597,8 @@
       let e; try { e = JSON.parse(ev.data); } catch (_) { return; }
       if (e.type === 'tout') { presents = e.presents || []; fusionner(e.messages || []); }
       else if (e.type === 'msg') recevoir(e.msg);
-      else if (e.type === 'presents') { presents = e.presents || []; majEtat(); }
-      else if (e.type === 'tape') { clearTimeout(tapeurs.get(e.de)); tapeurs.set(e.de, setTimeout(() => { tapeurs.delete(e.de); majEtat(); }, 4000)); majEtat(); }
+      else if (e.type === 'presents') { presents = e.presents || []; majEtat(); renderPour(); }
+      else if (e.type === 'tape') { clearTimeout(tapeurs.get(e.de)?.t); tapeurs.set(e.de, { prive: !!e.prive, t: setTimeout(() => { tapeurs.delete(e.de); majEtat(); }, 4000) }); majEtat(); }
       else if (e.type === 'lu') { const m = msgs.find(x => x.id === e.id); if (m) { m.lu = e.lu; garderChat(); renderChat(); } }
       else if (e.type === 'refus') { const m = msgs.find(x => x.cle === e.cle); if (m) { m.wait = false; m.rate = true; renderChat(); } }
     };
@@ -1615,22 +1630,24 @@
   function choisirPour(id){
     const p = me();
     chatPour = id && id !== 'tous' && id !== p?.id && profilDe(id) ? id : 'tous';
-    renderPour();
+    renderChat(); lireTout();
     if (chatPos.ouvert && matchMedia('(hover:hover)').matches && !enregistreur) chatTxt.focus({ preventScroll: true });
   }
   function renderPour(){
     const p = me(); if (!p) return;
     const choix = [{ id: 'tous', name: 'Équipe', tint: '74,98,116' }, ...PROFILES.filter(x => x.id !== p.id)];
     $('#chat-pour').replaceChildren(...choix.map(x => {
-      const b = el('button', x.id === 'tous' ? 'tous' : ''); b.type = 'button'; b.setAttribute('role', 'radio');
-      b.setAttribute('aria-checked', String(chatPour === x.id));
+      const b = el('button', (x.id === 'tous' ? 'tous' : '') + (presents.includes(x.id) ? ' en-ligne' : '')); b.type = 'button'; b.setAttribute('role', 'tab');
+      b.setAttribute('aria-checked', String(chatPour === x.id)); b.setAttribute('aria-selected', String(chatPour === x.id));
       b.style.setProperty('--a', x.tint);
-      b.title = x.id === 'tous' ? 'Toute l’équipe voit le message' : `Seul ${x.name} voit le message`;
+      const n = nonLus(x.id);
+      b.title = (x.id === 'tous' ? 'La conversation de toute l’équipe' : `Ta conversation avec ${x.name} (vous seuls)`) + (n ? ` · ${n} non lu${n > 1 ? 's' : ''}` : '');
       const s = el('span');
       if (x.id === 'tous') s.innerHTML = SVG('<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 4.5a3.2 3.2 0 0 1 0 6.2"/><path d="M18 14.5a6 6 0 0 1 3 5.5"/>');
       else s.append(avatar(x));
       s.append(x.name);
       b.append(s);
+      if (n && chatPour !== x.id) { const c = el('span', 'fil-n'); c.textContent = n > 9 ? '9+' : String(n); b.append(c); }
       b.onclick = () => choisirPour(x.id);
       return b;
     }));
@@ -1825,7 +1842,7 @@
     const m = lireCourant, p = me(); if (!m || !p) return;
     if (enLecture?.m === m.id) lecteur.pause();
     m.lu = new Date().toISOString();   // aussitôt chez moi ; le serveur confirme et prévient l'auteur
-    lireCourant = null; garderChat(); renderChat();
+    lireCourant = null; garderChat(); choisirPour(m.de);   // on retombe dans sa conversation, prêt à répondre
     if (chatWs?.readyState === 1) chatWs.send(JSON.stringify({ type: 'lu', id: m.id }));
     else fetch(`${BAT}/api/chat/lu/${encodeURIComponent(m.id)}?qui=${encodeURIComponent(p.id)}`, { method: 'POST' }).catch(() => {});
     aLire();
