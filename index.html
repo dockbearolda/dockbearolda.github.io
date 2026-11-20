@@ -21,6 +21,11 @@
     --spring:cubic-bezier(.34,1.56,.64,1);
     --radius:22px;
     --safe-b:env(safe-area-inset-bottom,0px);
+    /* post-it, en quatre teintes douces */
+    --postit-jaune:#fff5c4; --postit-jaune-bord:rgba(214,170,30,.28);
+    --postit-rose:#ffe3ee;  --postit-rose-bord:rgba(214,80,130,.22);
+    --postit-bleu:#dfeeff;  --postit-bleu-bord:rgba(40,110,210,.2);
+    --postit-vert:#dff5e5;  --postit-vert-bord:rgba(30,150,80,.2);
   }
   *{ margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
   html,body{ height:100%; }
@@ -34,7 +39,7 @@
   [hidden]{ display:none !important; }
   button,input{ font:inherit; color:inherit; }
   button{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
-  .wrap{ position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:max(32px,calc(env(safe-area-inset-top) + 16px)) max(16px,env(safe-area-inset-right)) calc(96px + var(--safe-b)) max(16px,env(safe-area-inset-left)); }
+  .wrap{ position:relative; z-index:1; min-height:100vh; padding:max(20px,calc(env(safe-area-inset-top) + 12px)) max(16px,env(safe-area-inset-right)) calc(96px + var(--safe-b)) max(16px,env(safe-area-inset-left)); }
 
   /* Fond animé façon Google : quatre halos aux couleurs Google, très pâles,
      qui dérivent lentement derrière le verre des cartes. Dégradés radiaux
@@ -60,41 +65,103 @@
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
-  /* Sans planning : simple grille. Avec planning (.has-hub) : le planning au centre, les apps autour. */
-  .bento{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; width:100%; max-width:600px; }
-  @media (max-width:560px){
-    .bento:not(.has-hub){ grid-template-columns:repeat(2,1fr); }
-    /* nombre impair de tuiles : la dernière prend toute la ligne */
-    .bento:not(.has-hub) > .tile:last-child:nth-child(odd){ grid-column:1 / -1; }
+  /* Le tableau de bord de chacun. Téléphone : bonjour, messages, planning, puis les apps en grille.
+     Grand écran (≥ 900 px) : les apps en barre à gauche ; à droite les messages en haut, le planning dessous. */
+  .dash{ display:flex; flex-direction:column; gap:16px; width:100%; max-width:600px; margin:0 auto; }
+  .side,.main{ display:contents; }
+  .me-row{ order:1; }
+  .board{ order:2; }
+  .tile--hub{ order:3; }
+  .bento{ order:4; display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  .bento > .tile:last-child:nth-child(odd){ grid-column:1 / -1; }
+  @media (min-width:700px) and (max-width:899px){ .dash{ max-width:820px; } .bento{ grid-template-columns:repeat(3,1fr); } .bento > .tile:last-child:nth-child(odd){ grid-column:auto; } }
+  @media (min-width:900px){
+    .wrap{ height:100dvh; min-height:560px; padding:max(16px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(16px,var(--safe-b)) max(16px,env(safe-area-inset-left)); }
+    .dash{ display:grid; grid-template-columns:240px minmax(0,1fr); gap:18px; max-width:1800px; height:100%; }
+    .side{ display:flex; flex-direction:column; gap:10px; min-height:0; padding-bottom:64px; }
+    .editing .side{ padding-bottom:118px; }
+    .main{ display:flex; flex-direction:column; gap:14px; min-width:0; min-height:0; }
+    .bento{ display:flex; flex-direction:column; gap:8px; flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; margin:-6px; padding:6px; scrollbar-width:thin; }
+    .bento > .tile{ flex:none; --fx:-16px; --fy:0px; }
+    .bento .card{ flex-direction:row; align-items:center; justify-content:flex-start; gap:12px; padding:9px 12px; border-radius:16px; min-height:60px; }
+    .bento .card-icon{ width:40px; height:40px; border-radius:12px; }
+    .bento .card-icon svg{ width:21px; height:21px; }
+    .bento .card--add{ min-height:60px; }
+    .tile--hub{ flex:1; min-height:0; }
+    /* la barre d'action se range au pied de la barre des apps */
+    .dock{ left:max(16px,env(safe-area-inset-left)); right:auto; bottom:max(16px,var(--safe-b)); width:240px; flex-wrap:wrap-reverse; }
+    #toast,#update{ left:calc(50% + 129px); }
   }
-  @media (max-width:420px){ .bento:not(.has-hub){ grid-template-columns:1fr; gap:12px; } }
-  /* tuile seule sur la dernière ligne à trois colonnes : elle la prend toute */
-  @media (min-width:561px){ .bento:not(.has-hub) > .tile:last-child:nth-child(3n+1){ grid-column:1 / -1; } }
 
-  /* Téléphone : le planning en tête, les apps en deux colonnes dessous */
-  .bento.has-hub{ grid-template-columns:repeat(2,1fr); gap:12px; max-width:560px; }
-  .has-hub > .tile--hub{ grid-column:1 / -1; }
-  @media (max-width:699px){ .has-hub > .tile:last-child:nth-child(even){ grid-column:1 / -1; } } /* le planning est le 1er enfant */
-  /* Tablette, petit écran : planning en direct sur toute la largeur, les apps dessous */
-  @media (min-width:700px){
-    .bento.has-hub{ grid-template-columns:repeat(4,1fr); gap:14px; max-width:1040px; }
+  /* ---------- Bonjour ---------- */
+  .me{ width:100%; min-height:56px; display:flex; align-items:center; gap:12px; padding:6px 12px 6px 6px; border:0; border-radius:18px; background:none; text-align:left; color:var(--ink); }
+  .me:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:2px; }
+  @media (hover:hover){ .me:hover{ background:rgba(255,255,255,.55); } }
+  .me .avatar{ width:44px; height:44px; font-size:18px; }
+  .me-txt{ flex:1; display:grid; min-width:0; }
+  .me-txt small{ font-size:13px; color:var(--muted); }
+  .me-txt b{ font-size:19px; font-weight:700; letter-spacing:-.015em; }
+  .me > svg{ width:18px; height:18px; stroke:var(--muted); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+  /* ---------- Messages : les post-it de l'équipe ---------- */
+  .board{ min-width:0; }
+  .board-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .board-head h2{ flex:1; font-size:17px; font-weight:700; letter-spacing:-.01em; }
+  .board-head .btn{ min-height:44px; padding:0 16px; }
+  .notes{ list-style:none; display:flex; gap:12px; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; margin:-8px; padding:8px; scrollbar-width:thin; -webkit-overflow-scrolling:touch; }
+  .note{
+    --n-bg:var(--postit-jaune); --n-edge:var(--postit-jaune-bord);
+    position:relative; flex:0 0 min(78vw,260px); scroll-snap-align:start; display:flex; flex-direction:column; gap:10px;
+    min-height:128px; padding:14px 6px 6px 16px; border-radius:18px;
+    background:var(--n-bg); box-shadow:inset 0 0 0 1px var(--n-edge), 0 1px 2px rgba(32,41,48,.05), 0 8px 20px rgba(74,98,116,.10);
+    animation:appear .45s var(--spring) backwards; transition:opacity .2s;
   }
-  /* Grand écran : le planning au cœur, les apps en orbite à gauche et à droite */
-  @media (min-width:1100px){
-    .wrap.hubbed{ justify-content:flex-start; padding-top:max(20px,env(safe-area-inset-top)); padding-bottom:calc(76px + var(--safe-b)); }
-    .bento.has-hub{
-      max-width:1720px; height:calc(100dvh - 96px - var(--safe-b)); min-height:600px;
-      grid-template-columns:232px minmax(0,1fr) 232px; grid-template-rows:repeat(var(--rows,6),minmax(0,1fr)); gap:14px 18px;
-    }
-    .has-hub > .tile--hub{ grid-column:2; grid-row:1 / span var(--rows,6); }
-    .has-hub > .tile:not(.tile--hub) .card{ flex-direction:row; align-items:center; justify-content:flex-start; gap:12px; padding:12px 14px; border-radius:18px; }
-    .has-hub > .tile:not(.tile--hub) .card-icon{ width:42px; height:42px; border-radius:13px; }
-    .has-hub > .tile:not(.tile--hub) .card-icon svg{ width:22px; height:22px; }
-    /* à l'ouverture, les apps sortent du planning vers leur côté */
-    .bento.has-hub{ grid-auto-flow:row dense; }
-    .has-hub > .tile.l{ grid-column:1; --fx:30px; --fy:0px; }
-    .has-hub > .tile.r{ grid-column:3; --fx:-30px; --fy:0px; }
-  }
+  .note--rose{ --n-bg:var(--postit-rose); --n-edge:var(--postit-rose-bord); }
+  .note--bleu{ --n-bg:var(--postit-bleu); --n-edge:var(--postit-bleu-bord); }
+  .note--vert{ --n-bg:var(--postit-vert); --n-edge:var(--postit-vert-bord); }
+  .note.is-wait{ opacity:.6; }
+  .note.neuf{ box-shadow:inset 0 0 0 2px var(--duck), 0 8px 20px rgba(74,98,116,.16); }
+  .note-txt{ flex:1; padding-right:10px; font-size:15px; line-height:1.42; white-space:pre-line; overflow-wrap:anywhere; cursor:pointer;
+    display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+  .note.open .note-txt{ -webkit-line-clamp:unset; display:block; }
+  .note-foot{ display:flex; align-items:center; gap:8px; min-width:0; }
+  .note-foot .avatar{ width:24px; height:24px; font-size:11px; background:rgba(255,255,255,.7); }
+  .note-who{ flex:1; min-width:0; font-size:12.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .note-who b{ color:var(--ink); font-weight:600; }
+  .note-who .toi{ display:inline-block; margin-right:4px; padding:1px 7px; border-radius:999px; background:var(--duck); color:#fff; font-size:11.5px; font-weight:700; }
+  .note .icon-btn{ width:40px; height:40px; color:var(--muted); }
+  .note .icon-btn:hover{ background:rgba(255,255,255,.6); }
+  .note .icon-btn svg{ width:18px; height:18px; }
+  .note .pin[aria-pressed="true"]{ color:var(--ink); }
+  .note .pin[aria-pressed="true"] svg{ fill:currentColor; }
+  .note-pinned{ position:absolute; top:-7px; left:14px; width:22px; height:22px; border-radius:50%; display:grid; place-items:center; background:var(--ink); color:#fff; box-shadow:0 2px 6px rgba(32,41,48,.25); }
+  .note-pinned svg{ width:12px; height:12px; fill:currentColor; stroke:currentColor; stroke-width:1.5; }
+  .note-vide{ flex:1; min-height:96px; display:grid; place-items:center; padding:16px; border-radius:18px; border:1.5px dashed rgba(74,98,116,.28); color:var(--muted); font-size:14px; text-align:center; }
+  @media (min-width:900px){ .note{ flex-basis:250px; min-height:120px; } .note-txt{ -webkit-line-clamp:3; } }
+
+  /* ---------- Écrire un mot ---------- */
+  #mot{ width:min(540px, calc(100% - 32px)); }
+  .postit{ width:100%; min-height:140px; resize:vertical; padding:14px 16px; border:0; border-radius:16px; font:inherit; font-size:16px; line-height:1.45; color:var(--ink);
+    background:var(--postit-jaune); box-shadow:inset 0 0 0 1px var(--postit-jaune-bord); }
+  .postit:focus{ outline:none; box-shadow:inset 0 0 0 1px var(--postit-jaune-bord), 0 0 0 3px rgba(107,129,145,.25); }
+  .postit[data-c="rose"]{ background:var(--postit-rose); }
+  .postit[data-c="bleu"]{ background:var(--postit-bleu); }
+  .postit[data-c="vert"]{ background:var(--postit-vert); }
+  .chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .chips button{ min-height:44px; padding:0 14px 0 6px; display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:999px; background:#fff; font-size:15px; font-weight:600; }
+  .chips button.tous{ padding-left:14px; }
+  .chips .avatar{ width:30px; height:30px; font-size:13px; }
+  .chips button[aria-pressed="true"]{ border-color:var(--duck); box-shadow:inset 0 0 0 1px var(--duck); background:#eef3f7; }
+  .swatches{ display:flex; gap:10px; }
+  .swatches button{ width:44px; height:44px; border-radius:50%; border:0; background:var(--sw); box-shadow:inset 0 0 0 1px rgba(32,41,48,.12); }
+  .swatches button[aria-pressed="true"]{ box-shadow:inset 0 0 0 1px rgba(32,41,48,.12), 0 0 0 3px #fff, 0 0 0 5px var(--duck); }
+  .switch{ display:flex; align-items:center; gap:12px; min-height:44px; font-size:15px; font-weight:600; cursor:pointer; }
+  .switch input{ appearance:none; -webkit-appearance:none; position:relative; width:46px; height:28px; flex-shrink:0; border-radius:999px; background:#d6dde3; transition:background-color .2s; cursor:pointer; }
+  .switch input::after{ content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(32,41,48,.25); transition:transform .25s var(--spring); }
+  .switch input:checked{ background:var(--duck); }
+  .switch input:checked::after{ transform:translateX(18px); }
+  .switch input:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:2px; }
+  .switch small{ display:block; font-size:13px; font-weight:400; color:var(--muted); }
 
   /* La tuile porte l'apparition, la carte porte le survol : les deux transform ne se battent pas. */
   .tile{ position:relative; display:flex; min-width:0; animation:appear .6s var(--spring) backwards; }
@@ -135,7 +202,7 @@
   .hub-wait{ position:absolute; inset:0; display:grid; place-content:center; justify-items:center; gap:14px; font-size:14px; color:var(--muted); }
   .hub-wait::before{ content:""; width:26px; height:26px; border-radius:50%; border:2.5px solid rgba(10,166,201,.18); border-top-color:#0aa6c9; animation:turn .8s linear infinite; }
   @keyframes turn{ to{ transform:rotate(360deg); } }
-  @media (min-width:700px) and (max-width:1099px){ .hub-frame{ flex:none; height:clamp(440px,62dvh,780px); } }
+  @media (min-width:700px) and (max-width:899px){ .hub-frame{ flex:none; height:clamp(440px,62dvh,780px); } }
   /* Téléphone : la tuile du planning est une grande carte, le planning s'ouvre en plein écran au toucher */
   @media (max-width:699px){
     .tile--hub:not(.is-max) .hub-frame,
@@ -159,7 +226,7 @@
     .tile--hub.is-max .hub{ border-radius:24px; box-shadow:0 30px 90px rgba(32,41,48,.28); }
   }
   .hub-max{ overflow:hidden; }
-  .hub-max .bento > .tile:not(.tile--hub), .hub-max .dock{ opacity:0; pointer-events:none; }
+  .hub-max .side, .hub-max .board, .hub-max .dock{ opacity:0; pointer-events:none; }
   ::view-transition-group(hub){ animation-duration:.5s; animation-timing-function:cubic-bezier(.2,.9,.25,1); }
   ::view-transition-old(hub),::view-transition-new(hub){ height:100%; object-fit:cover; }
 
@@ -315,7 +382,6 @@
   .who-grid button:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:2px; }
   @media (hover:hover){ .who-grid button:hover{ border-color:var(--duck-focus); box-shadow:var(--shadow); } }
   .who-grid button[aria-pressed="true"]{ border-color:var(--duck); box-shadow:0 0 0 2px var(--duck) inset; }
-  .who-chip{ padding:0 16px 0 7px; }
 
   /* ---------- Notifications (BAT Studio) : la cloche, la boîte ---------- */
   .bell{ position:relative; width:44px; padding:0; }
@@ -376,7 +442,7 @@
   .toast span{ padding:8px 14px 8px 0; }
 
   @media (prefers-reduced-motion:reduce){
-    .orb,.tile,dialog[open]{ animation:none; }
+    .orb,.tile,.note,dialog[open]{ animation:none; }
     .who-grid button,.card,.card::after,.card-icon,.toast,.hub-frame iframe{ transition:none; }
     ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){ animation:none !important; }
   }
@@ -391,30 +457,51 @@
 </div>
 <main class="wrap">
   <h1 hidden>Portail OLDA</h1>
-  <div class="bento" id="bento">
-    <div class="tile tile--hub" id="hub" hidden>
-      <section class="hub" aria-labelledby="hub-name">
-        <header class="hub-head">
-          <button type="button" class="hub-id" id="hub-id">
-            <span id="hub-icon"></span>
-            <span class="hub-txt"><b id="hub-name">Planning</b><small id="hub-date"></small></span>
+  <div class="dash" id="dash">
+    <aside class="side" aria-label="Mes apps">
+      <div class="me-row">
+        <button type="button" class="me" id="b-who" hidden>
+          <span class="avatar" id="b-who-av" aria-hidden="true"></span>
+          <span class="me-txt"><small id="b-who-hi">Bonjour</small><b id="b-who-name"></b></span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>
+        </button>
+      </div>
+      <nav class="bento" id="bento" aria-label="Apps"></nav>
+    </aside>
+    <div class="main">
+      <section class="board" id="board" aria-labelledby="board-title" hidden>
+        <header class="board-head">
+          <h2 id="board-title">Messages</h2>
+          <button type="button" class="btn btn--primary" id="b-mot">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Écrire un mot
           </button>
-          <div class="hub-acts">
-            <a class="icon-btn hub-tab" id="hub-tab" target="_blank" rel="noopener" aria-label="Ouvrir dans un nouvel onglet" title="Ouvrir dans un nouvel onglet">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
-            </a>
-            <button type="button" class="btn btn--primary hub-grow" id="hub-grow" aria-label="Agrandir le planning">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
-              <span>Agrandir</span>
-            </button>
-            <button type="button" class="btn btn--primary" id="hub-edit" hidden>Modifier</button>
-          </div>
         </header>
-        <div class="hub-frame">
-          <div class="hub-wait">Chargement du planning…</div>
-          <iframe id="hub-frame" title="Planning" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
-        </div>
+        <ul class="notes" id="notes" aria-live="polite"></ul>
       </section>
+      <div class="tile tile--hub" id="hub" hidden>
+        <section class="hub" aria-labelledby="hub-name">
+          <header class="hub-head">
+            <button type="button" class="hub-id" id="hub-id">
+              <span id="hub-icon"></span>
+              <span class="hub-txt"><b id="hub-name">Planning</b><small id="hub-date"></small></span>
+            </button>
+            <div class="hub-acts">
+              <a class="icon-btn hub-tab" id="hub-tab" target="_blank" rel="noopener" aria-label="Ouvrir dans un nouvel onglet" title="Ouvrir dans un nouvel onglet">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+              </a>
+              <button type="button" class="btn btn--primary hub-grow" id="hub-grow" aria-label="Agrandir le planning">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                <span>Agrandir</span>
+              </button>
+              <button type="button" class="btn btn--primary" id="hub-edit" hidden>Modifier</button>
+            </div>
+          </header>
+          <div class="hub-frame">
+            <div class="hub-wait">Chargement du planning…</div>
+            <iframe id="hub-frame" title="Planning" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+          </div>
+        </section>
+      </div>
     </div>
   </div>
 </main>
@@ -435,9 +522,6 @@
   <button type="button" class="btn btn--glass bell" id="b-bell" hidden aria-label="Notifications" title="Notifications">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     <span class="n" id="b-bell-n" hidden></span>
-  </button>
-  <button type="button" class="btn btn--glass who-chip" id="b-who" hidden>
-    <span class="avatar avatar--sm" id="b-who-av" aria-hidden="true"></span><span class="who-name" id="b-who-name"></span>
   </button>
   <button type="button" class="btn btn--glass" id="b-find" aria-label="Ouvrir une app (⌘K)" title="Ouvrir une app">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><kbd id="b-find-key">⌘K</kbd>
@@ -526,6 +610,26 @@
       <span class="spacer"></span>
       <button type="button" class="btn btn--ghost" data-close>Plus tard</button>
       <button type="submit" class="btn btn--primary">Publier</button>
+    </footer>
+  </form>
+</dialog>
+
+<dialog id="mot" aria-labelledby="mot-title">
+  <form class="sheet" id="mot-form" novalidate>
+    <header class="sheet-head">
+      <h2 id="mot-title">Laisser un mot</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </header>
+    <div class="sheet-body">
+      <label class="field"><span>Le mot</span><textarea class="postit" id="m-texte" rows="4" maxlength="600" placeholder="Ex. Rappeler ACME pour le devis" enterkeyhint="enter"></textarea></label>
+      <fieldset class="field"><legend>Pour</legend><div class="chips" id="m-pour"></div></fieldset>
+      <fieldset class="field"><legend>Couleur</legend><div class="swatches" id="m-couleur"></div></fieldset>
+      <label class="switch"><input type="checkbox" id="m-pin" /><span>Épingler en tête<small>Il reste tant qu'on ne le décroche pas.</small></span></label>
+    </div>
+    <footer class="sheet-foot">
+      <span class="spacer"></span>
+      <button type="button" class="btn btn--ghost" data-close>Annuler</button>
+      <button type="submit" class="btn btn--primary">Laisser le mot</button>
     </footer>
   </form>
 </dialog>
@@ -626,23 +730,15 @@
     const l = state.shortcuts, i = l.findIndex(s => s.hub);
     return i >= 0 ? i : l.findIndex(s => /planning/i.test(s.name || ''));
   }
+  // Les apps, dans l'ordre des raccourcis, dans la barre de gauche ; le planning à droite.
   function render(){
     const h = hubIndex();
-    grid.classList.toggle('has-hub', h >= 0); grid.parentElement.classList.toggle('hubbed', h >= 0);
     hubTile.hidden = h < 0;
     if (h >= 0) syncHub(state.shortcuts[h]); else if (maxed) setMax(false);
     const frag = document.createDocumentFragment();
-    // Chaque app a son côté (« side »: "left") ; sans côté elle va à droite.
-    // Ancien format sans aucun côté : on alterne gauche / droite.
-    const apps = state.shortcuts.map((s, i) => ({ s, i })).filter(x => x.i !== h);
-    const sided = apps.some(x => x.s.side);
-    apps.forEach((x, k) => { x.left = sided ? x.s.side === 'left' : k % 2 === 0; });
-    const left = apps.filter(x => x.left), right = apps.filter(x => !x.left);
-    let nl = 0, nr = 0;
-    [...left, ...right].forEach(({ s, i, left: isLeft }) => {
-      const k = isLeft ? nl++ : nr++;
-      const tile = el('div', 'tile ' + (isLeft ? 'l' : 'r')); tile.dataset.i = i;
-      tile.style.animationDelay = (.12 + k * .06).toFixed(2) + 's';
+    state.shortcuts.map((s, i) => ({ s, i })).filter(x => x.i !== h).forEach(({ s, i }, k) => {
+      const tile = el('div', 'tile'); tile.dataset.i = i;
+      tile.style.animationDelay = (.1 + k * .04).toFixed(2) + 's';
       const card = el(editing ? 'button' : 'a', 'card');
       if (editing) { card.type = 'button'; card.setAttribute('aria-label', 'Modifier ' + s.name); card.onclick = () => openSheet(i); }
       else { card.href = s.url; card.target = '_blank'; card.rel = 'noopener'; }
@@ -659,16 +755,13 @@
       frag.append(tile);
     });
     if (editing) {
-      const tile = el('div', 'tile tile--add r'); nr++;
+      const tile = el('div', 'tile tile--add');
       const add = el('button', 'card card--add'); add.type = 'button';
       add.innerHTML = '<div class="card-icon">' + SVG('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>') + '</div><div class="card-name">Ajouter</div>';
       add.onclick = () => openSheet(-1);
       tile.append(add); frag.append(tile);
     }
-    grid.style.setProperty('--rows', Math.max(1, nl, nr));
-    // Le planning reste en place (sortir l'iframe du DOM la rechargerait) : on ne remplace que les apps.
-    grid.querySelectorAll(':scope > .tile:not(.tile--hub)').forEach(t => t.remove());
-    grid.append(frag);
+    grid.replaceChildren(frag);
     updateDock();
   }
 
@@ -822,12 +915,7 @@
     justDragged = true; setTimeout(() => justDragged = false, 50);
     d.tile.classList.remove('dragging'); d.tile.style.transform = '';
     d.over?.classList.remove('drop');
-    // déposée sur une app de l'autre colonne : elle prend ce côté
-    if (e.type === 'pointerup' && d.over) {
-      const side = state.shortcuts[+d.over.dataset.i].side, s = state.shortcuts[d.from];
-      if (side) s.side = side; else delete s.side;
-      move(d.from, +d.over.dataset.i);
-    }
+    if (e.type === 'pointerup' && d.over) move(d.from, +d.over.dataset.i);
   };
   window.addEventListener('pointerup', endDrag);
   window.addEventListener('pointercancel', endDrag);
@@ -894,7 +982,6 @@
     const s = { name, url, icon: draft.icon || null, color: draft.color };
     if (draft.img) s.img = draft.img;
     if (draft.hub) s.hub = true;
-    if (draft.side) s.side = draft.side;
     s.since = index >= 0 && url === draft.url && draft.since ? draft.since : Date.now();
     if (index >= 0) state.shortcuts[index] = s; else state.shortcuts.push(s);
     sheet.close(); commit();
@@ -1051,7 +1138,8 @@
   function syncWho(){
     const p = me(), b = $('#b-who');
     b.hidden = !p; if (!p) return;
-    const av = avatar(p, 'avatar--sm'); av.id = 'b-who-av'; $('#b-who-av').replaceWith(av);
+    const av = avatar(p); av.id = 'b-who-av'; $('#b-who-av').replaceWith(av);
+    $('#b-who-hi').textContent = new Date().getHours() >= 18 ? 'Bonsoir' : 'Bonjour';
     $('#b-who-name').textContent = p.name;
     b.setAttribute('aria-label', `Au poste : ${p.name}. Changer de profil`);
   }
@@ -1062,7 +1150,7 @@
       const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', x === p);
       const n = el('span'); n.textContent = x.name;
       b.append(avatar(x), n);
-      b.onclick = () => { store.set(LS_WHO, x.id); who.close(); syncWho(); if (x !== p) { toast(`Bonjour ${x.name} 👋`); boite = []; relever(); } };
+      b.onclick = () => { store.set(LS_WHO, x.id); who.close(); syncWho(); if (x !== p) { toast(`Bonjour ${x.name} 👋`); boite = []; mots = null; relever(); releverMots(); } };
       return b;
     }));
     if (!who.open) who.showModal();
@@ -1163,10 +1251,176 @@
     if ('Notification' in window && Notification.permission === 'default') { try { Notification.requestPermission(); } catch (_) {} }
     remplirBoite(); $('#inbox').showModal(); relever();
   };
+
+  // ---------- Messages : les post-it de l'équipe, gardés par BAT Studio (/api/mots) ----------
+  // Chacun voit les mots laissés à tous, ceux qu'on lui laisse et les siens ; un mot épinglé reste en tête.
+  // Tout s'affiche aussitôt (avant la réponse du serveur) et se défait si l'envoi échoue.
+  const COULEURS_MOT = [['jaune', 'Jaune'], ['rose', 'Rose'], ['bleu', 'Bleu'], ['vert', 'Vert']];
+  const LS_MOTS = 'olda_mots', LS_MOTS_VUS = 'olda_mots_vus';
+  const PIN = '<path d="M12 17v5"/><path d="M9 10.76V6a1 1 0 0 0-1-1 2 2 0 0 1 0-4h8a2 2 0 0 1 0 4 1 1 0 0 0-1 1v4.76a2 2 0 0 0 1.11 1.79l1.78.9A2 2 0 0 1 19 15.24V16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-.76a2 2 0 0 1 1.11-1.79l1.78-.9A2 2 0 0 0 9 10.76z"/>';
+  const board = $('#board'), notes = $('#notes');
+  let mots = null, motsVus = store.get(LS_MOTS_VUS), neufs = new Set(), motsEnCours = false, ouverts = new Set();
+  { const c = store.get(LS_MOTS); if (c && c.pour === store.raw(LS_WHO) && Array.isArray(c.mots)) mots = c.mots; }
+  const profil = id => PROFILES.find(p => p.id === id);
+  const ilya = iso => {
+    const t = Date.parse(iso); if (isNaN(t)) return '';
+    const min = Math.round((Date.now() - t) / 60000);
+    if (min < 1) return 'à l\'instant';
+    if (min < 60) return `il y a ${min} min`;
+    if (min < 24 * 60 && new Date(t).getDate() === new Date().getDate()) return `il y a ${Math.round(min / 60)} h`;
+    if (min < 48 * 60 && new Date(t).getDate() === new Date(Date.now() - 864e5).getDate()) return 'hier';
+    return new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  };
+  const trier = l => l.sort((a, b) => (b.epingle - a.epingle) || (Date.parse(b.at) - Date.parse(a.at)));
+  function noteEl(x){
+    const p = me(), de = profil(x.de), pour = profil(x.pour);
+    const li = el('li', `note note--${x.couleur || 'jaune'}`);
+    li.classList.toggle('is-wait', !!x.envoi); li.classList.toggle('neuf', neufs.has(x.id)); li.classList.toggle('open', ouverts.has(x.id));
+    if (x.epingle) { const pin = el('span', 'note-pinned'); pin.setAttribute('aria-hidden', 'true'); pin.innerHTML = SVG(PIN); li.append(pin); }
+    const t = el('p', 'note-txt'); t.textContent = x.texte;
+    t.onclick = () => { ouverts.has(x.id) ? ouverts.delete(x.id) : ouverts.add(x.id); li.classList.toggle('open'); };
+    const foot = el('div', 'note-foot');
+    const av = de ? avatar(de) : el('span', 'avatar'); if (!de) av.textContent = '?';
+    const who = el('span', 'note-who');
+    if (p && x.pour === p.id && x.de !== p.id) { const toi = el('span', 'toi'); toi.textContent = 'Pour toi'; who.append(toi); }
+    const b = el('b'); b.textContent = x.de === p?.id ? 'Moi' : (de ? de.name : '?'); who.append(b);
+    if (pour && !(p && x.pour === p.id && x.de !== p.id)) who.append(` → ${pour.id === p?.id ? 'moi' : pour.name}`);
+    who.append(' · ' + ilya(x.at));
+    const pinB = el('button', 'icon-btn pin'); pinB.type = 'button'; pinB.innerHTML = SVG(PIN);
+    pinB.setAttribute('aria-pressed', !!x.epingle); pinB.setAttribute('aria-label', x.epingle ? 'Décrocher' : 'Épingler en tête'); pinB.title = pinB.getAttribute('aria-label');
+    pinB.onclick = () => changerMot(x, { epingle: !x.epingle });
+    const del = el('button', 'icon-btn'); del.type = 'button'; del.innerHTML = SVG('<path d="M18 6L6 18M6 6l12 12"/>');
+    del.setAttribute('aria-label', 'Retirer ce mot'); del.title = 'Retirer';
+    del.onclick = () => retirerMot(x);
+    pinB.disabled = del.disabled = !!x.envoi;
+    foot.append(av, who, pinB, del);
+    li.append(t, foot);
+    return li;
+  }
+  function renderMots(){
+    const p = me();
+    board.hidden = !p; if (!p) return;
+    if (!mots) { notes.replaceChildren(); return; }
+    if (!mots.length) {
+      const li = el('li', 'note-vide'); li.textContent = 'Aucun mot pour l\'instant. Le premier qui passe peut en laisser un.';
+      notes.replaceChildren(li); return;
+    }
+    notes.replaceChildren(...mots.map(noteEl));
+  }
+  const garderMots = () => store.set(LS_MOTS, { pour: me()?.id, mots: (mots || []).filter(x => !x.envoi) });
+  async function apiMots(chemin, corps){
+    const r = await fetch(`${BAT}/api/mots${chemin}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
+    return j.mot;
+  }
+  async function releverMots(){
+    const p = me();
+    if (!p || motsEnCours || !navigator.onLine) { renderMots(); return; }
+    motsEnCours = true;
+    try {
+      const r = await fetch(`${BAT}/api/mots?pour=${p.id}`, { cache: 'no-store' });
+      if (!r.ok || me() !== p) return;
+      const recus = (await r.json()).mots;
+      if (!Array.isArray(recus)) return;
+      const premiere = !Array.isArray(motsVus);
+      const vus = new Set(premiere ? recus.map(x => x.id) : motsVus);
+      const nouveaux = recus.filter(x => x.de !== p.id && !vus.has(x.id));
+      nouveaux.forEach(x => { vus.add(x.id); neufs.add(x.id); });
+      motsVus = [...vus].slice(-400); store.set(LS_MOTS_VUS, motsVus);
+      const avant = JSON.stringify((mots || []).filter(x => !x.envoi));
+      mots = trier([...recus, ...(mots || []).filter(x => x.envoi)]);
+      // Rien de neuf : on ne reconstruit pas les post-it (le focus et le défilement restent où ils sont).
+      if (JSON.stringify(recus) !== avant || nouveaux.length) { garderMots(); renderMots(); }
+      // Un mot laissé pour moi seul : ça sonne, comme une notification.
+      const pourMoi = nouveaux.find(x => x.pour === p.id);
+      if (pourMoi && !premiere) { annoncerMot(pourMoi); }
+      if (nouveaux.length) setTimeout(() => { nouveaux.forEach(x => neufs.delete(x.id)); renderMots(); }, 12000);
+    } catch (_) { renderMots(); }
+    finally { motsEnCours = false; }
+  }
+  function annoncerMot(x){
+    const de = profil(x.de);
+    $('#ring-msg').textContent = `📌 ${de ? de.name : 'Quelqu\'un'} t'a laissé un mot`;
+    $('#ring-act').textContent = 'Voir';
+    $('#ring-act').onclick = () => { $('#ring').classList.remove('show'); $('#ring-act').textContent = 'Ouvrir'; ouverts.add(x.id); renderMots(); board.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    $('#ring-x').onclick = () => { $('#ring').classList.remove('show'); $('#ring-act').textContent = 'Ouvrir'; };
+    $('#ring').classList.add('show');
+    sonner();
+    if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+      try { new Notification(`${de ? de.name : 'Un mot'} : ${x.texte.slice(0, 80)}`, { tag: 'mot-' + x.id }); } catch (_) {}
+    }
+  }
+  async function changerMot(x, modif){
+    const avant = { epingle: x.epingle };
+    Object.assign(x, modif); trier(mots); renderMots();
+    try { Object.assign(x, await apiMots('/' + x.id, modif)); garderMots(); }
+    catch (_) { Object.assign(x, avant); trier(mots); renderMots(); toast('Changement non enregistré. Vérifie la connexion.'); }
+  }
+  async function retirerMot(x){
+    mots = mots.filter(m => m !== x); renderMots();
+    const remettre = async () => {
+      mots = trier([...mots, x]); renderMots();
+      try { await apiMots('/' + x.id, { retire: false }); garderMots(); } catch (_) { toast('Le mot n\'a pas pu être remis.'); }
+    };
+    try { await apiMots('/' + x.id, { retire: true }); garderMots(); toast('Mot retiré', 'Annuler', remettre); }
+    catch (_) { mots = trier([...mots, x]); renderMots(); toast('Le mot n\'a pas pu être retiré. Vérifie la connexion.'); }
+  }
+
+  // Écrire un mot
+  const motDlg = $('#mot'), mTexte = $('#m-texte');
+  let brouillon = { pour: 'tous', couleur: 'jaune' };
+  function syncBrouillon(){
+    mTexte.dataset.c = brouillon.couleur;
+    $('#m-pour').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.pour === brouillon.pour));
+    $('#m-couleur').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === brouillon.couleur));
+  }
+  function ouvrirMot(){
+    const p = me(); if (!p) return openWho();
+    const tous = el('button', 'tous'); tous.type = 'button'; tous.dataset.pour = 'tous'; tous.textContent = 'Tout le monde';
+    $('#m-pour').replaceChildren(tous, ...PROFILES.filter(x => x !== p).map(x => {
+      const b = el('button'); b.type = 'button'; b.dataset.pour = x.id;
+      const n = el('span'); n.textContent = x.name; b.append(avatar(x), n); return b;
+    }));
+    if (brouillon.pour === p.id) brouillon.pour = 'tous';
+    mTexte.removeAttribute('aria-invalid');
+    syncBrouillon(); motDlg.showModal();
+    if (matchMedia('(hover:hover)').matches) mTexte.focus();
+  }
+  $('#m-couleur').replaceChildren(...COULEURS_MOT.map(([c, nom]) => {
+    const b = el('button'); b.type = 'button'; b.dataset.c = c; b.style.setProperty('--sw', `var(--postit-${c})`);
+    b.setAttribute('aria-label', nom); b.title = nom; return b;
+  }));
+  $('#m-pour').onclick = e => { const b = e.target.closest('button'); if (b) { brouillon.pour = b.dataset.pour; syncBrouillon(); } };
+  $('#m-couleur').onclick = e => { const b = e.target.closest('button'); if (b) { brouillon.couleur = b.dataset.c; syncBrouillon(); } };
+  mTexte.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); $('#mot-form').requestSubmit(); } });
+  $('#b-mot').onclick = ouvrirMot;
+  $('#mot-form').onsubmit = async e => {
+    e.preventDefault();
+    const p = me(), texte = mTexte.value.trim();
+    if (!p) return;
+    if (!texte) { mTexte.setAttribute('aria-invalid', 'true'); return mTexte.focus(); }
+    const corps = { de: p.id, pour: brouillon.pour, texte, couleur: brouillon.couleur, epingle: $('#m-pin').checked };
+    const x = { ...corps, id: 'envoi' + Date.now(), at: new Date().toISOString(), envoi: true };
+    mots = trier([x, ...(mots || [])]); renderMots(); notes.scrollTo({ left: 0, behavior: 'smooth' });
+    motDlg.close(); mTexte.value = ''; $('#m-pin').checked = false;
+    try {
+      const m = await apiMots('', corps);
+      motsVus = [...(motsVus || []), m.id]; store.set(LS_MOTS_VUS, motsVus);
+      const i = mots.indexOf(x); if (i >= 0) mots[i] = m; else mots.push(m);
+      trier(mots); garderMots(); renderMots();
+    } catch (err) {
+      mots = mots.filter(m => m !== x); renderMots();
+      mTexte.value = texte; brouillon = { pour: corps.pour, couleur: corps.couleur }; $('#m-pin').checked = corps.epingle;
+      toast('Mot non envoyé. Vérifie la connexion.', 'Réessayer', ouvrirMot);
+    }
+  };
+  renderMots();
+
   // Toutes les 20 s quand le portail est affiché, toutes les minutes sinon.
-  setInterval(() => { if (Date.now() - relevee > (document.hidden ? 60000 : 20000)) relever(); }, 5000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) relever(); });
-  relever();
+  setInterval(() => { if (Date.now() - relevee > (document.hidden ? 60000 : 20000)) { relever(); releverMots(); } }, 5000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { relever(); releverMots(); } });
+  relever(); releverMots();
 
   // ---------- Toast ----------
   let toastTimer;
