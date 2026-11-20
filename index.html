@@ -26,6 +26,7 @@
     --postit-rose:#ffe3ee;  --postit-rose-bord:rgba(214,80,130,.22);
     --postit-bleu:#dfeeff;  --postit-bleu-bord:rgba(40,110,210,.2);
     --postit-vert:#dff5e5;  --postit-vert-bord:rgba(30,150,80,.2);
+    --postit-rouge:#ffe4e1; --postit-rouge-bord:rgba(217,48,37,.22);
   }
   *{ margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
   html,body{ height:100%; }
@@ -119,6 +120,7 @@
   .note--rose{ --n-bg:var(--postit-rose); --n-edge:var(--postit-rose-bord); }
   .note--bleu{ --n-bg:var(--postit-bleu); --n-edge:var(--postit-bleu-bord); }
   .note--vert{ --n-bg:var(--postit-vert); --n-edge:var(--postit-vert-bord); }
+  .note--rouge{ --n-bg:var(--postit-rouge); --n-edge:var(--postit-rouge-bord); }
   .note.is-wait{ opacity:.6; }
   .note.neuf{ box-shadow:inset 0 0 0 2px var(--duck), 0 8px 20px rgba(74,98,116,.16); }
   .note-txt{ flex:1; padding-right:10px; font-size:15px; line-height:1.42; white-space:pre-line; overflow-wrap:anywhere; cursor:pointer;
@@ -147,14 +149,12 @@
   .postit[data-c="rose"]{ background:var(--postit-rose); }
   .postit[data-c="bleu"]{ background:var(--postit-bleu); }
   .postit[data-c="vert"]{ background:var(--postit-vert); }
+  .postit[data-c="rouge"]{ background:var(--postit-rouge); }
   .chips{ display:flex; flex-wrap:wrap; gap:6px; }
   .chips button{ min-height:44px; padding:0 14px 0 6px; display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:999px; background:#fff; font-size:15px; font-weight:600; }
   .chips button.tous{ padding-left:14px; }
   .chips .avatar{ width:30px; height:30px; font-size:13px; }
   .chips button[aria-pressed="true"]{ border-color:var(--duck); box-shadow:inset 0 0 0 1px var(--duck); background:#eef3f7; }
-  .swatches{ display:flex; gap:10px; }
-  .swatches button{ width:44px; height:44px; border-radius:50%; border:0; background:var(--sw); box-shadow:inset 0 0 0 1px rgba(32,41,48,.12); }
-  .swatches button[aria-pressed="true"]{ box-shadow:inset 0 0 0 1px rgba(32,41,48,.12), 0 0 0 3px #fff, 0 0 0 5px var(--duck); }
   .switch{ display:flex; align-items:center; gap:12px; min-height:44px; font-size:15px; font-weight:600; cursor:pointer; }
   .switch input{ appearance:none; -webkit-appearance:none; position:relative; width:46px; height:28px; flex-shrink:0; border-radius:999px; background:#d6dde3; transition:background-color .2s; cursor:pointer; }
   .switch input::after{ content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(32,41,48,.25); transition:transform .25s var(--spring); }
@@ -623,7 +623,6 @@
     <div class="sheet-body">
       <label class="field"><span>Le mot</span><textarea class="postit" id="m-texte" rows="4" maxlength="600" placeholder="Ex. Rappeler ACME pour le devis" enterkeyhint="enter"></textarea></label>
       <fieldset class="field"><legend>Pour</legend><div class="chips" id="m-pour"></div></fieldset>
-      <fieldset class="field"><legend>Couleur</legend><div class="swatches" id="m-couleur"></div></fieldset>
       <label class="switch"><input type="checkbox" id="m-pin" /><span>Épingler en tête<small>Il reste tant qu'on ne le décroche pas.</small></span></label>
     </div>
     <footer class="sheet-foot">
@@ -1127,10 +1126,11 @@
 
   // ---------- Qui est au poste ? Un humain derrière chaque poste, retenu sur l'appareil ----------
   const PROFILES = [
-    { id: 'loic',    name: 'Loïc',   tint: '66,133,244' },
-    { id: 'charlie', name: 'Charlie', tint: '217,48,37' },
-    { id: 'melina',  name: 'Mélina',  tint: '227,116,0' },
-    { id: 'julien',  name: 'Julien',  tint: '24,128,56' }
+    // Chacun sa couleur : ses initiales et ses mots la portent.
+    { id: 'loic',    name: 'Loïc',    tint: '217,48,37',  postit: 'rouge' },
+    { id: 'charlie', name: 'Charlie', tint: '26,115,232', postit: 'bleu' },
+    { id: 'melina',  name: 'Mélina',  tint: '214,51,132', postit: 'rose' },
+    { id: 'julien',  name: 'Julien',  tint: '24,128,56',  postit: 'vert' }
   ];
   const LS_WHO = 'olda_poste', who = $('#who'), whoGrid = $('#who-grid');
   const avatar = (p, cls) => { const a = el('span', 'avatar' + (cls ? ' ' + cls : '')); a.style.setProperty('--a', p.tint); a.textContent = p.name.charAt(0); a.setAttribute('aria-hidden', 'true'); return a; };
@@ -1255,7 +1255,6 @@
   // ---------- Messages : les post-it de l'équipe, gardés par BAT Studio (/api/mots) ----------
   // Chacun voit les mots laissés à tous, ceux qu'on lui laisse et les siens ; un mot épinglé reste en tête.
   // Tout s'affiche aussitôt (avant la réponse du serveur) et se défait si l'envoi échoue.
-  const COULEURS_MOT = [['jaune', 'Jaune'], ['rose', 'Rose'], ['bleu', 'Bleu'], ['vert', 'Vert']];
   const LS_MOTS = 'olda_mots', LS_MOTS_VUS = 'olda_mots_vus';
   const PIN = '<path d="M12 17v5"/><path d="M9 10.76V6a1 1 0 0 0-1-1 2 2 0 0 1 0-4h8a2 2 0 0 1 0 4 1 1 0 0 0-1 1v4.76a2 2 0 0 0 1.11 1.79l1.78.9A2 2 0 0 1 19 15.24V16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-.76a2 2 0 0 1 1.11-1.79l1.78-.9A2 2 0 0 0 9 10.76z"/>';
   const board = $('#board'), notes = $('#notes');
@@ -1274,7 +1273,7 @@
   const trier = l => l.sort((a, b) => (b.epingle - a.epingle) || (Date.parse(b.at) - Date.parse(a.at)));
   function noteEl(x){
     const p = me(), de = profil(x.de), pour = profil(x.pour);
-    const li = el('li', `note note--${x.couleur || 'jaune'}`);
+    const li = el('li', `note note--${de ? de.postit : 'jaune'}`);
     li.classList.toggle('is-wait', !!x.envoi); li.classList.toggle('neuf', neufs.has(x.id)); li.classList.toggle('open', ouverts.has(x.id));
     if (x.epingle) { const pin = el('span', 'note-pinned'); pin.setAttribute('aria-hidden', 'true'); pin.innerHTML = SVG(PIN); li.append(pin); }
     const t = el('p', 'note-txt'); t.textContent = x.texte;
@@ -1369,11 +1368,10 @@
 
   // Écrire un mot
   const motDlg = $('#mot'), mTexte = $('#m-texte');
-  let brouillon = { pour: 'tous', couleur: 'jaune' };
+  let brouillon = { pour: 'tous' };
   function syncBrouillon(){
-    mTexte.dataset.c = brouillon.couleur;
+    mTexte.dataset.c = me()?.postit || 'jaune';
     $('#m-pour').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.pour === brouillon.pour));
-    $('#m-couleur').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === brouillon.couleur));
   }
   function ouvrirMot(){
     const p = me(); if (!p) return openWho();
@@ -1387,12 +1385,7 @@
     syncBrouillon(); motDlg.showModal();
     if (matchMedia('(hover:hover)').matches) mTexte.focus();
   }
-  $('#m-couleur').replaceChildren(...COULEURS_MOT.map(([c, nom]) => {
-    const b = el('button'); b.type = 'button'; b.dataset.c = c; b.style.setProperty('--sw', `var(--postit-${c})`);
-    b.setAttribute('aria-label', nom); b.title = nom; return b;
-  }));
   $('#m-pour').onclick = e => { const b = e.target.closest('button'); if (b) { brouillon.pour = b.dataset.pour; syncBrouillon(); } };
-  $('#m-couleur').onclick = e => { const b = e.target.closest('button'); if (b) { brouillon.couleur = b.dataset.c; syncBrouillon(); } };
   mTexte.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); $('#mot-form').requestSubmit(); } });
   $('#b-mot').onclick = ouvrirMot;
   $('#mot-form').onsubmit = async e => {
@@ -1400,7 +1393,7 @@
     const p = me(), texte = mTexte.value.trim();
     if (!p) return;
     if (!texte) { mTexte.setAttribute('aria-invalid', 'true'); return mTexte.focus(); }
-    const corps = { de: p.id, pour: brouillon.pour, texte, couleur: brouillon.couleur, epingle: $('#m-pin').checked };
+    const corps = { de: p.id, pour: brouillon.pour, texte, epingle: $('#m-pin').checked };
     const x = { ...corps, id: 'envoi' + Date.now(), at: new Date().toISOString(), envoi: true };
     mots = trier([x, ...(mots || [])]); renderMots(); notes.scrollTo({ left: 0, behavior: 'smooth' });
     motDlg.close(); mTexte.value = ''; $('#m-pin').checked = false;
@@ -1411,7 +1404,7 @@
       trier(mots); garderMots(); renderMots();
     } catch (err) {
       mots = mots.filter(m => m !== x); renderMots();
-      mTexte.value = texte; brouillon = { pour: corps.pour, couleur: corps.couleur }; $('#m-pin').checked = corps.epingle;
+      mTexte.value = texte; brouillon = { pour: corps.pour }; $('#m-pin').checked = corps.epingle;
       toast('Mot non envoyé. Vérifie la connexion.', 'Réessayer', ouvrirMot);
     }
   };
