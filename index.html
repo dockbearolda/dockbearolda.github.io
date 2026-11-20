@@ -21,12 +21,6 @@
     --spring:cubic-bezier(.34,1.56,.64,1);
     --radius:22px;
     --safe-b:env(safe-area-inset-bottom,0px);
-    /* post-it, en quatre teintes douces */
-    --postit-jaune:#fff5c4; --postit-jaune-bord:rgba(214,170,30,.28);
-    --postit-rose:#ffe3ee;  --postit-rose-bord:rgba(214,80,130,.22);
-    --postit-bleu:#dfeeff;  --postit-bleu-bord:rgba(40,110,210,.2);
-    --postit-vert:#dff5e5;  --postit-vert-bord:rgba(30,150,80,.2);
-    --postit-rouge:#ffe4e1; --postit-rouge-bord:rgba(217,48,37,.22);
   }
   *{ margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
   html,body{ height:100%; }
@@ -66,12 +60,11 @@
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
-  /* Le tableau de bord de chacun. Téléphone : bonjour, messages, planning, puis les apps en grille.
-     Grand écran (≥ 900 px) : les apps en barre à gauche ; à droite les messages en haut, le planning dessous. */
+  /* Le tableau de bord de chacun. Téléphone : bonjour, planning, puis les apps en grille.
+     Grand écran (≥ 900 px) : les apps en barre à gauche, le planning à droite ; la bulle de discussion flotte au-dessus. */
   .dash{ display:flex; flex-direction:column; gap:16px; width:100%; max-width:600px; margin:0 auto; }
   .side,.main{ display:contents; }
   .me-row{ order:1; }
-  .board{ order:2; }
   .tile--hub{ order:3; }
   .bento{ order:4; display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
   .bento > .tile:last-child:nth-child(odd){ grid-column:1 / -1; }
@@ -104,64 +97,6 @@
   .me-txt b{ font-size:19px; font-weight:700; letter-spacing:-.015em; }
   .me > svg{ width:18px; height:18px; stroke:var(--muted); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 
-  /* ---------- Messages : les post-it de l'équipe ---------- */
-  .board{ min-width:0; }
-  .board-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-  .board-head h2{ flex:1; font-size:17px; font-weight:700; letter-spacing:-.01em; }
-  .board-head .btn{ min-height:44px; padding:0 16px; }
-  .notes{ list-style:none; display:flex; gap:12px; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x proximity; margin:-8px; padding:8px; scrollbar-width:thin; -webkit-overflow-scrolling:touch; }
-  .note{
-    --n-bg:var(--postit-jaune); --n-edge:var(--postit-jaune-bord);
-    position:relative; flex:0 0 min(78vw,260px); scroll-snap-align:start; display:flex; flex-direction:column; gap:10px;
-    min-height:128px; padding:14px 6px 6px 16px; border-radius:18px;
-    background:var(--n-bg); box-shadow:inset 0 0 0 1px var(--n-edge), 0 1px 2px rgba(32,41,48,.05), 0 8px 20px rgba(74,98,116,.10);
-    animation:appear .45s var(--spring) backwards; transition:opacity .2s;
-  }
-  .note--rose{ --n-bg:var(--postit-rose); --n-edge:var(--postit-rose-bord); }
-  .note--bleu{ --n-bg:var(--postit-bleu); --n-edge:var(--postit-bleu-bord); }
-  .note--vert{ --n-bg:var(--postit-vert); --n-edge:var(--postit-vert-bord); }
-  .note--rouge{ --n-bg:var(--postit-rouge); --n-edge:var(--postit-rouge-bord); }
-  .note.is-wait{ opacity:.6; }
-  .note.neuf{ box-shadow:inset 0 0 0 2px var(--duck), 0 8px 20px rgba(74,98,116,.16); }
-  .note-txt{ flex:1; padding-right:10px; font-size:15px; line-height:1.42; white-space:pre-line; overflow-wrap:anywhere; cursor:pointer;
-    display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
-  .note.open .note-txt{ -webkit-line-clamp:unset; display:block; }
-  .note-foot{ display:flex; align-items:center; gap:8px; min-width:0; }
-  .note-foot .avatar{ width:24px; height:24px; font-size:11px; background:rgba(255,255,255,.7); }
-  .note-who{ flex:1; min-width:0; font-size:12.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .note-who b{ color:var(--ink); font-weight:600; }
-  .note-who .toi{ display:inline-block; margin-right:4px; padding:1px 7px; border-radius:999px; background:var(--duck); color:#fff; font-size:11.5px; font-weight:700; }
-  .note .icon-btn{ width:40px; height:40px; color:var(--muted); }
-  .note .icon-btn:hover{ background:rgba(255,255,255,.6); }
-  .note .icon-btn svg{ width:18px; height:18px; }
-  .note .pin[aria-pressed="true"]{ color:var(--ink); }
-  .note .pin[aria-pressed="true"] svg{ fill:currentColor; }
-  .note-pinned{ position:absolute; top:-7px; left:14px; width:22px; height:22px; border-radius:50%; display:grid; place-items:center; background:var(--ink); color:#fff; box-shadow:0 2px 6px rgba(32,41,48,.25); }
-  .note-pinned svg{ width:12px; height:12px; fill:currentColor; stroke:currentColor; stroke-width:1.5; }
-  .note-vide{ flex:1; min-height:96px; display:grid; place-items:center; padding:16px; border-radius:18px; border:1.5px dashed rgba(74,98,116,.28); color:var(--muted); font-size:14px; text-align:center; }
-  @media (min-width:900px){ .note{ flex-basis:250px; min-height:120px; } .note-txt{ -webkit-line-clamp:3; } }
-
-  /* ---------- Écrire un mot ---------- */
-  #mot{ width:min(540px, calc(100% - 32px)); }
-  .postit{ width:100%; min-height:140px; resize:vertical; padding:14px 16px; border:0; border-radius:16px; font:inherit; font-size:16px; line-height:1.45; color:var(--ink);
-    background:var(--postit-jaune); box-shadow:inset 0 0 0 1px var(--postit-jaune-bord); }
-  .postit:focus{ outline:none; box-shadow:inset 0 0 0 1px var(--postit-jaune-bord), 0 0 0 3px rgba(107,129,145,.25); }
-  .postit[data-c="rose"]{ background:var(--postit-rose); }
-  .postit[data-c="bleu"]{ background:var(--postit-bleu); }
-  .postit[data-c="vert"]{ background:var(--postit-vert); }
-  .postit[data-c="rouge"]{ background:var(--postit-rouge); }
-  .chips{ display:flex; flex-wrap:wrap; gap:6px; }
-  .chips button{ min-height:44px; padding:0 14px 0 6px; display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:999px; background:#fff; font-size:15px; font-weight:600; }
-  .chips button.tous{ padding-left:14px; }
-  .chips .avatar{ width:30px; height:30px; font-size:13px; }
-  .chips button[aria-pressed="true"]{ border-color:var(--duck); box-shadow:inset 0 0 0 1px var(--duck); background:#eef3f7; }
-  .switch{ display:flex; align-items:center; gap:12px; min-height:44px; font-size:15px; font-weight:600; cursor:pointer; }
-  .switch input{ appearance:none; -webkit-appearance:none; position:relative; width:46px; height:28px; flex-shrink:0; border-radius:999px; background:#d6dde3; transition:background-color .2s; cursor:pointer; }
-  .switch input::after{ content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(32,41,48,.25); transition:transform .25s var(--spring); }
-  .switch input:checked{ background:var(--duck); }
-  .switch input:checked::after{ transform:translateX(18px); }
-  .switch input:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:2px; }
-  .switch small{ display:block; font-size:13px; font-weight:400; color:var(--muted); }
 
   /* La tuile porte l'apparition, la carte porte le survol : les deux transform ne se battent pas. */
   .tile{ position:relative; display:flex; min-width:0; animation:appear .6s var(--spring) backwards; }
@@ -226,7 +161,7 @@
     .tile--hub.is-max .hub{ border-radius:24px; box-shadow:0 30px 90px rgba(32,41,48,.28); }
   }
   .hub-max{ overflow:hidden; }
-  .hub-max .side, .hub-max .board, .hub-max .dock{ opacity:0; pointer-events:none; }
+  .hub-max .side, .hub-max .dock{ opacity:0; pointer-events:none; }
   ::view-transition-group(hub){ animation-duration:.5s; animation-timing-function:cubic-bezier(.2,.9,.25,1); }
   ::view-transition-old(hub),::view-transition-new(hub){ height:100%; object-fit:cover; }
 
@@ -566,8 +501,28 @@
   .chat.drag .chat-orb{ transform:scale(1.08); }
   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .chat{ --chat-glass:rgba(250,251,252,.96); } }
 
+  /* ---------- Message privé à lire : il s'impose, on ne peut que confirmer ---------- */
+  #lire{ width:min(460px, calc(100% - 32px)); margin:auto; border-radius:28px; background:rgba(255,255,255,.82);
+    -webkit-backdrop-filter:blur(30px) saturate(190%); backdrop-filter:blur(30px) saturate(190%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.8), 0 40px 90px rgba(32,41,48,.35); }
+  #lire::backdrop{ background:rgba(32,41,48,.45); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); }
+  .lire{ display:flex; flex-direction:column; align-items:center; gap:14px; padding:28px 24px 22px; text-align:center; }
+  .lire > .avatar{ width:72px; height:72px; font-size:30px; background:#fff; box-shadow:inset 0 0 0 1px rgba(var(--a),.3), 0 0 0 6px rgba(var(--a),.12); }
+  .lire-de{ font-size:19px; font-weight:700; letter-spacing:-.015em; }
+  .lire-sous{ display:inline-flex; align-items:center; gap:5px; margin-top:2px; font-size:13px; font-weight:600; color:rgb(var(--a)); }
+  .lire-sous svg{ width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+  .lire-txt{ align-self:stretch; max-height:40dvh; overflow-y:auto; padding:16px 18px; border-radius:20px; background:#fff; box-shadow:inset 0 0 0 1.5px rgba(var(--a),.35);
+    font-size:18px; line-height:1.45; text-align:left; white-space:pre-line; overflow-wrap:anywhere; }
+  .lire-txt .chat-voc{ min-width:0; }
+  .lire-ok{ align-self:stretch; min-height:52px; font-size:16px; border-radius:16px; background:rgb(var(--a)); color:#fff; border:0; font-weight:700;
+    box-shadow:0 8px 22px rgba(var(--a),.32); transition:opacity .2s, transform .2s var(--spring); }
+  .lire-ok:disabled{ opacity:.4; box-shadow:none; }
+  .lire-ok:not(:disabled):active{ transform:scale(.97); }
+  .lire-n{ font-size:12.5px; color:var(--muted); min-height:16px; }
+  .chat-b .vu{ font-weight:700; opacity:1; }
+
   @media (prefers-reduced-motion:reduce){
-    .orb,.tile,.note,dialog[open]{ animation:none; }
+    .orb,.tile,dialog[open]{ animation:none; }
     .who-grid button,.card,.card::after,.card-icon,.toast,.hub-frame iframe,.chat-orb{ transition:none; }
     .chat-panel,.chat-m,.chat-n{ animation:none; }
     ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){ animation:none !important; }
@@ -595,15 +550,6 @@
       <nav class="bento" id="bento" aria-label="Apps"></nav>
     </aside>
     <div class="main">
-      <section class="board" id="board" aria-labelledby="board-title" hidden>
-        <header class="board-head">
-          <h2 id="board-title">Messages</h2>
-          <button type="button" class="btn btn--primary" id="b-mot">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Écrire un mot
-          </button>
-        </header>
-        <ul class="notes" id="notes" aria-live="polite"></ul>
-      </section>
       <div class="tile tile--hub" id="hub" hidden>
         <section class="hub" aria-labelledby="hub-name">
           <header class="hub-head">
@@ -740,25 +686,6 @@
   </form>
 </dialog>
 
-<dialog id="mot" aria-labelledby="mot-title">
-  <form class="sheet" id="mot-form" novalidate>
-    <header class="sheet-head">
-      <h2 id="mot-title">Laisser un mot</h2>
-      <button type="button" class="icon-btn" data-close aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-    </header>
-    <div class="sheet-body">
-      <label class="field"><span>Le mot</span><textarea class="postit" id="m-texte" rows="4" maxlength="600" placeholder="Ex. Rappeler ACME pour le devis" enterkeyhint="enter"></textarea></label>
-      <fieldset class="field"><legend>Pour</legend><div class="chips" id="m-pour"></div></fieldset>
-      <label class="switch"><input type="checkbox" id="m-pin" /><span>Épingler en tête<small>Il reste tant qu'on ne le décroche pas.</small></span></label>
-    </div>
-    <footer class="sheet-foot">
-      <span class="spacer"></span>
-      <button type="button" class="btn btn--ghost" data-close>Annuler</button>
-      <button type="submit" class="btn btn--primary">Laisser le mot</button>
-    </footer>
-  </form>
-</dialog>
-
 <dialog id="inbox" aria-labelledby="inbox-title">
   <div class="sheet">
     <header class="sheet-head">
@@ -802,6 +729,15 @@
     </form>
   </section>
 </div>
+<dialog id="lire" aria-labelledby="lire-de" aria-describedby="lire-txt">
+  <div class="lire">
+    <span class="avatar" id="lire-av" aria-hidden="true"></span>
+    <div><div class="lire-de" id="lire-de"></div><div class="lire-sous"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span id="lire-quand"></span></div></div>
+    <div class="lire-txt" id="lire-txt"></div>
+    <button type="button" class="lire-ok" id="lire-ok">J'ai lu</button>
+    <div class="lire-n" id="lire-n"></div>
+  </div>
+</dialog>
 <div class="toast" id="ring" role="alert"><span id="ring-msg"></span><button type="button" id="ring-act">Ouvrir</button><button type="button" id="ring-x" aria-label="Plus tard">Plus tard</button></div>
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button type="button" id="toast-act" hidden></button></div>
 <div class="toast" id="update" role="status" aria-live="polite"><span>Nouvelle version disponible</span><button type="button" id="update-act">Recharger</button></div>
@@ -1286,11 +1222,11 @@
 
   // ---------- Qui est au poste ? Un humain derrière chaque poste, retenu sur l'appareil ----------
   const PROFILES = [
-    // Chacun sa couleur : ses initiales et ses mots la portent.
-    { id: 'loic',    name: 'Loïc',    tint: '217,48,37',  postit: 'rouge' },
-    { id: 'charlie', name: 'Charlie', tint: '26,115,232', postit: 'bleu' },
-    { id: 'melina',  name: 'Mélina',  tint: '214,51,132', postit: 'rose' },
-    { id: 'julien',  name: 'Julien',  tint: '24,128,56',  postit: 'vert' }
+    // Chacun sa couleur : ses initiales et ses messages la portent.
+    { id: 'loic',    name: 'Loïc',    tint: '217,48,37' },
+    { id: 'charlie', name: 'Charlie', tint: '26,115,232' },
+    { id: 'melina',  name: 'Mélina',  tint: '214,51,132' },
+    { id: 'julien',  name: 'Julien',  tint: '24,128,56' }
   ];
   const LS_WHO = 'olda_poste', who = $('#who'), whoGrid = $('#who-grid');
   const avatar = (p, cls) => { const a = el('span', 'avatar' + (cls ? ' ' + cls : '')); a.style.setProperty('--a', p.tint); a.textContent = p.name.charAt(0); a.setAttribute('aria-hidden', 'true'); return a; };
@@ -1310,7 +1246,7 @@
       const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', x === p);
       const n = el('span'); n.textContent = x.name;
       b.append(avatar(x), n);
-      b.onclick = () => { store.set(LS_WHO, x.id); who.close(); syncWho(); if (x !== p) { toast(`Bonjour ${x.name} 👋`); boite = []; mots = null; relever(); releverMots(); chatRelancer(); } };
+      b.onclick = () => { store.set(LS_WHO, x.id); who.close(); syncWho(); if (x !== p) { toast(`Bonjour ${x.name} 👋`); boite = []; relever(); chatRelancer(); } };
       return b;
     }));
     if (!who.open) who.showModal();
@@ -1412,168 +1348,10 @@
     remplirBoite(); $('#inbox').showModal(); relever();
   };
 
-  // ---------- Messages : les post-it de l'équipe, gardés par BAT Studio (/api/mots) ----------
-  // Chacun voit les mots laissés à tous, ceux qu'on lui laisse et les siens ; un mot épinglé reste en tête.
-  // Tout s'affiche aussitôt (avant la réponse du serveur) et se défait si l'envoi échoue.
-  const LS_MOTS = 'olda_mots', LS_MOTS_VUS = 'olda_mots_vus';
-  const PIN = '<path d="M12 17v5"/><path d="M9 10.76V6a1 1 0 0 0-1-1 2 2 0 0 1 0-4h8a2 2 0 0 1 0 4 1 1 0 0 0-1 1v4.76a2 2 0 0 0 1.11 1.79l1.78.9A2 2 0 0 1 19 15.24V16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-.76a2 2 0 0 1 1.11-1.79l1.78-.9A2 2 0 0 0 9 10.76z"/>';
-  const board = $('#board'), notes = $('#notes');
-  let mots = null, motsVus = store.get(LS_MOTS_VUS), neufs = new Set(), motsEnCours = false, ouverts = new Set();
-  { const c = store.get(LS_MOTS); if (c && c.pour === store.raw(LS_WHO) && Array.isArray(c.mots)) mots = c.mots; }
-  const profil = id => PROFILES.find(p => p.id === id);
-  const ilya = iso => {
-    const t = Date.parse(iso); if (isNaN(t)) return '';
-    const min = Math.round((Date.now() - t) / 60000);
-    if (min < 1) return 'à l\'instant';
-    if (min < 60) return `il y a ${min} min`;
-    if (min < 24 * 60 && new Date(t).getDate() === new Date().getDate()) return `il y a ${Math.round(min / 60)} h`;
-    if (min < 48 * 60 && new Date(t).getDate() === new Date(Date.now() - 864e5).getDate()) return 'hier';
-    return new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-  };
-  const trier = l => l.sort((a, b) => (b.epingle - a.epingle) || (Date.parse(b.at) - Date.parse(a.at)));
-  function noteEl(x){
-    const p = me(), de = profil(x.de), pour = profil(x.pour);
-    const li = el('li', `note note--${de ? de.postit : 'jaune'}`);
-    li.classList.toggle('is-wait', !!x.envoi); li.classList.toggle('neuf', neufs.has(x.id)); li.classList.toggle('open', ouverts.has(x.id));
-    if (x.epingle) { const pin = el('span', 'note-pinned'); pin.setAttribute('aria-hidden', 'true'); pin.innerHTML = SVG(PIN); li.append(pin); }
-    const t = el('p', 'note-txt'); t.textContent = x.texte;
-    t.onclick = () => { ouverts.has(x.id) ? ouverts.delete(x.id) : ouverts.add(x.id); li.classList.toggle('open'); };
-    const foot = el('div', 'note-foot');
-    const av = de ? avatar(de) : el('span', 'avatar'); if (!de) av.textContent = '?';
-    const who = el('span', 'note-who');
-    if (p && x.pour === p.id && x.de !== p.id) { const toi = el('span', 'toi'); toi.textContent = 'Pour toi'; who.append(toi); }
-    const b = el('b'); b.textContent = x.de === p?.id ? 'Moi' : (de ? de.name : '?'); who.append(b);
-    if (pour && !(p && x.pour === p.id && x.de !== p.id)) who.append(` → ${pour.id === p?.id ? 'moi' : pour.name}`);
-    who.append(' · ' + ilya(x.at));
-    const pinB = el('button', 'icon-btn pin'); pinB.type = 'button'; pinB.innerHTML = SVG(PIN);
-    pinB.setAttribute('aria-pressed', !!x.epingle); pinB.setAttribute('aria-label', x.epingle ? 'Décrocher' : 'Épingler en tête'); pinB.title = pinB.getAttribute('aria-label');
-    pinB.onclick = () => changerMot(x, { epingle: !x.epingle });
-    const del = el('button', 'icon-btn'); del.type = 'button'; del.innerHTML = SVG('<path d="M18 6L6 18M6 6l12 12"/>');
-    del.setAttribute('aria-label', 'Retirer ce mot'); del.title = 'Retirer';
-    del.onclick = () => retirerMot(x);
-    pinB.disabled = del.disabled = !!x.envoi;
-    foot.append(av, who, pinB, del);
-    li.append(t, foot);
-    return li;
-  }
-  function renderMots(){
-    const p = me();
-    board.hidden = !p; if (!p) return;
-    if (!mots) { notes.replaceChildren(); return; }
-    if (!mots.length) {
-      const li = el('li', 'note-vide'); li.textContent = 'Aucun mot pour l\'instant. Le premier qui passe peut en laisser un.';
-      notes.replaceChildren(li); return;
-    }
-    notes.replaceChildren(...mots.map(noteEl));
-  }
-  const garderMots = () => store.set(LS_MOTS, { pour: me()?.id, mots: (mots || []).filter(x => !x.envoi) });
-  async function apiMots(chemin, corps){
-    const r = await fetch(`${BAT}/api/mots${chemin}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
-    return j.mot;
-  }
-  async function releverMots(){
-    const p = me();
-    if (!p || motsEnCours || !navigator.onLine) { renderMots(); return; }
-    motsEnCours = true;
-    try {
-      const r = await fetch(`${BAT}/api/mots?pour=${p.id}`, { cache: 'no-store' });
-      if (!r.ok || me() !== p) return;
-      const recus = (await r.json()).mots;
-      if (!Array.isArray(recus)) return;
-      const premiere = !Array.isArray(motsVus);
-      const vus = new Set(premiere ? recus.map(x => x.id) : motsVus);
-      const nouveaux = recus.filter(x => x.de !== p.id && !vus.has(x.id));
-      nouveaux.forEach(x => { vus.add(x.id); neufs.add(x.id); });
-      motsVus = [...vus].slice(-400); store.set(LS_MOTS_VUS, motsVus);
-      const avant = JSON.stringify((mots || []).filter(x => !x.envoi));
-      mots = trier([...recus, ...(mots || []).filter(x => x.envoi)]);
-      // Rien de neuf : on ne reconstruit pas les post-it (le focus et le défilement restent où ils sont).
-      if (JSON.stringify(recus) !== avant || nouveaux.length) { garderMots(); renderMots(); }
-      // Un mot laissé pour moi seul : ça sonne, comme une notification.
-      const pourMoi = nouveaux.find(x => x.pour === p.id);
-      if (pourMoi && !premiere) { annoncerMot(pourMoi); }
-      if (nouveaux.length) setTimeout(() => { nouveaux.forEach(x => neufs.delete(x.id)); renderMots(); }, 12000);
-    } catch (_) { renderMots(); }
-    finally { motsEnCours = false; }
-  }
-  function annoncerMot(x){
-    const de = profil(x.de);
-    $('#ring-msg').textContent = `📌 ${de ? de.name : 'Quelqu\'un'} t'a laissé un mot`;
-    $('#ring-act').textContent = 'Voir';
-    $('#ring-act').onclick = () => { $('#ring').classList.remove('show'); $('#ring-act').textContent = 'Ouvrir'; ouverts.add(x.id); renderMots(); board.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
-    $('#ring-x').onclick = () => { $('#ring').classList.remove('show'); $('#ring-act').textContent = 'Ouvrir'; };
-    $('#ring').classList.add('show');
-    sonner();
-    if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
-      try { new Notification(`${de ? de.name : 'Un mot'} : ${x.texte.slice(0, 80)}`, { tag: 'mot-' + x.id }); } catch (_) {}
-    }
-  }
-  async function changerMot(x, modif){
-    const avant = { epingle: x.epingle };
-    Object.assign(x, modif); trier(mots); renderMots();
-    try { Object.assign(x, await apiMots('/' + x.id, modif)); garderMots(); }
-    catch (_) { Object.assign(x, avant); trier(mots); renderMots(); toast('Changement non enregistré. Vérifie la connexion.'); }
-  }
-  async function retirerMot(x){
-    mots = mots.filter(m => m !== x); renderMots();
-    const remettre = async () => {
-      mots = trier([...mots, x]); renderMots();
-      try { await apiMots('/' + x.id, { retire: false }); garderMots(); } catch (_) { toast('Le mot n\'a pas pu être remis.'); }
-    };
-    try { await apiMots('/' + x.id, { retire: true }); garderMots(); toast('Mot retiré', 'Annuler', remettre); }
-    catch (_) { mots = trier([...mots, x]); renderMots(); toast('Le mot n\'a pas pu être retiré. Vérifie la connexion.'); }
-  }
-
-  // Écrire un mot
-  const motDlg = $('#mot'), mTexte = $('#m-texte');
-  let brouillon = { pour: 'tous' };
-  function syncBrouillon(){
-    mTexte.dataset.c = me()?.postit || 'jaune';
-    $('#m-pour').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.pour === brouillon.pour));
-  }
-  function ouvrirMot(){
-    const p = me(); if (!p) return openWho();
-    const tous = el('button', 'tous'); tous.type = 'button'; tous.dataset.pour = 'tous'; tous.textContent = 'Tout le monde';
-    $('#m-pour').replaceChildren(tous, ...PROFILES.filter(x => x !== p).map(x => {
-      const b = el('button'); b.type = 'button'; b.dataset.pour = x.id;
-      const n = el('span'); n.textContent = x.name; b.append(avatar(x), n); return b;
-    }));
-    if (brouillon.pour === p.id) brouillon.pour = 'tous';
-    mTexte.removeAttribute('aria-invalid');
-    syncBrouillon(); motDlg.showModal();
-    if (matchMedia('(hover:hover)').matches) mTexte.focus();
-  }
-  $('#m-pour').onclick = e => { const b = e.target.closest('button'); if (b) { brouillon.pour = b.dataset.pour; syncBrouillon(); } };
-  mTexte.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); $('#mot-form').requestSubmit(); } });
-  $('#b-mot').onclick = ouvrirMot;
-  $('#mot-form').onsubmit = async e => {
-    e.preventDefault();
-    const p = me(), texte = mTexte.value.trim();
-    if (!p) return;
-    if (!texte) { mTexte.setAttribute('aria-invalid', 'true'); return mTexte.focus(); }
-    const corps = { de: p.id, pour: brouillon.pour, texte, epingle: $('#m-pin').checked };
-    const x = { ...corps, id: 'envoi' + Date.now(), at: new Date().toISOString(), envoi: true };
-    mots = trier([x, ...(mots || [])]); renderMots(); notes.scrollTo({ left: 0, behavior: 'smooth' });
-    motDlg.close(); mTexte.value = ''; $('#m-pin').checked = false;
-    try {
-      const m = await apiMots('', corps);
-      motsVus = [...(motsVus || []), m.id]; store.set(LS_MOTS_VUS, motsVus);
-      const i = mots.indexOf(x); if (i >= 0) mots[i] = m; else mots.push(m);
-      trier(mots); garderMots(); renderMots();
-    } catch (err) {
-      mots = mots.filter(m => m !== x); renderMots();
-      mTexte.value = texte; brouillon = { pour: corps.pour }; $('#m-pin').checked = corps.epingle;
-      toast('Mot non envoyé. Vérifie la connexion.', 'Réessayer', ouvrirMot);
-    }
-  };
-  renderMots();
-
   // Toutes les 20 s quand le portail est affiché, toutes les minutes sinon.
-  setInterval(() => { if (Date.now() - relevee > (document.hidden ? 60000 : 20000)) { relever(); releverMots(); } }, 5000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { relever(); releverMots(); } });
-  relever(); releverMots();
+  setInterval(() => { if (Date.now() - relevee > (document.hidden ? 60000 : 20000)) relever(); }, 5000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) relever(); });
+  relever();
 
   // ---------- Toast ----------
   let toastTimer;
@@ -1723,6 +1501,8 @@
         if (!moi) b.onclick = e => { if (!e.target.closest('.chat-play')) choisirPour(m.de); };
       }
       const t = el('time'); t.dateTime = m.at; t.textContent = m.rate ? 'Non envoyé · toucher pour réessayer' : heure(m.at);
+      // Mon message privé : l'autre l'a-t-il lu ?
+      if (moi && prive && !m.wait && !m.rate) { const v = el('span', m.lu ? 'vu' : ''); v.textContent = m.lu ? ` · ✓✓ Lu ${heure(m.lu)}` : ' · ✓ Pas encore lu'; t.append(v); }
       if (m.vocal) b.append(lecteurVocal(m), t);
       else b.append(document.createTextNode(m.texte), t);
       if (m.rate) {
@@ -1783,12 +1563,12 @@
       msgs.push(m);
       if (p && m.de !== p.id) { tapeurs.delete(m.de); if (!chatPos.ouvert || document.hidden) toc(); }
     }
-    msgs = msgs.slice(-200); garderChat(); renderChat(); lireTout();
+    msgs = msgs.slice(-200); garderChat(); renderChat(); lireTout(); aLire();
   }
   function fusionner(liste){
     const enAttente = msgs.filter(m => m.wait || m.rate);
     msgs = [...liste, ...enAttente.filter(m => !liste.some(x => x.cle && x.cle === m.cle))];
-    garderChat(); renderChat(); lireTout();
+    garderChat(); renderChat(); lireTout(); aLire();
   }
   function connecter(){
     const p = me(); if (!p) return;
@@ -1804,6 +1584,7 @@
       else if (e.type === 'msg') recevoir(e.msg);
       else if (e.type === 'presents') { presents = e.presents || []; majEtat(); }
       else if (e.type === 'tape') { clearTimeout(tapeurs.get(e.de)); tapeurs.set(e.de, setTimeout(() => { tapeurs.delete(e.de); majEtat(); }, 4000)); majEtat(); }
+      else if (e.type === 'lu') { const m = msgs.find(x => x.id === e.id); if (m) { m.lu = e.lu; garderChat(); renderChat(); } }
       else if (e.type === 'refus') { const m = msgs.find(x => x.cle === e.cle); if (m) { m.wait = false; m.rate = true; renderChat(); } }
     };
     ws.onclose = () => {
@@ -2011,13 +1792,52 @@
     if (!chatWs && chatMode !== 'sonde' && me()) connecter();
   });
 
+  // --- Un message privé pour moi : il s'impose à l'écran jusqu'à « J'ai lu » ---
+  // Pas de fermeture possible (ni Échap, ni clic à côté) ; une note vocale s'écoute jusqu'au bout avant.
+  // Le ding-dong revient toutes les 20 s tant que ce n'est pas confirmé.
+  const lireDlg = $('#lire'), lireOk = $('#lire-ok');
+  let lireCourant = null, lireDing = null, titreAvant = document.title, dernierJoue = null;
+  lireDlg.addEventListener('cancel', e => e.preventDefault());
+  lecteur.addEventListener('play', () => { dernierJoue = enLecture?.m; });
+  lecteur.addEventListener('ended', () => { if (lireCourant && dernierJoue === lireCourant.id) { lireOk.disabled = false; lireOk.textContent = 'J’ai écouté'; } });
+  const enAttenteDeMoi = () => { const p = me(); return p ? msgs.filter(m => m.pour === p.id && m.de !== p.id && m.lu === null && !m.wait) : []; };
+  function aLire(){
+    const file = enAttenteDeMoi();
+    if (lireCourant && !file.some(m => m.id === lireCourant.id)) lireCourant = null;
+    if (!file.length) { if (lireDlg.open) lireDlg.close(); clearInterval(lireDing); lireDing = null; document.title = titreAvant; return; }
+    $('#lire-n').textContent = file.length > 1 ? `Encore ${file.length - 1} message${file.length > 2 ? 's' : ''} après celui-ci` : '';
+    if (lireCourant) return;
+    const m = lireCourant = file[0], de = profilDe(m.de);
+    lireDlg.style.setProperty('--a', de ? de.tint : '74,98,116');
+    const av = de ? avatar(de) : el('span', 'avatar'); av.id = 'lire-av'; $('#lire-av').replaceWith(av);
+    $('#lire-de').textContent = `${de ? de.name : '?'} t’écrit`;
+    $('#lire-quand').textContent = `Pour toi seulement · ${heure(m.at)}`;
+    const box = $('#lire-txt');
+    if (m.vocal) { box.replaceChildren(lecteurVocal(m)); lireOk.disabled = true; lireOk.textContent = 'Écoute la note jusqu’au bout'; }
+    else { box.textContent = m.texte; lireOk.disabled = false; lireOk.textContent = 'J’ai lu'; }
+    if (!lireDlg.open) lireDlg.showModal();
+    lireOk.focus();
+    sonner();
+    clearInterval(lireDing); lireDing = setInterval(sonner, 20000);
+    document.title = `🔴 ${de ? de.name : 'Message'} t’écrit`;
+  }
+  lireOk.onclick = () => {
+    const m = lireCourant, p = me(); if (!m || !p) return;
+    if (enLecture?.m === m.id) lecteur.pause();
+    m.lu = new Date().toISOString();   // aussitôt chez moi ; le serveur confirme et prévient l'auteur
+    lireCourant = null; garderChat(); renderChat();
+    if (chatWs?.readyState === 1) chatWs.send(JSON.stringify({ type: 'lu', id: m.id }));
+    else fetch(`${BAT}/api/chat/lu/${encodeURIComponent(m.id)}?qui=${encodeURIComponent(p.id)}`, { method: 'POST' }).catch(() => {});
+    aLire();
+  };
+
   function chatRelancer(){
     const p = me(); chat.hidden = !p; if (!p) return;
     chat.classList.toggle('is-min', !chatPos.ouvert);
     // Un autre prénom au poste : on repart de sa conversation à lui (ses messages privés ne sont pas ceux d'avant).
     const c = store.get(LS_CHAT); msgs = c && c.qui === p.id && Array.isArray(c.msgs) ? c.msgs : [];
     chatPour = 'tous'; renderPour(); modeSaisie();
-    renderChat(); placer(); connecter();
+    lireCourant = null; renderChat(); placer(); connecter(); aLire();
   }
   chatRelancer();
 
