@@ -427,21 +427,16 @@
   @keyframes chatOpen{ from{ opacity:0; transform:scale(.6); } to{ opacity:1; transform:none; } }
   @keyframes chatPop{ from{ transform:scale(.4); } to{ transform:none; } }
   .chat-head{
-    display:flex; align-items:center; gap:10px; padding:10px 8px 10px 16px; min-height:60px;
+    display:flex; align-items:center; gap:4px; padding:8px 6px 2px 16px; min-height:52px;
     cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
     border-bottom:1px solid rgba(255,255,255,.55);
     background:linear-gradient(to bottom,rgba(255,255,255,.45),rgba(255,255,255,0));
   }
   .chat-head:active{ cursor:grabbing; }
   .chat-grip{ position:absolute; left:50%; top:5px; width:36px; height:4px; margin-left:-18px; border-radius:2px; background:rgba(74,98,116,.22); }
-  .chat-title{ flex:1; min-width:0; display:grid; }
-  .chat-title b{ font-size:16px; font-weight:700; letter-spacing:-.015em; }
-  .chat-title small{ font-size:12.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-height:16px; }
-  .chat-title small.tape{ color:var(--duck); font-weight:600; }
-  .chat-pres{ display:flex; }
-  .chat-pres .avatar{ width:28px; height:28px; font-size:12px; margin-left:-6px; background:#fff; box-shadow:inset 0 0 0 1px rgba(var(--a),.3), 0 0 0 2px rgba(255,255,255,.9); position:relative; }
-  .chat-pres .avatar.on::after{ content:""; position:absolute; right:-1px; bottom:-1px; width:9px; height:9px; border-radius:50%; background:#1e9e5a; box-shadow:0 0 0 2px #fff; }
-  .chat-pres .avatar:not(.on){ opacity:.4; }
+  /* Une seule ligne, et seulement quand elle dit quelque chose : « écrit… », une pause, une reconnexion */
+  .chat-etat{ flex:1; min-width:0; font-size:12.5px; font-weight:600; color:var(--duck); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chat-etat.pause{ color:#3d3a8c; }
   .chat-x{ width:44px; height:44px; flex-shrink:0; display:grid; place-items:center; border:0; border-radius:50%; background:none; }
   .chat-x:hover{ background:rgba(74,98,116,.1); }
   .chat-x svg{ width:20px; height:20px; fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round; }
@@ -468,16 +463,15 @@
   .chat-pour button{ position:relative; min-height:44px; padding:0 2px; border:0; background:none; display:grid; place-items:center; flex-shrink:0; }
   .chat-pour .fil-n{ position:absolute; top:2px; right:-2px; min-width:18px; height:18px; padding:0 5px; border-radius:9px; display:grid; place-items:center;
     background:var(--danger); color:#fff; font-size:11px; font-weight:700; box-shadow:0 0 0 2px #fff; }
-  .chat-pour .en-ligne .avatar{ box-shadow:0 0 0 2px #1e9e5a; }
   .chat-pour span{ display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 12px 0 4px; border-radius:999px; font-size:13.5px; font-weight:600; color:var(--muted);
     background:rgba(255,255,255,.5); box-shadow:inset 0 0 0 1px rgba(74,98,116,.12); transition:background-color .2s, color .2s, box-shadow .2s; }
   .chat-pour .tous span{ padding-left:12px; }
-  .chat-pour .avatar{ width:24px; height:24px; font-size:11px; background:#fff; }
+  /* En ligne : vert ; sinon neutre */
+  .chat-pour .avatar{ width:24px; height:24px; font-size:11px; color:#6b7a86; background:#e9edf0; box-shadow:none; }
+  .chat-pour .en-ligne .avatar{ color:#fff; background:#1e9e5a; }
   .chat-pour button[aria-checked="true"] span{ color:#fff; background:rgb(var(--a)); box-shadow:0 4px 12px rgba(var(--a),.3); }
   .chat-pour button[aria-checked="true"] svg{ stroke:#fff; }
   .chat-pour svg{ width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
-  .chat.prive .chat-pres{ display:none; }
-  .chat.prive .chat-form textarea{ border-color:rgba(var(--a),.55); box-shadow:0 0 0 3px rgba(var(--a),.12); }
   .chat-form{ position:relative; display:flex; align-items:flex-end; gap:8px; padding:6px 8px calc(8px + var(--safe-b)) 12px; }
   /* Note vocale en cours d'enregistrement */
   .chat-rec{ flex:1; min-height:44px; display:flex; align-items:center; gap:10px; padding:0 6px 0 2px; border-radius:22px; background:rgba(255,255,255,.8); box-shadow:inset 0 0 0 1px rgba(217,48,37,.25); font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
@@ -510,7 +504,6 @@
   .chat-menu button{ display:block; width:100%; min-height:44px; padding:0 12px; border:0; border-radius:10px; background:none; text-align:left; font-size:15px; font-weight:600; }
   .chat-menu button:hover{ background:rgba(74,98,116,.09); }
   .chat-menu button.fin{ color:var(--danger); }
-  .chat-title small.pause{ color:#3d3a8c; font-weight:600; }
   .chat-pour button.en-pause .avatar{ opacity:.45; }
   .chat-lune{ position:absolute; bottom:2px; left:2px; width:22px; height:22px; border-radius:50%; display:grid; place-items:center; background:#3d3a8c; box-shadow:0 0 0 2px #fff; }
   .chat-lune svg{ width:12px; height:12px; fill:#fff; stroke:none; }
@@ -745,8 +738,7 @@
   <section class="chat-panel" id="chat-panel" aria-label="Discussion de l'équipe">
     <header class="chat-head" id="chat-head">
       <span class="chat-grip" aria-hidden="true"></span>
-      <div class="chat-title"><b id="chat-nom">L'équipe</b><small id="chat-etat" aria-live="polite"></small></div>
-      <div class="chat-pres" id="chat-pres"></div>
+      <small class="chat-etat" id="chat-etat" aria-live="polite"></small>
       <button type="button" class="chat-dnd" id="chat-dnd" aria-pressed="false" aria-haspopup="true" aria-label="Ne pas déranger" title="Ne pas déranger">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
       </button>
@@ -1497,7 +1489,7 @@
   // --- Glisser : au-delà de 5 px c'est un déplacement, sinon un simple toucher ---
   let glisse = null, vientDeGlisser = false;
   function prise(e){
-    if (e.button > 0 || e.target.closest('.chat-x')) return;
+    if (e.button > 0 || e.target.closest('button')) return;   // un bouton se touche, il ne déplace pas
     glisse = { id: e.pointerId, x0: e.clientX, y0: e.clientY, px: chatPos.x, py: chatPos.y, bouge: false, cible: e.currentTarget };
     e.currentTarget.setPointerCapture(e.pointerId);
   }
@@ -1588,10 +1580,8 @@
   function majEtat(){
     const p = me(); if (!p) return;
     const autres = PROFILES.filter(x => x.id !== p.id);
-    $('#chat-pres').replaceChildren(...autres.map(x => { const a = avatar(x); a.classList.toggle('on', presents.includes(x.id)); a.title = x.name + (presents.includes(x.id) ? ' est là' : ''); return a; }));
     // « écrit… » : dans l'équipe, ceux qui écrivent à l'équipe ; en privé, seulement l'autre, s'il m'écrit.
     const dest = profilDe(chatPour);
-    $('#chat-nom').textContent = dest ? dest.name : 'L’équipe';
     const ecrit = [...tapeurs.entries()].filter(([id, t]) => id !== p.id && (dest ? id === dest.id && t.prive : !t.prive)).map(([id]) => profilDe(id)?.name).filter(Boolean);
     chatEtat.classList.toggle('tape', !!ecrit.length);
     const la = autres.filter(x => presents.includes(x.id)).map(x => x.name);
@@ -1600,12 +1590,7 @@
     chatEtat.classList.toggle('pause', enPause(p.id) || (!!dest && enPause(dest.id)));
     if (enPause(p.id)) { chatEtat.textContent = `Ne pas déranger · jusqu’à ${heure(pauses[p.id])}`; return; }
     if (dest && enPause(dest.id)) { chatEtat.textContent = `En pause jusqu’à ${heure(pauses[dest.id])}`; return; }
-    if (dest) { chatEtat.textContent = chatMode === 'coupe' ? 'Reconnexion…' : presents.includes(dest.id) ? 'En ligne' : 'Pas sur le portail en ce moment'; return; }
-    chatEtat.textContent = chatMode === 'coupe' ? 'Reconnexion…'
-      : chatMode === 'sonde' ? 'Toute l’équipe'
-      : !la.length ? 'Personne d’autre en ce moment'
-      : la.length === 1 ? `${la[0]} est là` : `${la.slice(0, -1).join(', ')} et ${la.at(-1)} sont là`;
-    chatOrb.classList.toggle('is-live', la.length > 0);
+    chatEtat.textContent = chatMode === 'coupe' ? 'Reconnexion…' : '';
   }
   // Non lus d'une conversation : les messages des autres après le dernier vu de ce fil.
   function nonLus(fil){
@@ -1720,9 +1705,9 @@
     $('#chat-pour').replaceChildren(...choix.map(x => {
       const b = el('button', (x.id === 'tous' ? 'tous' : '') + (presents.includes(x.id) ? ' en-ligne' : '') + (enPause(x.id) ? ' en-pause' : '')); b.type = 'button'; b.setAttribute('role', 'tab');
       b.setAttribute('aria-checked', String(chatPour === x.id)); b.setAttribute('aria-selected', String(chatPour === x.id));
-      b.style.setProperty('--a', x.tint);
+      b.style.setProperty('--a', '74,98,116');
       const n = nonLus(x.id);
-      b.title = (x.id === 'tous' ? 'L’équipe' : x.name) + (n ? ` · ${n} non lu${n > 1 ? 's' : ''}` : '');
+      b.title = (x.id === 'tous' ? 'L’équipe' : x.name + (enPause(x.id) ? ` · en pause jusqu’à ${heure(pauses[x.id])}` : presents.includes(x.id) ? ' · en ligne' : '')) + (n ? ` · ${n} non lu${n > 1 ? 's' : ''}` : '');
       const s = el('span');
       if (x.id === 'tous') s.innerHTML = SVG('<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 4.5a3.2 3.2 0 0 1 0 6.2"/><path d="M18 14.5a6 6 0 0 1 3 5.5"/>');
       else s.append(avatar(x));
@@ -1734,7 +1719,6 @@
     }));
     const dest = profilDe(chatPour);
     chat.classList.toggle('prive', !!dest);
-    if (dest) chat.style.setProperty('--a', dest.tint); else chat.style.removeProperty('--a');
     if (!dest) chatUrgent = false;
     $('#chat-urg').hidden = !dest; $('#chat-urg').setAttribute('aria-pressed', String(chatUrgent));
     chat.classList.toggle('urgent', chatUrgent);
