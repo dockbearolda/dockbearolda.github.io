@@ -1,6 +1,12 @@
 {
-  "rev": 1795221119632,
+  "rev": 1795235542372,
   "shortcuts": [
+    {
+      "name": "BAT Studio",
+      "url": "https://bat-studio.dockbear.workers.dev/",
+      "icon": "check",
+      "color": "vert"
+    },
     {
       "name": "Site B2C",
       "url": "https://myolda.com/",
@@ -53,12 +59,6 @@
       "color": "turquoise",
       "since": 1793901116418,
       "side": "left"
-    },
-    {
-      "name": "Bon à Tirer",
-      "url": "https://bat-studio.dockbear.workers.dev/",
-      "icon": "check",
-      "color": "vert"
     },
     {
       "name": "Design",
