@@ -44,12 +44,21 @@
   }
   const me = () => profil(store.raw(LS_WHO));
 
+  // --- La police manuscrite de la to do list (Caveat, licence OFL), servie par le Dashboard ---
+  // Déclarée dans la page : une @font-face posée dans un Shadow DOM ne sert pas. Installée sur le poste, elle est prise d'abord.
+  const ICI = (() => { try { return new URL('.', script?.src || 'https://dockbearolda.github.io/bulle.js').href; } catch (_) { return 'https://dockbearolda.github.io/'; } })();
+  try {
+    const f = document.createElement('style');
+    f.textContent = `@font-face{font-family:"OLDA Main";src:local("Caveat"),local("Caveat Regular"),url("${ICI}caveat.woff2") format("woff2");font-weight:400 700;font-display:swap;}`;
+    (document.head || document.documentElement).append(f);
+  } catch (_) {}
+
   // --- La bulle vit dans son Shadow DOM, au-dessus de tout ---
   const hote = document.createElement('olda-bulle');
   const root = hote.attachShadow({ mode: 'open' });
   root.innerHTML = `<style>
   :host{ all:initial; position:fixed; left:0; top:0; width:0; height:0; z-index:2147483000; }
-  .chat, dialog, .toast{
+  .chat, .todo, .ctx, .rappel, dialog, .toast{
     --duck:#4A6274; --duck-hover:#42596A; --duck-focus:#6B8191;
     --ink:#202930; --muted:#5b6b78; --line:#d6dde3; --danger:#d93025;
     --spring:cubic-bezier(.34,1.56,.64,1); --safe-b:env(safe-area-inset-bottom,0px);
@@ -273,6 +282,82 @@
   .lire-n{ font-size:12.5px; color:var(--muted); min-height:16px; }
   .chat-b .vu{ font-weight:700; opacity:1; }
 
+  /* ---------- La to do list : un bloc-notes à soi, coché ici, rayé partout ---------- */
+  .todo{ position:fixed; z-index:34; left:0; top:0; touch-action:none; user-select:none; -webkit-user-select:none;
+    --main:"OLDA Main","Segoe Print","Bradley Hand",cursive; --papier:#fffcf2; --encre:#23324a; --marge:rgba(217,48,37,.3); --ligne:rgba(74,120,180,.17); }
+  .todo-orb{ position:relative; width:56px; height:56px; border-radius:50%; border:0; padding:0; display:grid; place-items:center; -webkit-touch-callout:none;
+    background:radial-gradient(120% 120% at 30% 20%, #ffe892 0%, #ffcf3f 55%, #eea600 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 0 0 4px rgba(255,255,255,.75), 0 10px 24px rgba(190,130,0,.34), 0 2px 6px rgba(32,41,48,.18);
+    transition:transform .35s var(--spring); cursor:grab; }
+  .todo-orb:hover{ transform:scale(1.05); }
+  .todo-orb:active{ cursor:grabbing; }
+  .todo-orb svg{ width:26px; height:26px; fill:none; stroke:#5a3d00; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .todo-orb.has-new::before{ content:""; position:absolute; inset:-4px; border-radius:50%; border:3px solid rgba(217,48,37,.4); animation:chatHalo 2.4s ease-out infinite; pointer-events:none; }
+  .todo-n{ position:absolute; top:-3px; right:-3px; min-width:22px; height:22px; padding:0 6px; border-radius:11px; display:grid; place-items:center;
+    background:var(--danger); color:#fff; font-size:12px; font-weight:700; box-shadow:0 0 0 2px #fff; animation:chatPop .45s var(--spring); }
+  .todo-panel{ position:absolute; left:0; top:0; width:min(340px, calc(100vw - 24px)); height:min(480px, calc(100dvh - 24px));
+    display:flex; flex-direction:column; overflow:hidden; border-radius:22px; background:var(--papier);
+    box-shadow:0 0 0 1px rgba(120,100,40,.14), 0 2px 8px rgba(32,41,48,.08), 0 30px 70px rgba(42,58,72,.28);
+    transform-origin:var(--ox,0) var(--oy,0); animation:chatOpen .42s var(--spring); user-select:text; -webkit-user-select:text; }
+  .todo.is-min .todo-panel{ display:none; }
+  .todo:not(.is-min) .todo-orb{ display:none; }
+  .todo.drag .todo-panel, .todo.drag .todo-orb{ box-shadow:0 0 0 1px rgba(120,100,40,.14), 0 34px 80px rgba(42,58,72,.34); }
+  .todo.drag{ will-change:transform; }
+  .todo-head{ position:relative; display:flex; align-items:center; gap:8px; min-height:58px; padding:8px 6px 0 18px; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .todo-head:active{ cursor:grabbing; }
+  .todo-t{ font-family:var(--main); font-size:32px; font-weight:700; line-height:1; color:var(--encre); }
+  .todo-c{ flex:1; min-width:0; padding-top:6px; font-size:12.5px; font-weight:600; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .todo-add{ display:flex; align-items:center; margin:0 8px 0 52px; border-bottom:1.5px dashed rgba(35,50,74,.25); transition:border-color .2s; }
+  .todo-add:focus-within{ border-bottom-color:var(--duck); border-bottom-style:solid; }
+  .todo-add input{ flex:1; min-width:0; height:48px; border:0; background:none; outline:none; font-family:var(--main); font-size:24px; color:var(--encre); }
+  .todo-add input::placeholder{ color:rgba(35,50,74,.38); }
+  .todo-plus{ width:44px; height:44px; flex-shrink:0; border:0; border-radius:50%; background:none; display:grid; place-items:center; }
+  .todo-plus:hover{ background:rgba(74,98,116,.1); }
+  .todo-plus svg{ width:20px; height:20px; fill:none; stroke:var(--encre); stroke-width:2.2; stroke-linecap:round; }
+  /* La marge rouge du cahier, et une ligne bleue sous chaque tâche */
+  .todo-list{ flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; list-style:none; padding:4px 0 10px; scrollbar-width:thin;
+    background:linear-gradient(to right, transparent 45px, var(--marge) 45px, var(--marge) 46.5px, transparent 46.5px); }
+  .todo-i{ display:flex; align-items:flex-start; min-height:50px; padding-right:4px; border-bottom:1px solid var(--ligne); }
+  .todo-cc{ width:44px; height:48px; flex-shrink:0; border:0; background:none; display:grid; place-items:center; }
+  .todo-cc:disabled{ cursor:default; }
+  .todo-cc svg{ width:22px; height:22px; fill:none; stroke:var(--encre); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .todo-cc rect{ opacity:.6; }
+  .todo-cc .v{ stroke:#1e8e3e; stroke-width:2.6; stroke-dasharray:16; stroke-dashoffset:16; }
+  .todo-i.fait .todo-cc .v{ stroke-dashoffset:0; }
+  .todo-i.raye .todo-cc .v{ animation:coche .3s ease-out; }
+  @keyframes coche{ from{ stroke-dashoffset:16; } }
+  .todo-corps{ flex:1; min-width:0; padding:10px 6px 9px 10px; display:flex; flex-direction:column; align-items:flex-start; gap:3px; }
+  .todo-tx{ font-family:var(--main); font-size:24px; font-weight:500; line-height:1.12; color:var(--encre); overflow-wrap:anywhere; transition:color .3s; }
+  /* Le trait qui raye : tiré à la main, ligne par ligne */
+  .todo-tx > span{ background:linear-gradient(currentColor, currentColor) no-repeat 0 60% / 0 2px; -webkit-box-decoration-break:clone; box-decoration-break:clone; }
+  .todo-i.fait .todo-tx{ color:rgba(35,50,74,.5); }
+  .todo-i.fait .todo-tx > span{ background-size:100% 2px; }
+  .todo-i.raye .todo-tx > span{ animation:raye .45s ease-out; }
+  @keyframes raye{ from{ background-size:0 2px; } }
+  .todo-tag{ padding:1px 8px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.01em; color:#fff; background:var(--duck); }
+  .todo-tag.bat-paiement{ background:#1e8e3e; } .todo-tag.bat-valide{ background:#d97706; } .todo-tag.prt-imprimer, .todo-tag.prt-shop{ background:#1a73e8; }
+  .todo-tag.bat-note{ background:#b45309; } .todo-tag.stock-bas{ background:var(--danger); }
+  .todo-i.fait .todo-tag{ opacity:.45; }
+  .todo-sous{ font-size:12.5px; line-height:1.35; color:var(--muted); }
+  .todo-ic{ width:40px; height:48px; flex-shrink:0; border:0; border-radius:12px; background:none; display:grid; place-items:center; color:var(--muted); }
+  .todo-ic:hover{ background:rgba(74,98,116,.09); color:var(--ink); }
+  .todo-ic svg{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
+  .todo-vide{ padding:26px 20px 0 60px; font-family:var(--main); font-size:24px; color:rgba(35,50,74,.48); }
+  .todo-vider{ flex-shrink:0; min-height:44px; border:0; border-top:1px solid var(--ligne); background:none; font-size:13.5px; font-weight:600; color:var(--muted); }
+  .todo-vider:hover{ color:var(--danger); }
+  .todo-police{ flex-shrink:0; display:flex; align-items:center; min-height:44px; padding:6px 14px; border-top:1px solid var(--ligne); font-size:12.5px; font-weight:600; color:var(--duck); text-decoration:underline; }
+  /* ---------- Clic droit : cacher / afficher la to do list ou la messagerie ---------- */
+  .ctx{ position:fixed; z-index:60; left:0; top:0; min-width:236px; padding:6px; border-radius:14px; background:rgba(255,255,255,.98);
+    box-shadow:inset 0 0 0 1px rgba(74,98,116,.14), 0 18px 40px rgba(42,58,72,.24); animation:chatPop .2s var(--spring); }
+  .ctx button{ display:flex; align-items:center; gap:10px; width:100%; min-height:44px; padding:0 12px; border:0; border-radius:10px; background:none; text-align:left; font-size:15px; font-weight:600; }
+  .ctx button:hover, .ctx button:focus-visible{ background:rgba(74,98,116,.1); outline:none; }
+  .ctx svg{ width:18px; height:18px; flex-shrink:0; fill:none; stroke:var(--muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  /* Tout est caché : un petit point en bas à droite pour tout remettre */
+  .rappel{ position:fixed; right:calc(2px + env(safe-area-inset-right,0px)); bottom:calc(2px + var(--safe-b)); width:44px; height:44px; border:0; background:none; display:grid; place-items:center; }
+  .rappel i{ width:12px; height:12px; border-radius:50%; background:rgba(74,98,116,.38); box-shadow:0 0 0 2px rgba(255,255,255,.85); transition:transform .2s, background-color .2s; }
+  .rappel:hover i, .rappel:focus-visible i{ transform:scale(1.4); background:var(--duck); }
+  .rappel.neuf i{ background:var(--danger); }
+  @media (prefers-reduced-motion:reduce){ .todo-orb{ transition:none; } .todo-panel, .todo-orb.has-new::before, .todo-i.raye .todo-tx > span, .todo-i.raye .todo-cc .v, .ctx{ animation:none; } }
 </style>
 <div class="chat is-min" id="chat" hidden>
   <button type="button" class="chat-orb" id="chat-orb" aria-label="Ouvrir la discussion de l'équipe">
@@ -315,6 +400,31 @@
     </form>
   </section>
 </div>
+<div class="todo is-min" id="todo" hidden>
+  <button type="button" class="todo-orb" id="todo-orb" aria-label="Ouvrir ma to do list">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="M3.5 6l1.5 1.5L7.5 5"/><path d="M3.5 12l1.5 1.5L7.5 11"/><path d="M3.5 18l1.5 1.5L7.5 17"/></svg>
+    <span class="todo-n" id="todo-n" hidden></span>
+  </button>
+  <section class="todo-panel" id="todo-panel" aria-label="Ma to do list">
+    <header class="todo-head" id="todo-head">
+      <span class="chat-grip" aria-hidden="true"></span>
+      <h2 class="todo-t">À faire</h2>
+      <small class="todo-c" id="todo-c" aria-live="polite"></small>
+      <button type="button" class="chat-x" id="todo-x" aria-label="Réduire la to do list" title="Réduire (Échap)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>
+      </button>
+    </header>
+    <form class="todo-add" id="todo-add" autocomplete="off">
+      <input id="todo-txt" type="text" maxlength="300" placeholder="Ajouter une tâche…" enterkeyhint="done" aria-label="Nouvelle tâche">
+      <button type="submit" class="todo-plus" aria-label="Ajouter la tâche"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    </form>
+    <ul class="todo-list" id="todo-list" aria-label="Tâches"></ul>
+    <a class="todo-police" id="todo-police" hidden download="Caveat.ttf">La police manuscrite ne se charge pas ici : l’installer (Caveat, 1 clic)</a>
+    <button type="button" class="todo-vider" id="todo-vider" hidden></button>
+  </section>
+</div>
+<div class="ctx" id="ctx" role="menu" hidden></div>
+<button type="button" class="rappel" id="rappel" hidden aria-label="Afficher la to do list ou la messagerie" title="To do list et messagerie cachées ici : toucher pour les remettre"><i></i></button>
 <dialog id="lire" aria-labelledby="lire-de" aria-describedby="lire-txt">
   <div class="lire">
     <span class="avatar" id="lire-av" aria-hidden="true"></span>
@@ -445,10 +555,10 @@
     poignee.addEventListener('pointercancel', lacher);
   }
   chat.addEventListener('transitionend', () => { chat.style.transition = ''; });
-  chatOrb.onclick = () => { if (!vientDeGlisser) basculer(true); };
+  chatOrb.onclick = () => { if (!vientDeGlisser && !appuiLongPris()) basculer(true); };
   $('#chat-x').onclick = () => basculer(false);
   chatPanel.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); basculer(false); chatOrb.focus(); } });
-  addEventListener('resize', () => { if (!chat.hidden) { appliquerTaille(); placer(); } });
+  addEventListener('resize', () => { if (!chat.hidden) { appliquerTaille(); placer(); } if (!todo.hidden) placerT(); });
 
   // --- Taille : on tire un bord ou un coin du panneau ouvert ; elle est gardée sur l'appareil ---
   const BORD = 8, COIN = 20, MIN_W = 380, MIN_H = 360;
@@ -941,8 +1051,302 @@
   // Une pause finit toute seule : on regarde chaque demi-minute (les urgents en attente s'affichent alors).
   setInterval(() => { if (JSON.stringify(Object.keys(pauses).filter(enPause)) !== pauseVue) majPause(); }, 30000);
 
+  // ---------- La to do list : à soi, cochée ici, rayée partout (BAT Studio, /api/todo) ----------
+  // Une liste par prénom, rangée chez BAT Studio : cochée sur le Dashboard, elle l'est dans chaque appli.
+  // Les notifications de BAT Studio pour moi s'y ajoutent d'elles-mêmes (cocher = lu) :
+  // Mélina et Loïc, un BAT validé à lancer si le client a payé ; Julien, les cotes à prendre ;
+  // Charlie, la production (l'imprimante de la bulle PRT, les demandes de PRT).
+  // Le clic droit (un appui long au doigt) sur la to do list ou la messagerie les cache sur ce site.
+  const LS_TODO = 'olda_todo', LS_TODO_POS = 'olda_todo_pos', LS_TODO_VUS = 'olda_todo_vus', LS_CACHES = 'olda_caches';
+  const todo = $('#todo'), todoOrb = $('#todo-orb'), todoPanel = $('#todo-panel'), todoList = $('#todo-list'), todoTxt = $('#todo-txt');
+  const ORB_T = 56, JOUR = 864e5, BAT_ORIGINE = (() => { try { return new URL(BAT).origin; } catch (_) { return ''; } })();
+  const caches = Object.assign({ todo: false, chat: false }, store.get(LS_CACHES) || {});
+  // Ouverte d'office sur le Dashboard, sauf au téléphone (elle couvrirait la discussion).
+  const todoPos = Object.assign({ x: null, y: null, ouvert: DASHBOARD && innerWidth >= 720 }, store.get(LS_TODO_POS) || {});
+  const todoVus = new Set(store.get(LS_TODO_VUS) || []);
+  let taches = [], notifsT = [], todoMinuterie = null, rayes = new Set();
+  const TAGS = { 'bat-paiement': 'Paiement ?', 'bat-valide': 'Cotes à prendre', 'prt-imprimer': 'À imprimer', 'prt-shop': 'PRT shop', 'bat-note': 'Note client', 'stock-bas': 'Stock', 'bat-atelier': 'Atelier' };
+
+  // --- Place et taille, comme la bulle de discussion ---
+  const tailleT = () => todoPos.ouvert ? { w: todoPanel.offsetWidth || 340, h: todoPanel.offsetHeight || 480 } : { w: ORB_T, h: ORB_T };
+  function bornerT(){
+    const { w, h } = tailleT(), vw = innerWidth, vh = innerHeight;
+    if (todoPos.x == null) {
+      if (vw < 200 || vh < 200) return;
+      // Le Dashboard l'ouvre en bas à gauche ; ailleurs, la pastille se pose au-dessus de celle de la discussion.
+      if (DASHBOARD) { todoPos.x = 24; todoPos.y = vh - h - 24; } else { todoPos.x = vw - w - 28; todoPos.y = vh - ORB - 92 - h - 18; }
+    }
+    todoPos.x = Math.min(Math.max(MARGE, todoPos.x), Math.max(MARGE, vw - w - MARGE));
+    todoPos.y = Math.min(Math.max(MARGE, todoPos.y), Math.max(MARGE, vh - h - MARGE));
+  }
+  function placerT(){ bornerT(); todo.style.transform = `translate3d(${Math.round(todoPos.x)}px,${Math.round(todoPos.y)}px,0)`; }
+  const garderPosT = () => store.set(LS_TODO_POS, todoPos);
+  function basculerT(ouvrir){
+    if (ouvrir === todoPos.ouvert) return;
+    const vw = innerWidth, vh = innerHeight;
+    if (ouvrir) {
+      const droite = todoPos.x + ORB_T / 2 > vw / 2, bas = todoPos.y + ORB_T / 2 > vh / 2;
+      todoPos.ouvert = true; todo.classList.remove('is-min');
+      const { w, h } = tailleT();
+      todoPanel.style.setProperty('--ox', droite ? '100%' : '0'); todoPanel.style.setProperty('--oy', bas ? '100%' : '0');
+      todoPos.x = droite ? todoPos.x + ORB_T - w : todoPos.x; todoPos.y = bas ? todoPos.y + ORB_T - h : todoPos.y;
+      placerT(); devant(todo); todoOrb.classList.remove('has-new'); relireT(); verifierPolice();
+      if (matchMedia('(hover:hover)').matches) todoTxt.focus({ preventScroll: true });
+    } else {
+      const { w, h } = tailleT();
+      const droite = todoPos.x + w / 2 > vw / 2, bas = todoPos.y + h / 2 > vh / 2;
+      todoPos.ouvert = false; todo.classList.add('is-min');
+      todoPos.x = droite ? todoPos.x + w - ORB_T : todoPos.x; todoPos.y = bas ? todoPos.y + h - ORB_T : todoPos.y;
+      placerT();
+    }
+    garderPosT(); majCompteT();
+  }
+  let glisseT = null, vientDeGlisserT = false;
+  function priseT(e){
+    const bt = e.target.closest('button');
+    if (e.button > 0 || (bt && bt !== e.currentTarget)) return;
+    glisseT = { id: e.pointerId, x0: e.clientX, y0: e.clientY, px: todoPos.x, py: todoPos.y, bouge: false };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function deplacerT(e){
+    if (!glisseT || e.pointerId !== glisseT.id) return;
+    const dx = e.clientX - glisseT.x0, dy = e.clientY - glisseT.y0;
+    if (!glisseT.bouge && Math.hypot(dx, dy) < 3) return;
+    if (!glisseT.bouge) { glisseT.bouge = true; todo.classList.add('drag'); todo.style.transition = 'none'; }
+    todoPos.x = glisseT.px + dx; todoPos.y = glisseT.py + dy;
+    placerT();
+  }
+  function lacherT(e){
+    if (!glisseT || e.pointerId !== glisseT.id) return;
+    const bouge = glisseT.bouge; glisseT = null; todo.classList.remove('drag');
+    if (!bouge) return;
+    vientDeGlisserT = true; setTimeout(() => { vientDeGlisserT = false; }, 0);
+    bornerT();
+    const { w, h } = tailleT(), dX = innerWidth - w - MARGE, dY = innerHeight - h - MARGE;
+    const colle = v => v - MARGE < AIMANT ? MARGE : null;
+    const x = colle(todoPos.x) ?? (dX - todoPos.x < AIMANT ? dX : todoPos.x);
+    const y = colle(todoPos.y) ?? (dY - todoPos.y < AIMANT ? dY : todoPos.y);
+    todo.style.transition = (x !== todoPos.x || y !== todoPos.y) && !reduced.matches ? 'transform .45s cubic-bezier(.34,1.4,.64,1)' : '';
+    todoPos.x = x; todoPos.y = y;
+    placerT(); garderPosT();
+  }
+  for (const poignee of [todoOrb, $('#todo-head')]) {
+    poignee.addEventListener('pointerdown', priseT);
+    poignee.addEventListener('pointermove', deplacerT);
+    poignee.addEventListener('pointerup', lacherT);
+    poignee.addEventListener('pointercancel', lacherT);
+  }
+  todo.addEventListener('transitionend', () => { todo.style.transition = ''; });
+  // Celle qu'on touche ou qu'on ouvre passe devant l'autre.
+  const devant = n => { todo.style.zIndex = n === todo ? 36 : 34; chat.style.zIndex = n === chat ? 36 : 35; };
+  todo.addEventListener('pointerdown', () => devant(todo), true);
+  chat.addEventListener('pointerdown', () => devant(chat), true);
+  todoOrb.onclick = () => { if (!vientDeGlisserT && !appuiLongPris()) basculerT(true); };
+  $('#todo-x').onclick = () => basculerT(false);
+  todoPanel.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); basculerT(false); todoOrb.focus(); } });
+
+  // --- La police manuscrite ne passe pas (une appli qui la bloque) : un lien pour l'installer sur le poste ---
+  let policeVue = false;
+  function verifierPolice(){
+    if (policeVue || !document.fonts?.load) return;
+    policeVue = true;
+    const lien = $('#todo-police'); lien.href = ICI + 'Caveat.ttf';
+    document.fonts.load('24px "OLDA Main"').then(l => { lien.hidden = !!(l && l.length); }, () => { lien.hidden = false; });
+  }
+
+  // --- Afficher ---
+  const notifsVisibles = () => notifsT.filter(n => !n.lu || Date.now() - Date.parse(n.lu) < JOUR);
+  const aFaire = () => taches.filter(t => !t.fait).length + notifsT.filter(n => !n.lu).length;
+  function majCompteT(){
+    const n = aFaire(), c = $('#todo-n');
+    c.hidden = !n || todoPos.ouvert; c.textContent = n > 9 ? '9+' : String(n);
+    $('#todo-c').textContent = n ? `${n} à faire` : '';
+    todoOrb.setAttribute('aria-label', n ? `Ma to do list : ${n} à faire` : 'Ouvrir ma to do list');
+  }
+  function ligneT({ texte, sous, tag, type, fait, cocher, ouvrir, suppr }){
+    const li = el('li', 'todo-i' + (fait ? ' fait' : ''));
+    const c = el('button', 'todo-cc'); c.type = 'button'; c.setAttribute('role', 'checkbox'); c.setAttribute('aria-checked', String(!!fait));
+    c.setAttribute('aria-label', texte); c.innerHTML = SVG('<rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path class="v" d="M7.5 12.5l3 3 6-7"/>');
+    if (cocher) c.onclick = cocher; else c.disabled = true;
+    const corps = el('div', 'todo-corps');
+    if (tag) { const t = el('span', 'todo-tag ' + (type || '')); t.textContent = tag; corps.append(t); }
+    const tx = el('span', 'todo-tx'), sp = el('span'); sp.textContent = texte; tx.append(sp); corps.append(tx);
+    if (sous) { const s2 = el('small', 'todo-sous'); s2.textContent = sous; corps.append(s2); }
+    li.append(c, corps);
+    if (ouvrir) { const o = el('button', 'todo-ic'); o.type = 'button'; o.title = 'Ouvrir'; o.setAttribute('aria-label', 'Ouvrir : ' + texte); o.innerHTML = SVG('<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'); o.onclick = ouvrir; li.append(o); }
+    if (suppr) { const d = el('button', 'todo-ic'); d.type = 'button'; d.title = 'Supprimer'; d.setAttribute('aria-label', 'Supprimer : ' + texte); d.innerHTML = SVG('<path d="M6 6l12 12M18 6L6 18"/>'); d.onclick = suppr; li.append(d); }
+    return li;
+  }
+  function renderTodo(){
+    const p = me(); if (!p) return;
+    const out = [];
+    for (const n of notifsVisibles()) {
+      const li = ligneT({ texte: n.titre, sous: n.texte, tag: TAGS[n.type] || 'BAT Studio', type: n.type, fait: !!n.lu,
+        cocher: n.lu ? null : () => cocherNotif(n), ouvrir: n.type === 'bat-paiement' || (n.lien && n.lien !== '/') ? () => ouvrirNotifT(n) : null });
+      if (rayes.has(n.id)) li.classList.add('raye');
+      out.push(li);
+    }
+    for (const t of taches) {
+      const li = ligneT({ texte: t.texte, fait: !!t.fait, cocher: () => cocherTache(t), suppr: t.fait ? () => supprimerTache(t) : null });
+      if (rayes.has(t.id)) li.classList.add('raye');
+      out.push(li);
+    }
+    if (!out.length) { const v = el('li', 'todo-vide'); v.textContent = 'Rien à faire. Profites-en ✌️'; out.push(v); }
+    todoList.replaceChildren(...out);
+    rayes = new Set();
+    const finies = taches.filter(t => t.fait).length, vider = $('#todo-vider');
+    vider.hidden = !finies; vider.textContent = `Effacer les terminées (${finies})`;
+    majCompteT();
+  }
+
+  // --- Mes tâches : sur l'appareil tout de suite, chez BAT Studio dans la foulée ---
+  const nouvelId = () => 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  function sauverT(){
+    store.set(LS_TODO, { qui: me()?.id, items: taches, aEnvoyer: true, v: Date.now() + Math.random() });
+    clearTimeout(todoMinuterie); todoMinuterie = setTimeout(envoyerT, 400);
+    renderTodo();
+  }
+  async function envoyerT(){
+    const c = store.get(LS_TODO);
+    if (!c || !c.aEnvoyer || !profil(c.qui)) return;
+    try {
+      const r = await fetch(`${BAT}/api/todo?qui=${encodeURIComponent(c.qui)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: c.items }) });
+      if (!r.ok) throw 0;
+      const d = store.get(LS_TODO);
+      if (d && d.v === c.v) store.set(LS_TODO, { ...d, aEnvoyer: false });
+    } catch (_) { /* hors-ligne : la liste reste sur l'appareil, elle repartira */ }
+  }
+  $('#todo-add').onsubmit = e => {
+    e.preventDefault();
+    const v = todoTxt.value.replace(/\s+/g, ' ').trim().slice(0, 300); if (!v) return;
+    if (taches.length >= 200) return toast('200 tâches au plus : efface les terminées.');
+    taches.unshift({ id: nouvelId(), texte: v, at: new Date().toISOString(), fait: null });
+    todoTxt.value = ''; sauverT(); todoList.scrollTop = 0;
+  };
+  function cocherTache(t){ t.fait = t.fait ? null : new Date().toISOString(); if (t.fait) rayes.add(t.id); sauverT(); }
+  function supprimerTache(t){ taches = taches.filter(x => x !== t); sauverT(); }
+  $('#todo-vider').onclick = () => { taches = taches.filter(t => !t.fait); sauverT(); };
+
+  // --- Les notifications pour moi : cocher = lu (la cloche du Dashboard le voit aussi) ---
+  function cocherNotif(n){
+    if (n.lu) return;
+    n.lu = new Date().toISOString(); rayes.add(n.id); renderTodo();
+    fetch(`${BAT}/api/notifs/${encodeURIComponent(n.id)}/lu`, { method: 'POST' }).catch(() => {});
+  }
+  function ouvrirNotifT(n){
+    // « Le client a-t-il payé ? » se règle sur le Dashboard (« Payé » / « Non payé »).
+    if (n.type === 'bat-paiement') {
+      if (DASHBOARD) { basculerT(false); document.getElementById('suivi-box')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+      window.open('https://dockbearolda.github.io/', '_blank', 'noopener'); return;
+    }
+    let u; try { u = new URL(n.lien || '/', BAT + '/'); } catch (_) { return; }
+    if (u.origin !== BAT_ORIGINE) return;   // le lien ne mène que chez BAT Studio
+    u.searchParams.set('poste', me()?.id || '');
+    window.open(u.toString(), '_blank', 'noopener');
+  }
+  function nouvellesNotifs(){
+    const neuves = notifsT.filter(n => !n.lu && !todoVus.has(n.id));
+    if (!neuves.length) return;
+    neuves.forEach(n => todoVus.add(n.id)); store.set(LS_TODO_VUS, [...todoVus].slice(-300));
+    if (!todoPos.ouvert) todoOrb.classList.add('has-new');
+    $('#rappel').classList.add('neuf');
+    // Le Dashboard sonne déjà de lui-même ; ailleurs, c'est la bulle qui prévient.
+    const p = me();
+    if (!DASHBOARD && p && !enPause(p.id)) { sonner(); toast(`🔔 ${neuves[0].titre}`); }
+  }
+
+  // --- Relever : à l'ouverture, au retour sur l'onglet, et chaque demi-minute ---
+  let releveT = false;
+  async function relireT(){
+    const p = me(); if (!p || releveT) return;
+    releveT = true;
+    try {
+      const c = store.get(LS_TODO);
+      if (c?.aEnvoyer && c.qui === p.id) await envoyerT();
+      const [rt, rn] = await Promise.all([
+        fetch(`${BAT}/api/todo?qui=${encodeURIComponent(p.id)}`, { cache: 'no-store' }).catch(() => null),
+        fetch(`${BAT}/api/notifs?pour=${encodeURIComponent(p.id)}`, { cache: 'no-store' }).catch(() => null),
+      ]);
+      if (me() !== p) return;
+      const d = store.get(LS_TODO);
+      if (rt?.ok && !(d?.aEnvoyer && d.qui === p.id)) {
+        const { items } = await rt.json().catch(() => ({}));
+        if (Array.isArray(items)) { taches = items; store.set(LS_TODO, { qui: p.id, items, aEnvoyer: false, v: 0 }); }
+      }
+      if (rn?.ok) { const { notifs } = await rn.json().catch(() => ({})); if (Array.isArray(notifs)) { notifsT = notifs; nouvellesNotifs(); } }
+      renderTodo();
+    } finally { releveT = false; }
+  }
+  setInterval(() => { if (!document.hidden) relireT(); }, 30000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) relireT(); });
+  addEventListener('online', relireT);
+
+  function todoRelancer(){
+    const p = me(), c = store.get(LS_TODO);
+    taches = c && c.qui === p?.id && Array.isArray(c.items) ? c.items : [];
+    notifsT = [];
+    todo.classList.toggle('is-min', !todoPos.ouvert);
+    appliquerCaches();
+    if (p) { renderTodo(); relireT(); if (todoPos.ouvert) verifierPolice(); }
+  }
+
+  // --- Cacher / afficher, site par site : clic droit, ou appui long au doigt ---
+  const ctx = $('#ctx'), rappel = $('#rappel');
+  function appliquerCaches(){
+    const p = me();
+    chat.hidden = (!p && DASHBOARD) || caches.chat;
+    todo.hidden = !p || caches.todo;
+    rappel.hidden = !(chat.hidden && todo.hidden && (caches.chat || caches.todo));
+    if (!chat.hidden) placer();
+    if (!todo.hidden) placerT();
+  }
+  function cacher(k, v){
+    caches[k] = v; store.set(LS_CACHES, caches); ctx.hidden = true;
+    appliquerCaches();
+    const nom = k === 'todo' ? 'La to do list' : 'La messagerie';
+    toast(!v ? `${nom} est de retour.` : caches.todo && caches.chat ? 'Tout est caché sur ce site : le petit point en bas à droite les remet.' : `${nom} est cachée sur ce site. Clic droit sur l’autre pour la remettre.`);
+  }
+  const ICO_CACHER = '<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c5 0 9 5 10 7a17 17 0 0 1-3.2 4.2"/><path d="M6.6 6.6A17 17 0 0 0 2 12c1 2 5 7 10 7a9.6 9.6 0 0 0 4.4-1.1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>';
+  const ICO_VOIR = '<path d="M2 12c1-2 5-7 10-7s9 5 10 7c-1 2-5 7-10 7S3 14 2 12z"/><circle cx="12" cy="12" r="3"/>';
+  function ouvrirCtx(x, y){
+    const ligne = (txt, ico, fn) => { const b = el('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.innerHTML = SVG(ico); b.append(txt); b.onclick = fn; return b; };
+    ctx.replaceChildren(
+      ligne(caches.todo ? 'Afficher la To do list' : 'Cacher la To do list', caches.todo ? ICO_VOIR : ICO_CACHER, () => cacher('todo', !caches.todo)),
+      ligne(caches.chat ? 'Afficher la messagerie' : 'Cacher la messagerie', caches.chat ? ICO_VOIR : ICO_CACHER, () => cacher('chat', !caches.chat)));
+    ctx.hidden = false;
+    const w = ctx.offsetWidth, h = ctx.offsetHeight;
+    ctx.style.transform = `translate(${Math.round(Math.max(8, Math.min(x, innerWidth - w - 8)))}px,${Math.round(Math.max(8, Math.min(y, innerHeight - h - 8)))}px)`;
+    ctx.querySelector('button')?.focus({ preventScroll: true });
+  }
+  function surClicDroit(e){
+    const t = e.composedPath()[0];
+    // Dans un champ, ou du texte sélectionné : le menu du navigateur (coller, copier).
+    if (t?.closest?.('textarea, input') || String(root.getSelection?.() || getSelection() || '').trim()) return;
+    e.preventDefault(); e.stopPropagation();
+    ouvrirCtx(e.clientX, e.clientY);
+  }
+  for (const n of [chat, todo, rappel]) n.addEventListener('contextmenu', surClicDroit);
+  rappel.onclick = () => { rappel.classList.remove('neuf'); ouvrirCtx(innerWidth, innerHeight - 52); };   // juste au-dessus du point
+  document.addEventListener('pointerdown', e => { if (!ctx.hidden && !ctx.contains(e.composedPath()[0])) ctx.hidden = true; });
+  ctx.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); ctx.hidden = true; } });
+  // Au doigt (iPhone : pas de clic droit), un appui long sur la pastille ou l'en-tête ouvre le même menu.
+  let appui = null, appuiLong = false;
+  const appuiLongPris = () => { const v = appuiLong; appuiLong = false; return v; };
+  for (const n of [chatOrb, $('#chat-head'), todoOrb, $('#todo-head')]) {
+    n.style.webkitTouchCallout = 'none';
+    n.addEventListener('pointerdown', e => {
+      appuiLong = false;
+      if (e.pointerType === 'mouse') return;
+      clearTimeout(appui?.t);
+      const x = e.clientX, y = e.clientY;
+      appui = { x, y, t: setTimeout(() => { appui = null; appuiLong = true; glisse = null; glisseT = null; chat.classList.remove('drag'); todo.classList.remove('drag'); ouvrirCtx(x, y); }, 550) };
+    });
+    n.addEventListener('pointermove', e => { if (appui && Math.hypot(e.clientX - appui.x, e.clientY - appui.y) > 10) { clearTimeout(appui.t); appui = null; } });
+    for (const t of ['pointerup', 'pointercancel']) n.addEventListener(t, () => { if (appui) { clearTimeout(appui.t); appui = null; } });
+  }
+
   function chatRelancer(){
-    const p = me(); chat.classList.toggle('sans-nom', !p); chat.hidden = !p && DASHBOARD;
+    const p = me(); chat.classList.toggle('sans-nom', !p); todoRelancer();
     if (!p) { if (chatWs) { chatWs.onclose = null; chatWs.close(); chatWs = null; } clearInterval(chatSonde); chatSonde = null; renderQui(); placer(); return; }
     chat.classList.toggle('is-min', !chatPos.ouvert);
     // Un autre prénom au poste : on repart de sa conversation à lui (ses messages privés ne sont pas ceux d'avant).
