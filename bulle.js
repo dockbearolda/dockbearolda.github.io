@@ -44,15 +44,6 @@
   }
   const me = () => profil(store.raw(LS_WHO));
 
-  // --- La police manuscrite de la to do list (Caveat, licence OFL), servie par le Dashboard ---
-  // Déclarée dans la page : une @font-face posée dans un Shadow DOM ne sert pas. Installée sur le poste, elle est prise d'abord.
-  const ICI = (() => { try { return new URL('.', script?.src || 'https://dockbearolda.github.io/bulle.js').href; } catch (_) { return 'https://dockbearolda.github.io/'; } })();
-  try {
-    const f = document.createElement('style');
-    f.textContent = `@font-face{font-family:"OLDA Main";src:local("Caveat"),local("Caveat Regular"),url("${ICI}caveat.woff2") format("woff2");font-weight:400 700;font-display:swap;}`;
-    (document.head || document.documentElement).append(f);
-  } catch (_) {}
-
   // --- La bulle vit dans son Shadow DOM, au-dessus de tout ---
   const hote = document.createElement('olda-bulle');
   const root = hote.attachShadow({ mode: 'open' });
@@ -284,56 +275,55 @@
 
   /* ---------- La to do list : un bloc-notes à soi, coché ici, rayé partout ---------- */
   .todo{ position:fixed; z-index:34; left:0; top:0; touch-action:none; user-select:none; -webkit-user-select:none;
-    --main:"OLDA Main","Segoe Print","Bradley Hand",cursive; --papier:#fffcf2; --encre:#23324a; --marge:rgba(217,48,37,.3); --ligne:rgba(74,120,180,.17); }
+    --main:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; --papier:#fff; --encre:#1d2733; --ligne:rgba(74,98,116,.12); }
   .todo-orb{ position:relative; width:56px; height:56px; border-radius:50%; border:0; padding:0; display:grid; place-items:center; -webkit-touch-callout:none;
-    background:radial-gradient(120% 120% at 30% 20%, #ffe892 0%, #ffcf3f 55%, #eea600 100%);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 0 0 4px rgba(255,255,255,.75), 0 10px 24px rgba(190,130,0,.34), 0 2px 6px rgba(32,41,48,.18);
+    background:#fff; color:#1a73e8;   /* blanc et bleu, comme Google Tasks ou Rappels d'Apple */
+    box-shadow:0 0 0 1px rgba(32,41,48,.06), 0 8px 22px rgba(32,41,48,.18), 0 2px 6px rgba(32,41,48,.12);
     transition:transform .35s var(--spring); cursor:grab; }
   .todo-orb:hover{ transform:scale(1.05); }
   .todo-orb:active{ cursor:grabbing; }
-  .todo-orb svg{ width:26px; height:26px; fill:none; stroke:#5a3d00; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .todo-orb svg{ width:28px; height:28px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
   .todo-orb.has-new::before{ content:""; position:absolute; inset:-4px; border-radius:50%; border:3px solid rgba(217,48,37,.4); animation:chatHalo 2.4s ease-out infinite; pointer-events:none; }
   .todo-n{ position:absolute; top:-3px; right:-3px; min-width:22px; height:22px; padding:0 6px; border-radius:11px; display:grid; place-items:center;
     background:var(--danger); color:#fff; font-size:12px; font-weight:700; box-shadow:0 0 0 2px #fff; animation:chatPop .45s var(--spring); }
   .todo-panel{ position:absolute; left:0; top:0; width:min(340px, calc(100vw - 24px)); height:min(480px, calc(100dvh - 24px));
     display:flex; flex-direction:column; overflow:hidden; border-radius:22px; background:var(--papier);
-    box-shadow:0 0 0 1px rgba(120,100,40,.14), 0 2px 8px rgba(32,41,48,.08), 0 30px 70px rgba(42,58,72,.28);
+    box-shadow:0 0 0 1px rgba(74,98,116,.14), 0 2px 8px rgba(32,41,48,.08), 0 30px 70px rgba(42,58,72,.28);
     transform-origin:var(--ox,0) var(--oy,0); animation:chatOpen .42s var(--spring); user-select:text; -webkit-user-select:text; }
   .todo.is-min .todo-panel{ display:none; }
   .todo:not(.is-min) .todo-orb{ display:none; }
-  .todo.drag .todo-panel, .todo.drag .todo-orb{ box-shadow:0 0 0 1px rgba(120,100,40,.14), 0 34px 80px rgba(42,58,72,.34); }
+  .todo.drag .todo-panel, .todo.drag .todo-orb{ box-shadow:0 0 0 1px rgba(74,98,116,.14), 0 34px 80px rgba(42,58,72,.34); }
   .todo.drag{ will-change:transform; }
   .todo-head{ position:relative; display:flex; align-items:center; gap:8px; min-height:58px; padding:8px 6px 0 18px; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
   .todo-head:active{ cursor:grabbing; }
-  .todo-t{ font-family:var(--main); font-size:32px; font-weight:700; line-height:1; color:var(--encre); }
+  .todo-t{ font-family:var(--main); font-size:22px; font-weight:700; letter-spacing:-.01em; line-height:1; color:var(--encre); }
   .todo-c{ flex:1; min-width:0; padding-top:6px; font-size:12.5px; font-weight:600; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .todo-add{ display:flex; align-items:center; margin:0 8px 0 52px; border-bottom:1.5px dashed rgba(35,50,74,.25); transition:border-color .2s; }
-  .todo-add:focus-within{ border-bottom-color:var(--duck); border-bottom-style:solid; }
-  .todo-add input{ flex:1; min-width:0; height:48px; border:0; background:none; outline:none; font-family:var(--main); font-size:24px; color:var(--encre); }
+  .todo-add{ display:flex; align-items:center; margin:0 8px 0 52px; border-bottom:1px solid var(--ligne); transition:border-color .2s; }
+  .todo-add:focus-within{ border-bottom-color:var(--duck); }
+  .todo-add input{ flex:1; min-width:0; height:48px; border:0; background:none; outline:none; font-family:var(--main); font-size:16px; color:var(--encre); }
   .todo-add input::placeholder{ color:rgba(35,50,74,.38); }
   .todo-plus{ width:44px; height:44px; flex-shrink:0; border:0; border-radius:50%; background:none; display:grid; place-items:center; }
   .todo-plus:hover{ background:rgba(74,98,116,.1); }
   .todo-plus svg{ width:20px; height:20px; fill:none; stroke:var(--encre); stroke-width:2.2; stroke-linecap:round; }
-  /* La marge rouge du cahier, et une ligne bleue sous chaque tâche */
-  .todo-list{ flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; list-style:none; padding:4px 0 10px; scrollbar-width:thin;
-    background:linear-gradient(to right, transparent 45px, var(--marge) 45px, var(--marge) 46.5px, transparent 46.5px); }
+  .todo-list{ flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; list-style:none; padding:4px 0 10px; scrollbar-width:thin; }
   .todo-i{ display:flex; align-items:flex-start; min-height:50px; padding-right:4px; border-bottom:1px solid var(--ligne); }
   .todo-cc{ width:44px; height:48px; flex-shrink:0; border:0; background:none; display:grid; place-items:center; }
   .todo-cc:disabled{ cursor:default; }
   .todo-cc svg{ width:22px; height:22px; fill:none; stroke:var(--encre); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
-  .todo-cc rect{ opacity:.6; }
-  .todo-cc .v{ stroke:#1e8e3e; stroke-width:2.6; stroke-dasharray:16; stroke-dashoffset:16; }
+  .todo-cc circle{ opacity:.55; }
+  .todo-i.fait .todo-cc circle{ opacity:1; stroke:#1a73e8; fill:#1a73e8; }
+  .todo-cc .v{ stroke:#fff; stroke-width:2.4; stroke-dasharray:16; stroke-dashoffset:16; }
   .todo-i.fait .todo-cc .v{ stroke-dashoffset:0; }
   .todo-i.raye .todo-cc .v{ animation:coche .3s ease-out; }
   @keyframes coche{ from{ stroke-dashoffset:16; } }
-  .todo-corps{ flex:1; min-width:0; padding:10px 6px 9px 10px; display:flex; flex-direction:column; align-items:flex-start; gap:3px; }
-  .todo-tx{ font-family:var(--main); font-size:24px; font-weight:500; line-height:1.12; color:var(--encre); overflow-wrap:anywhere; transition:color .3s; }
-  /* Le trait qui raye : tiré à la main, ligne par ligne */
-  .todo-tx > span{ background:linear-gradient(currentColor, currentColor) no-repeat 0 60% / 0 2px; -webkit-box-decoration-break:clone; box-decoration-break:clone; }
+  .todo-corps{ flex:1; min-width:0; padding:13px 6px 12px 4px; display:flex; flex-direction:column; align-items:flex-start; gap:3px; }
+  .todo-tx{ font-family:var(--main); font-size:16px; font-weight:500; line-height:1.35; color:var(--encre); overflow-wrap:anywhere; transition:color .3s; }
+  /* Le trait qui raye, ligne par ligne */
+  .todo-tx > span{ background:linear-gradient(currentColor, currentColor) no-repeat 0 55% / 0 1.5px; -webkit-box-decoration-break:clone; box-decoration-break:clone; }
   .todo-i.fait .todo-tx{ color:rgba(35,50,74,.5); }
-  .todo-i.fait .todo-tx > span{ background-size:100% 2px; }
+  .todo-i.fait .todo-tx > span{ background-size:100% 1.5px; }
   .todo-i.raye .todo-tx > span{ animation:raye .45s ease-out; }
-  @keyframes raye{ from{ background-size:0 2px; } }
+  @keyframes raye{ from{ background-size:0 1.5px; } }
   .todo-tag{ padding:1px 8px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.01em; color:#fff; background:var(--duck); }
   .todo-tag.bat-paiement{ background:#1e8e3e; } .todo-tag.bat-valide{ background:#d97706; } .todo-tag.prt-imprimer, .todo-tag.prt-shop{ background:#1a73e8; }
   .todo-tag.bat-note{ background:#b45309; } .todo-tag.stock-bas{ background:var(--danger); }
@@ -342,10 +332,9 @@
   .todo-ic{ width:40px; height:48px; flex-shrink:0; border:0; border-radius:12px; background:none; display:grid; place-items:center; color:var(--muted); }
   .todo-ic:hover{ background:rgba(74,98,116,.09); color:var(--ink); }
   .todo-ic svg{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
-  .todo-vide{ padding:26px 20px 0 60px; font-family:var(--main); font-size:24px; color:rgba(35,50,74,.48); }
+  .todo-vide{ padding:26px 20px 0 56px; font-size:15px; color:var(--muted); }
   .todo-vider{ flex-shrink:0; min-height:44px; border:0; border-top:1px solid var(--ligne); background:none; font-size:13.5px; font-weight:600; color:var(--muted); }
   .todo-vider:hover{ color:var(--danger); }
-  .todo-police{ flex-shrink:0; display:flex; align-items:center; min-height:44px; padding:6px 14px; border-top:1px solid var(--ligne); font-size:12.5px; font-weight:600; color:var(--duck); text-decoration:underline; }
   /* ---------- Clic droit : cacher / afficher la to do list ou la messagerie ---------- */
   .ctx{ position:fixed; z-index:60; left:0; top:0; min-width:236px; padding:6px; border-radius:14px; background:rgba(255,255,255,.98);
     box-shadow:inset 0 0 0 1px rgba(74,98,116,.14), 0 18px 40px rgba(42,58,72,.24); animation:chatPop .2s var(--spring); }
@@ -402,7 +391,7 @@
 </div>
 <div class="todo is-min" id="todo" hidden>
   <button type="button" class="todo-orb" id="todo-orb" aria-label="Ouvrir ma to do list">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="M3.5 6l1.5 1.5L7.5 5"/><path d="M3.5 12l1.5 1.5L7.5 11"/><path d="M3.5 18l1.5 1.5L7.5 17"/></svg>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.7 2.7L16 9.7"/></svg>
     <span class="todo-n" id="todo-n" hidden></span>
   </button>
   <section class="todo-panel" id="todo-panel" aria-label="Ma to do list">
@@ -419,7 +408,6 @@
       <button type="submit" class="todo-plus" aria-label="Ajouter la tâche"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
     </form>
     <ul class="todo-list" id="todo-list" aria-label="Tâches"></ul>
-    <a class="todo-police" id="todo-police" hidden download="Caveat.ttf">La police manuscrite ne se charge pas ici : l’installer (Caveat, 1 clic)</a>
     <button type="button" class="todo-vider" id="todo-vider" hidden></button>
   </section>
 </div>
@@ -1090,7 +1078,7 @@
       const { w, h } = tailleT();
       todoPanel.style.setProperty('--ox', droite ? '100%' : '0'); todoPanel.style.setProperty('--oy', bas ? '100%' : '0');
       todoPos.x = droite ? todoPos.x + ORB_T - w : todoPos.x; todoPos.y = bas ? todoPos.y + ORB_T - h : todoPos.y;
-      placerT(); devant(todo); todoOrb.classList.remove('has-new'); relireT(); verifierPolice();
+      placerT(); devant(todo); todoOrb.classList.remove('has-new'); relireT();
       if (matchMedia('(hover:hover)').matches) todoTxt.focus({ preventScroll: true });
     } else {
       const { w, h } = tailleT();
@@ -1145,15 +1133,6 @@
   $('#todo-x').onclick = () => basculerT(false);
   todoPanel.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); basculerT(false); todoOrb.focus(); } });
 
-  // --- La police manuscrite ne passe pas (une appli qui la bloque) : un lien pour l'installer sur le poste ---
-  let policeVue = false;
-  function verifierPolice(){
-    if (policeVue || !document.fonts?.load) return;
-    policeVue = true;
-    const lien = $('#todo-police'); lien.href = ICI + 'Caveat.ttf';
-    document.fonts.load('24px "OLDA Main"').then(l => { lien.hidden = !!(l && l.length); }, () => { lien.hidden = false; });
-  }
-
   // --- Afficher ---
   const notifsVisibles = () => notifsT.filter(n => !n.lu || Date.now() - Date.parse(n.lu) < JOUR);
   const aFaire = () => taches.filter(t => !t.fait).length + notifsT.filter(n => !n.lu).length;
@@ -1166,7 +1145,7 @@
   function ligneT({ texte, sous, tag, type, fait, cocher, ouvrir, suppr }){
     const li = el('li', 'todo-i' + (fait ? ' fait' : ''));
     const c = el('button', 'todo-cc'); c.type = 'button'; c.setAttribute('role', 'checkbox'); c.setAttribute('aria-checked', String(!!fait));
-    c.setAttribute('aria-label', texte); c.innerHTML = SVG('<rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path class="v" d="M7.5 12.5l3 3 6-7"/>');
+    c.setAttribute('aria-label', texte); c.innerHTML = SVG('<circle cx="12" cy="12" r="8.5"/><path class="v" d="M7.5 12.5l3 3 6-7"/>');
     if (cocher) c.onclick = cocher; else c.disabled = true;
     const corps = el('div', 'todo-corps');
     if (tag) { const t = el('span', 'todo-tag ' + (type || '')); t.textContent = tag; corps.append(t); }
@@ -1287,7 +1266,7 @@
     notifsT = [];
     todo.classList.toggle('is-min', !todoPos.ouvert);
     appliquerCaches();
-    if (p) { renderTodo(); relireT(); if (todoPos.ouvert) verifierPolice(); }
+    if (p) { renderTodo(); relireT(); }
   }
 
   // --- Cacher / afficher, site par site : clic droit, ou appui long au doigt ---
