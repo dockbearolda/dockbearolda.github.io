@@ -70,8 +70,17 @@
   .bento{ order:4; display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
   .bento > .tile:last-child:nth-child(odd){ grid-column:1 / -1; }
   /* Les apps rangées par familles : un petit titre au début de chaque groupe */
-  .bento-groupe{ grid-column:1 / -1; flex:none; padding:12px 10px 0; font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
-  .bento-groupe:first-child{ padding-top:2px; }
+  /* Un toucher sur le titre replie / déplie la famille (mémorisé sur ce poste). */
+  .bento-groupe{ grid-column:1 / -1; flex:none; display:flex; align-items:center; gap:6px; width:100%; min-height:44px; padding:8px 10px 0; border:0; border-radius:12px; background:none; cursor:pointer;
+    font:inherit; font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); text-align:left; }
+  .bento-groupe:first-child{ padding-top:0; }
+  .bento-groupe:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:-2px; }
+  @media (hover:hover){ .bento-groupe:hover{ color:var(--ink); } }
+  .bento-groupe .nb{ display:none; min-width:20px; padding:1px 6px; border-radius:99px; background:rgba(74,98,116,.12); text-align:center; letter-spacing:0; }
+  .bento-groupe[aria-expanded="false"] .nb{ display:inline-block; }
+  .bento-groupe svg{ width:14px; height:14px; margin-left:auto; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; transition:transform .2s; }
+  .bento-groupe[aria-expanded="false"] svg{ transform:rotate(-90deg); }
+  .bento > .tile[hidden]{ display:none; }
   @media (min-width:700px) and (max-width:899px){ .dash{ max-width:820px; } .bento{ grid-template-columns:repeat(3,1fr); } .bento > .tile:last-child:nth-child(odd){ grid-column:auto; } }
   @media (min-width:900px){
     .wrap{ height:100dvh; min-height:560px; padding:max(16px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(16px,var(--safe-b)) max(16px,env(safe-area-inset-left)); }
@@ -355,7 +364,17 @@
   #ring button{ color:#fff; text-decoration:underline; white-space:nowrap; padding:0 10px; }
 
   /* ---------- Le suivi des Bons à Tirer (BAT Studio, /api/suivi) : des lignes en haut, pour tous ---------- */
-  .suivi{ order:-1; display:grid; gap:8px; list-style:none; }
+  .suivi-box{ order:-1; flex:none; display:grid; gap:8px; min-height:0; }
+  .suivi-box[hidden]{ display:none; }
+  .suivi-tete{ display:flex; align-items:center; gap:10px; min-height:44px; padding:0 14px; border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,.8);
+    font:inherit; font-size:15px; font-weight:700; color:var(--ink); text-align:left; cursor:pointer; }
+  .suivi-tete small{ flex:1; min-width:0; font-size:13px; font-weight:500; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .suivi-tete svg{ width:18px; height:18px; flex:none; fill:none; stroke:var(--muted); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; transition:transform .2s; }
+  .suivi-tete[aria-expanded="false"] svg{ transform:rotate(-90deg); }
+  .suivi-tete:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:2px; }
+  @media (hover:hover){ .suivi-tete:hover{ background:#fff; } }
+  /* Jamais plus d'un tiers de l'écran : au-delà, la liste défile (petit portable 14", comme grand écran). */
+  .suivi{ display:grid; gap:8px; list-style:none; max-height:clamp(150px,34dvh,420px); overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; padding:2px 4px 6px 2px; }
   .suivi[hidden]{ display:none; }
   .suivi li{ display:flex; align-items:center; gap:10px 12px; flex-wrap:wrap; min-height:64px; padding:10px 12px 10px 16px;
     background:#fff; border:1px solid var(--line); border-left:6px solid var(--ok,#1e8e3e); border-radius:16px; box-shadow:var(--shadow); }
@@ -619,7 +638,13 @@
       <nav class="bento" id="bento" aria-label="Apps"></nav>
     </aside>
     <div class="main">
-      <ul class="suivi" id="suivi" hidden aria-label="Bons à Tirer : réponses des clients"></ul>
+      <section class="suivi-box" id="suivi-box" hidden aria-label="Bons à Tirer : réponses des clients">
+        <button type="button" class="suivi-tete" id="suivi-tete" aria-expanded="true" aria-controls="suivi">
+          <span id="suivi-titre">Bons à Tirer</span><small id="suivi-resume"></small>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <ul class="suivi" id="suivi"></ul>
+      </section>
       <div class="tile tile--hub" id="hub" hidden>
         <section class="hub" aria-labelledby="hub-name">
           <header class="hub-head">
@@ -891,17 +916,35 @@
     const l = state.shortcuts, i = l.findIndex(s => s.hub);
     return i >= 0 ? i : l.findIndex(s => /planning/i.test(s.name || ''));
   }
+  // Les familles repliées, mémorisées sur ce poste : un toucher sur le titre range ou ressort ses apps.
+  const LS_REPLIES = 'olda_groupes_replies';
+  const replies = new Set(store.get(LS_REPLIES) || []);
+  function titreGroupe(nom, nb){
+    const t = el('button', 'bento-groupe'); t.type = 'button';
+    const n = el('span', 'nb'); n.textContent = nb;
+    t.append(nom, n); t.insertAdjacentHTML('beforeend', SVG('<path d="M6 9l6 6 6-6"/>'));
+    const maj = () => t.setAttribute('aria-expanded', String(!replies.has(nom)));
+    maj();
+    t.onclick = () => {
+      replies.has(nom) ? replies.delete(nom) : replies.add(nom);
+      store.set(LS_REPLIES, [...replies]); maj();
+      grid.querySelectorAll('.tile').forEach(x => { if (x.dataset.groupe === nom) x.hidden = replies.has(nom); });
+    };
+    return t;
+  }
   // Les apps, dans l'ordre des raccourcis, dans la barre de gauche ; le planning à droite.
   function render(){
     const h = hubIndex();
     hubTile.hidden = h < 0;
     if (h >= 0) syncHub(state.shortcuts[h]); else if (maxed) setMax(false);
     const frag = document.createDocumentFragment();
+    const apps = state.shortcuts.map((s, i) => ({ s, i })).filter(x => x.i !== h);
     let groupe = '';
-    state.shortcuts.map((s, i) => ({ s, i })).filter(x => x.i !== h).forEach(({ s, i }, k) => {
-      if (!editing && s.groupe && s.groupe !== groupe) { const t = el('div', 'bento-groupe'); t.textContent = s.groupe; frag.append(t); }
+    apps.forEach(({ s, i }, k) => {
+      if (!editing && s.groupe && s.groupe !== groupe) frag.append(titreGroupe(s.groupe, apps.filter(x => x.s.groupe === s.groupe).length));
       groupe = s.groupe || '';
       const tile = el('div', 'tile'); tile.dataset.i = i;
+      if (!editing && s.groupe) { tile.dataset.groupe = s.groupe; tile.hidden = replies.has(s.groupe); }
       tile.style.animationDelay = (.1 + k * .04).toFixed(2) + 's';
       const card = el(editing ? 'button' : 'a', 'card');
       if (editing) { card.type = 'button'; card.setAttribute('aria-label', 'Modifier ' + s.name); card.onclick = () => openSheet(i); }
@@ -1448,9 +1491,21 @@
     } catch (e) { toast(e.message || 'Réseau indisponible, réessayez.'); }
     finally { b.disabled = false; releverSuivi(); }
   }
+  // Replié ou déplié, mémorisé sur ce poste ; une réponse neuve d'un client le redéplie.
+  const LS_SUIVI_REPLIE = 'olda_suivi_replie';
+  let suiviReplie = store.get(LS_SUIVI_REPLIE) === true;
+  function replierSuivi(v){
+    suiviReplie = v; store.set(LS_SUIVI_REPLIE, v);
+    $('#suivi').hidden = v; $('#suivi-tete').setAttribute('aria-expanded', String(!v));
+  }
+  $('#suivi-tete').onclick = () => replierSuivi(!suiviReplie);
   function afficherSuivi(){
     const ul = $('#suivi');
-    ul.hidden = !lignes.length;
+    $('#suivi-box').hidden = !lignes.length;
+    replierSuivi(suiviReplie);
+    const nbRem = lignes.filter(l => l.etat !== 'valide').length, nbVal = lignes.length - nbRem;
+    $('#suivi-titre').textContent = `Bons à Tirer · ${lignes.length}`;
+    $('#suivi-resume').textContent = [nbRem && `${nbRem} à refaire`, nbVal && `${nbVal} validé${nbVal > 1 ? 's' : ''}`].filter(Boolean).join(' · ');
     ul.replaceChildren(...lignes.map(l => {
       const li = el('li', l.etat), txt = el('div', 'suivi-txt'), b = el('b'), acts = el('div', 'suivi-acts');
       const payeDeja = l.paiement && typeof l.paiement === 'object';
@@ -1486,7 +1541,7 @@
       // Une réponse neuve d'un client : le ding-dong (pas au premier chargement).
       const neuves = lignes.filter(l => !suiviVus.has(l.id + l.at));
       neuves.forEach(l => suiviVus.add(l.id + l.at));
-      if (neuves.length) { store.set(LS_SUIVI, [...suiviVus].slice(-300)); if (!suiviPremier) sonner(); }
+      if (neuves.length) { store.set(LS_SUIVI, [...suiviVus].slice(-300)); if (!suiviPremier) { sonner(); suiviReplie = false; } }
       suiviPremier = false;
       afficherSuivi();
     } catch (_) { /* hors-ligne passager */ }
