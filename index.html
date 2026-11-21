@@ -36,24 +36,15 @@
   button{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .wrap{ position:relative; z-index:1; min-height:100vh; padding:max(20px,calc(env(safe-area-inset-top) + 12px)) max(16px,env(safe-area-inset-right)) calc(96px + var(--safe-b)) max(16px,env(safe-area-inset-left)); }
 
-  /* Fond animé façon Google : quatre halos aux couleurs Google, très pâles,
-     qui dérivent lentement derrière le verre des cartes. Dégradés radiaux
-     (pas de filter:blur) : seul transform bouge, rien à recalculer. */
-  .aurora{ position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
-  .orb{
-    position:absolute; width:62vmax; height:62vmax; border-radius:50%;
-    background:radial-gradient(circle, var(--c) 0%, transparent 64%);
-    will-change:transform;
-    animation:var(--path) var(--dur) ease-in-out infinite alternate;
-  }
-  .orb--blue  { --c:rgba(66,133,244,.24); --path:orbA; --dur:34s; top:-26vmax; left:-18vmax; }
-  .orb--red   { --c:rgba(234,67,53,.13);  --path:orbB; --dur:41s; top:-22vmax; right:-24vmax; }
-  .orb--yellow{ --c:rgba(251,188,5,.17);  --path:orbC; --dur:38s; bottom:-30vmax; right:-12vmax; }
-  .orb--green { --c:rgba(52,168,83,.14);  --path:orbD; --dur:46s; bottom:-28vmax; left:-22vmax; }
-  @keyframes orbA{ 0%{transform:translate(0,0) scale(1)} 50%{transform:translate(18vmax,10vmax) scale(1.12)} 100%{transform:translate(8vmax,24vmax) scale(.94)} }
-  @keyframes orbB{ 0%{transform:translate(0,0) scale(1.05)} 50%{transform:translate(-16vmax,14vmax) scale(.92)} 100%{transform:translate(-26vmax,4vmax) scale(1.1)} }
-  @keyframes orbC{ 0%{transform:translate(0,0) scale(.95)} 50%{transform:translate(-14vmax,-16vmax) scale(1.1)} 100%{transform:translate(-4vmax,-26vmax) scale(1)} }
-  @keyframes orbD{ 0%{transform:translate(0,0) scale(1.08)} 50%{transform:translate(20vmax,-8vmax) scale(.96)} 100%{transform:translate(10vmax,-20vmax) scale(1.04)} }
+  /* Le fond façon Google : quatre halos très pâles, figés. Un fond qui bouge
+     oblige le GPU à re-flouter tout le verre à chaque image (le Mac chauffe) :
+     ici il est peint une fois pour toutes. */
+  .aurora{ position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;
+    background:
+      radial-gradient(circle at 13vmax 5vmax, rgba(66,133,244,.24), transparent 28vmax),
+      radial-gradient(circle at calc(100% - 7vmax) 9vmax, rgba(234,67,53,.13), transparent 28vmax),
+      radial-gradient(circle at calc(100% - 19vmax) calc(100% - 1vmax), rgba(251,188,5,.17), transparent 28vmax),
+      radial-gradient(circle at 9vmax calc(100% - 3vmax), rgba(52,168,83,.14), transparent 28vmax); }
   /* grain très fin : casse les bandes des dégradés, donne la matière */
   .aurora::after{
     content:""; position:absolute; inset:0; opacity:.05;
@@ -94,7 +85,7 @@
     .side-rangee .side{ opacity:0; transform:translateX(-24px); pointer-events:none; overflow:hidden; }
     .side-rangee .dock{ opacity:0; pointer-events:none; transition:opacity .25s; }   /* elle suit les apps */
     .side-rangee .side-tirer{ display:grid; position:fixed; z-index:6; left:0; top:50%; transform:translateY(-50%); width:28px; height:88px; place-items:center; border:0; border-radius:0 14px 14px 0;
-      background:rgba(255,255,255,.85); box-shadow:inset 0 0 0 1px rgba(74,98,116,.14), 0 6px 18px rgba(42,58,72,.14); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); }
+      background:rgba(255,255,255,.85); box-shadow:inset 0 0 0 1px rgba(74,98,116,.14), 0 6px 18px rgba(42,58,72,.14); }
     .side-tirer:hover{ background:#fff; }
     .side-tirer svg{ width:18px; height:18px; fill:none; stroke:var(--duck); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
     .main{ display:flex; flex-direction:column; gap:14px; min-width:0; min-height:0; }
@@ -131,7 +122,7 @@
   .hub{
     position:relative; flex:1; min-width:0; min-height:0; display:flex; flex-direction:column;
     border-radius:28px; overflow:hidden; isolation:isolate;
-    background:var(--glass); -webkit-backdrop-filter:blur(18px) saturate(170%); backdrop-filter:blur(18px) saturate(170%);
+    background:var(--glass);
     box-shadow:0 1px 2px rgba(32,41,48,.05), 0 34px 80px -28px rgba(10,166,201,.42), 0 12px 30px rgba(74,98,116,.10), inset 0 1px 0 rgba(255,255,255,.9);
   }
   /* anneau dégradé : c'est lui qui désigne le cœur */
@@ -157,6 +148,7 @@
   .hub-frame{ position:relative; flex:1; min-height:0; background:#f8fafd; border-top:1px solid rgba(32,41,48,.07); }
   .hub-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; display:block; opacity:0; transition:opacity .45s ease; }
   .hub-frame iframe.on{ opacity:1; }
+  .hub-frame:has(iframe.on) .hub-wait{ display:none; }   /* planning là : le rond s'arrête (il tournait caché dessous) */
   /* Une seule barre : quand le planning sait se présenter, il porte lui-même nouvel onglet + Agrandir */
   .tile--hub.merged .hub-head{ display:none; }
   .tile--hub.merged .hub-frame{ border-top:0; background:#fff; }
@@ -196,7 +188,6 @@
     position:relative; flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:14px;
     padding:22px 18px; text-align:left;
     background:var(--glass);
-    -webkit-backdrop-filter:blur(14px) saturate(160%); backdrop-filter:blur(14px) saturate(160%);
     border:1px solid var(--card-border); border-radius:var(--radius);
     box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,.85);
     text-decoration:none; color:var(--ink); overflow:hidden; isolation:isolate;
@@ -263,7 +254,7 @@
   .btn:focus-visible,.icon-btn:focus-visible,.badge:focus-visible > span{ outline:3px solid rgba(107,129,145,.45); outline-offset:2px; }
   .btn--primary{ background:var(--duck); color:#fff; }
   .btn--primary:hover{ background:var(--duck-hover); }
-  .btn--glass{ background:var(--glass); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border-color:var(--card-border); color:var(--duck); box-shadow:var(--shadow); }
+  .btn--glass{ background:var(--glass); border-color:var(--card-border); color:var(--duck); box-shadow:var(--shadow); }
   .btn--ghost{ background:transparent; color:var(--duck); border-color:var(--line); }
   .btn--danger{ background:transparent; color:var(--danger); padding:0 12px; }
   .btn[disabled]{ opacity:.55; pointer-events:none; }
@@ -607,7 +598,7 @@
   .chat-b .vu{ font-weight:700; opacity:1; }
 
   @media (prefers-reduced-motion:reduce){
-    .orb,.tile,dialog[open]{ animation:none; }
+    .tile,dialog[open]{ animation:none; }
     .who-grid button,.card,.card::after,.card-icon,.toast,.hub-frame iframe,.chat-orb{ transition:none; }
     .chat-panel,.chat-m,.chat-n,.chat-orb.has-new::before{ animation:none; }
     ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){ animation:none !important; }
@@ -616,10 +607,6 @@
 </head>
 <body>
 <div class="aurora" aria-hidden="true">
-  <span class="orb orb--blue"></span>
-  <span class="orb orb--red"></span>
-  <span class="orb orb--yellow"></span>
-  <span class="orb orb--green"></span>
 </div>
 <main class="wrap">
   <h1 hidden>Portail OLDA</h1>
@@ -1537,13 +1524,15 @@
       const r = await fetch(`${BAT}/api/suivi`, { cache: 'no-store' });
       if (!r.ok) return;
       const j = await r.json();
+      const vu = JSON.stringify(lignes);
       lignes = Array.isArray(j.lignes) ? j.lignes : [];
       // Une réponse neuve d'un client : le ding-dong (pas au premier chargement).
       const neuves = lignes.filter(l => !suiviVus.has(l.id + l.at));
       neuves.forEach(l => suiviVus.add(l.id + l.at));
       if (neuves.length) { store.set(LS_SUIVI, [...suiviVus].slice(-300)); if (!suiviPremier) { sonner(); suiviReplie = false; } }
+      const pareil = !suiviPremier && JSON.stringify(lignes) === vu;
       suiviPremier = false;
-      afficherSuivi();
+      if (!pareil) afficherSuivi();   // rien de neuf : on ne repeint pas
     } catch (_) { /* hors-ligne passager */ }
     finally { suiviEnCours = false; }
   }
