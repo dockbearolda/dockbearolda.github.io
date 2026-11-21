@@ -416,7 +416,7 @@
   .chat-en .avatar:first-child{ margin-left:0; }
   .chat-en .avatar::after, .chat-pour .en-ligne .avatar::after{ content:""; position:absolute; right:-3px; bottom:-3px; width:10px; height:10px; border-radius:50%; background:var(--vert); box-shadow:0 0 0 2px #fff; }
   .chat-panel{
-    position:absolute; left:0; top:0; width:min(540px, calc(100vw - 24px)); height:min(540px, calc(100dvh - 24px));
+    position:absolute; left:0; top:0; width:min(540px, calc(100vw - 24px)); height:min(540px, calc(100dvh - 24px)); max-width:calc(100vw - 24px); max-height:calc(100dvh - 24px);
     /* Comme WhatsApp : les gens en colonne à gauche, la conversation à droite */
     display:grid; grid-template-columns:minmax(132px, 34%) minmax(0, 1fr); grid-template-rows:auto minmax(0, 1fr) auto; overflow:hidden; border-radius:26px;
     background:var(--chat-glass);
@@ -429,6 +429,8 @@
   .chat:not(.is-min) .chat-orb{ display:none; }
   @keyframes chatOpen{ from{ opacity:0; transform:scale(.6); } to{ opacity:1; transform:none; } }
   @keyframes chatPop{ from{ transform:scale(.4); } to{ transform:none; } }
+  /* Taille au choix : on tire un bord ou un coin du panneau, comme une fenêtre */
+  .chat.taille .chat-panel{ user-select:none; -webkit-user-select:none; }
   .chat-head{
     grid-column:1 / -1; display:flex; align-items:center; gap:4px; padding:8px 6px 2px 16px; min-height:52px;
     cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;
@@ -1523,7 +1525,50 @@
   chatOrb.onclick = () => { if (!vientDeGlisser) basculer(true); };
   $('#chat-x').onclick = () => basculer(false);
   chatPanel.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); basculer(false); chatOrb.focus(); } });
-  addEventListener('resize', () => { if (!chat.hidden) placer(); });
+  addEventListener('resize', () => { if (!chat.hidden) { appliquerTaille(); placer(); } });
+
+  // --- Taille : on tire un bord ou un coin du panneau ouvert ; elle est gardée sur l'appareil ---
+  const BORD = 8, COIN = 20, MIN_W = 380, MIN_H = 360;
+  function appliquerTaille(){
+    if (!chatPos.w) return;
+    chatPanel.style.width = Math.max(MIN_W, Math.min(chatPos.w, innerWidth - 2 * MARGE)) + 'px';
+    chatPanel.style.height = Math.max(MIN_H, Math.min(chatPos.h, innerHeight - 2 * MARGE)) + 'px';
+  }
+  // Quel bord est sous le doigt : 'n', 'se', 'w'… ou '' au milieu.
+  function zoneBord(e){
+    const r = chatPanel.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    // Les coins sont arrondis : on les attrape un peu plus loin du bord.
+    const coin = (x < COIN || x > r.width - COIN) && (y < COIN || y > r.height - COIN), b = coin ? COIN : BORD;
+    return (y < b ? 'n' : y > r.height - b ? 's' : '') + (x < b ? 'w' : x > r.width - b ? 'e' : '');
+  }
+  const CURSEUR = { n: 'ns', s: 'ns', e: 'ew', w: 'ew', ne: 'nesw', sw: 'nesw', nw: 'nwse', se: 'nwse' };
+  let tire = null;
+  chatPanel.addEventListener('pointermove', e => {
+    if (tire) {
+      const dx = e.clientX - tire.x0, dy = e.clientY - tire.y0, z = tire.zone;
+      let { x, y, w, h } = tire;
+      const maxW = innerWidth - 2 * MARGE, maxH = innerHeight - 2 * MARGE;
+      if (z.includes('e')) w = Math.min(Math.max(MIN_W, w + dx), innerWidth - MARGE - x);
+      if (z.includes('s')) h = Math.min(Math.max(MIN_H, h + dy), innerHeight - MARGE - y);
+      if (z.includes('w')) { const nw = Math.min(Math.max(MIN_W, w - dx), x + w - MARGE, maxW); x += w - nw; w = nw; }
+      if (z.includes('n')) { const nh = Math.min(Math.max(MIN_H, h - dy), y + h - MARGE, maxH); y += h - nh; h = nh; }
+      chatPos.w = w; chatPos.h = h; chatPos.x = x; chatPos.y = y;
+      appliquerTaille(); placer();
+      return;
+    }
+    if (e.pointerType === 'mouse') { const z = zoneBord(e); chatPanel.style.cursor = z ? CURSEUR[z] + '-resize' : ''; }
+  });
+  chatPanel.addEventListener('pointerdown', e => {
+    if (e.button > 0) return;
+    const zone = zoneBord(e); if (!zone) return;
+    e.preventDefault(); e.stopPropagation();
+    tire = { zone, x0: e.clientX, y0: e.clientY, x: chatPos.x, y: chatPos.y, w: chatPanel.offsetWidth, h: chatPanel.offsetHeight };
+    chatPanel.setPointerCapture(e.pointerId); chat.classList.add('taille'); chat.style.transition = 'none';
+  }, true);
+  const lacherTaille = () => { if (!tire) return; tire = null; chat.classList.remove('taille'); chat.style.transition = ''; garderPos(); };
+  chatPanel.addEventListener('pointerup', lacherTaille);
+  chatPanel.addEventListener('pointercancel', lacherTaille);
+  appliquerTaille();
 
   // --- Affichage ---
   const heure = iso => new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
