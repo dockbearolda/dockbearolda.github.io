@@ -383,7 +383,7 @@
 
   /* ---------- La bulle : on se parle en direct, flottante au-dessus de tout ---------- */
   .chat{
-    --chat-glass:rgba(255,255,255,.66); --chat-edge:rgba(255,255,255,.85);
+    --chat-glass:rgba(255,255,255,.66); --chat-edge:rgba(255,255,255,.85); --vert:#2fcf5f; /* le vert « en ligne » d'Instagram */
     position:fixed; z-index:35; left:0; top:0; will-change:transform;
     touch-action:none; user-select:none; -webkit-user-select:none;
   }
@@ -391,8 +391,8 @@
     position:relative; width:64px; height:64px; border-radius:50%; border:0; padding:0;
     display:grid; place-items:center;
     /* Pleine, couleur de la maison : on la trouve d'un coup d'œil, sur le planning comme sur le fond */
-    background:radial-gradient(120% 120% at 30% 20%, #6b8497 0%, var(--duck) 55%, #33475a 100%);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(255,255,255,.12), 0 0 0 4px rgba(255,255,255,.75), 0 10px 24px rgba(42,58,72,.32), 0 2px 6px rgba(32,41,48,.18);
+    background:radial-gradient(120% 120% at 30% 20%, #6ff08f 0%, var(--vert) 55%, #14a83f 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(255,255,255,.12), 0 0 0 4px rgba(255,255,255,.75), 0 10px 24px rgba(20,140,60,.38), 0 2px 6px rgba(32,41,48,.18);
     transition:transform .35s var(--spring), box-shadow .25s; cursor:grab;
   }
   .chat-orb:hover{ transform:scale(1.05); }
@@ -406,7 +406,11 @@
     display:grid; place-items:center; background:var(--danger); color:#fff; font-size:12px; font-weight:700;
     box-shadow:0 0 0 2px #fff; animation:chatPop .45s var(--spring);
   }
-  .chat-orb.is-live::after{ content:""; position:absolute; bottom:5px; right:5px; width:12px; height:12px; border-radius:50%; background:#1e9e5a; box-shadow:0 0 0 2px #fff; }
+  /* Qui est en ligne, d'un coup d'œil : leurs initiales sous la bulle, avec la pastille verte */
+  .chat-en{ position:absolute; left:50%; top:calc(100% + 6px); transform:translateX(-50%); display:flex; pointer-events:none; }
+  .chat-en .avatar{ position:relative; width:24px; height:24px; font-size:12px; margin-left:-6px; color:#fff; background:rgb(var(--a)); box-shadow:0 0 0 2px #fff, 0 2px 6px rgba(32,41,48,.25); }
+  .chat-en .avatar:first-child{ margin-left:0; }
+  .chat-en .avatar::after, .chat-pour .en-ligne .avatar::after{ content:""; position:absolute; right:-3px; bottom:-3px; width:10px; height:10px; border-radius:50%; background:var(--vert); box-shadow:0 0 0 2px #fff; }
   .chat-panel{
     position:absolute; left:0; top:0; width:min(372px, calc(100vw - 24px)); height:min(520px, calc(100dvh - 24px));
     display:flex; flex-direction:column; overflow:hidden; border-radius:26px;
@@ -462,7 +466,11 @@
   .chat-pour .tous span{ padding-left:12px; }
   /* En ligne : vert ; sinon neutre */
   .chat-pour .avatar{ width:24px; height:24px; font-size:11px; color:#6b7a86; background:#e9edf0; box-shadow:none; }
-  .chat-pour .en-ligne .avatar{ color:#fff; background:#1e9e5a; }
+  .chat-pour .avatar{ position:relative; }
+  .chat-pour .en-ligne .avatar{ color:#fff; background:rgb(var(--a)); }
+  .chat-pour .en-ligne span{ color:var(--ink); background:rgba(47,207,95,.16); box-shadow:inset 0 0 0 1.5px var(--vert); }
+  .chat-pour button:not(.tous):not(.en-ligne) span{ opacity:.55; }
+  .chat-etat.en{ color:#14a83f; }
   .chat-pour button[aria-checked="true"] span{ color:#fff; background:rgb(var(--a)); box-shadow:0 4px 12px rgba(var(--a),.3); }
   .chat-pour button[aria-checked="true"] svg{ stroke:#fff; }
   .chat-pour svg{ width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
@@ -1262,7 +1270,7 @@
     { id: 'loic',    name: 'Loïc',    tint: '217,48,37' },
     { id: 'charlie', name: 'Charlie', tint: '26,115,232' },
     { id: 'melina',  name: 'Mélina',  tint: '214,51,132' },
-    { id: 'julien',  name: 'Julien',  tint: '24,128,56' }
+    { id: 'julien',  name: 'Julien',  tint: '245,158,11' }
   ];
   const LS_WHO = 'olda_poste', who = $('#who'), whoGrid = $('#who-grid');
   const avatar = (p, cls) => { const a = el('span', 'avatar' + (cls ? ' ' + cls : '')); a.style.setProperty('--a', p.tint); a.textContent = p.name.charAt(0); a.setAttribute('aria-hidden', 'true'); return a; };
@@ -1473,17 +1481,18 @@
   // --- Glisser : au-delà de 5 px c'est un déplacement, sinon un simple toucher ---
   let glisse = null, vientDeGlisser = false;
   function prise(e){
-    if (e.button > 0 || e.target.closest('button')) return;   // un bouton se touche, il ne déplace pas
+    const bt = e.target.closest('button');
+    if (e.button > 0 || (bt && bt !== e.currentTarget)) return;   // un bouton intérieur se touche ; la bulle elle-même se saisit tout de suite
     glisse = { id: e.pointerId, x0: e.clientX, y0: e.clientY, px: chatPos.x, py: chatPos.y, bouge: false, cible: e.currentTarget };
     e.currentTarget.setPointerCapture(e.pointerId);
   }
   function deplacer(e){
     if (!glisse || e.pointerId !== glisse.id) return;
     const dx = e.clientX - glisse.x0, dy = e.clientY - glisse.y0;
-    if (!glisse.bouge && Math.hypot(dx, dy) < 5) return;
+    if (!glisse.bouge && Math.hypot(dx, dy) < 2) return;
     if (!glisse.bouge) { glisse.bouge = true; chat.classList.add('drag'); chat.style.transition = 'none'; }
     chatPos.x = glisse.px + dx; chatPos.y = glisse.py + dy;
-    requestAnimationFrame(placer);
+    placer();
   }
   function lacher(e){
     if (!glisse || e.pointerId !== glisse.id) return;
@@ -1570,11 +1579,16 @@
     chatEtat.classList.toggle('tape', !!ecrit.length);
     const la = autres.filter(x => presents.includes(x.id)).map(x => x.name);
     chatOrb.classList.toggle('is-live', la.length > 0);
+    let en = chatOrb.querySelector('.chat-en');
+    if (!la.length) en?.remove();
+    else { en = en || chatOrb.appendChild(el('span', 'chat-en')); en.replaceChildren(...autres.filter(x => presents.includes(x.id)).map(x => avatar(x))); }
+    chatEtat.classList.remove('en');
     if (ecrit.length) { chatEtat.textContent = `${ecrit.join(' et ')} ${ecrit.length > 1 ? 'écrivent' : 'écrit'}…`; return; }
     chatEtat.classList.toggle('pause', enPause(p.id) || (!!dest && enPause(dest.id)));
     if (enPause(p.id)) { chatEtat.textContent = `Ne pas déranger · jusqu’à ${heure(pauses[p.id])}`; return; }
     if (dest && enPause(dest.id)) { chatEtat.textContent = `En pause jusqu’à ${heure(pauses[dest.id])}`; return; }
-    chatEtat.textContent = chatMode === 'coupe' ? 'Reconnexion…' : '';
+    chatEtat.classList.toggle('en', chatMode !== 'coupe' && la.length > 0);
+    chatEtat.textContent = chatMode === 'coupe' ? 'Reconnexion…' : la.length ? `● En ligne : ${la.join(', ')}` : '';
   }
   // Non lus d'une conversation : les messages des autres après le dernier vu de ce fil.
   function nonLus(fil){
