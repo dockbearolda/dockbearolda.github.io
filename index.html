@@ -98,7 +98,13 @@
     .tile--hub{ flex:1; min-height:0; }
     /* la barre d'action se range au pied de la barre des apps */
     .dock{ left:max(16px,env(safe-area-inset-left)); right:auto; bottom:max(16px,var(--safe-b)); width:240px; flex-wrap:wrap-reverse; }
-    #toast,#update{ left:calc(50% + 129px); }
+    #toast,#update{ left:calc(50% + 129px); }    /* Une appli ouverte dans un onglet : la barre se resserre en rail d'icônes, l'appli prend la place */
+    .side-etroite .dash{ grid-template-columns:68px minmax(0,1fr); gap:14px; }
+    .side-etroite .me{ padding:6px; justify-content:center; }
+    .side-etroite .me-txt, .side-etroite .me > svg, .side-etroite .card-name, .side-etroite .bento-groupe{ display:none; }
+    .side-etroite .bento{ gap:6px; }
+    .side-etroite .bento .card{ justify-content:center; padding:8px; min-height:56px; }
+    .side-etroite .bento-groupe:not(:first-child) + .tile{ margin-top:10px; }
   }
 
   /* ---------- Bonjour ---------- */
@@ -746,7 +752,7 @@
       const card = el(editing ? 'button' : 'a', 'card');
       if (editing) { card.type = 'button'; card.setAttribute('aria-label', 'Modifier ' + s.name); card.onclick = () => openSheet(i); }
       else {
-        card.href = s.url; card.target = '_blank'; card.rel = 'noopener'; card.dataset.url = s.url;
+        card.href = s.url; card.target = '_blank'; card.rel = 'noopener'; card.dataset.url = s.url; card.title = s.name || '';
         // Clic simple : l'appli s'ouvre dans un onglet du Dashboard. Ctrl/⌘/Maj/clic molette : onglet du navigateur, comme avant.
         card.onclick = e => { if (!e.button && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && ouvrirOnglet(s.url)) e.preventDefault(); };
       }
@@ -923,6 +929,7 @@
     hubBox.classList.toggle('app-on', !!vue);
     frame.classList.toggle('vue', !vue);
     onglets.forEach(o => { if (o.url === vue) cadreDe(o); o.frame?.classList.toggle('vue', o.url === vue); });
+    document.body.classList.toggle('side-etroite', !!vue && !editing);
     $('.hub-wait').textContent = vue ? 'Chargement de ' + nomDe(vue) + '…' : 'Chargement du planning…';
     if (on) {
       const h = state.shortcuts[hubIndex()];
