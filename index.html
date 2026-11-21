@@ -771,13 +771,19 @@
     };
     return t;
   }
+  // UNE APPLI POUR UNE SEULE PERSONNE (21/11/2026) : « pour » liste les profils qui la
+  // voient (Fast White : Charlie seul) ; sans « pour », tout le monde. En édition, tout paraît.
+  const pourMoi = s => !Array.isArray(s.pour) || s.pour.includes(store.raw('olda_poste'));
+  // Une appli locale (Fast White, http://127.0.0.1) ne tient pas dans un onglet du
+  // Dashboard (page https) : « externe » l'ouvre directement dans le navigateur.
+  const ouvrirApp = s => s.externe ? (window.open(s.url, '_blank', 'noopener'), true) : ouvrirOnglet(s.url);
   // Les apps, dans l'ordre des raccourcis, dans la barre de gauche ; le planning à droite.
   function render(){
     const h = hubIndex();
     hubTile.hidden = h < 0;
     if (h >= 0) syncHub(state.shortcuts[h]); else if (maxed) setMax(false);
     const frag = document.createDocumentFragment();
-    const apps = state.shortcuts.map((s, i) => ({ s, i })).filter(x => x.i !== h);
+    const apps = state.shortcuts.map((s, i) => ({ s, i })).filter(x => x.i !== h && (editing || pourMoi(x.s)));
     let groupe = '';
     apps.forEach(({ s, i }, k) => {
       if (!editing && s.groupe && s.groupe !== groupe) frag.append(titreGroupe(s.groupe, apps.filter(x => x.s.groupe === s.groupe).length));
@@ -790,7 +796,7 @@
       else {
         card.href = s.url; card.target = '_blank'; card.rel = 'noopener'; card.dataset.url = s.url; card.setAttribute('aria-label', s.name || 'Sans nom');
         // Clic simple : l'appli s'ouvre dans un onglet du Dashboard. Ctrl/⌘/Maj/clic molette : onglet du navigateur, comme avant.
-        card.onclick = e => { if (!e.button && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && ouvrirOnglet(s.url)) e.preventDefault(); };
+        card.onclick = e => { if (!e.button && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && !s.externe && ouvrirOnglet(s.url)) e.preventDefault(); };
       }
       fillCard(card, s);
       tile.append(card);
@@ -1186,6 +1192,8 @@
     if (draft.img) s.img = draft.img;
     if (draft.hub) s.hub = true;
     if (draft.groupe) s.groupe = draft.groupe;
+    if (Array.isArray(draft.pour)) s.pour = draft.pour;   // retouché ici : reste à qui il était
+    if (draft.externe) s.externe = true;
     s.since = index >= 0 && url === draft.url && draft.since ? draft.since : Date.now();
     if (index >= 0) state.shortcuts[index] = s; else state.shortcuts.push(s);
     sheet.close(); commit();
@@ -1279,7 +1287,7 @@
   function palRender(){
     const q = norm(palQ.value.trim()), h = hubIndex();
     palItems = state.shortcuts.map((s, i) => ({ s, i, r: q ? palRank(s, q) : (i === h ? -0.5 : 0) }))
-      .filter(x => x.r !== -1).sort((a, b) => a.r - b.r);
+      .filter(x => x.r !== -1 && pourMoi(x.s)).sort((a, b) => a.r - b.r);
     palAt = Math.min(palAt, Math.max(0, palItems.length - 1));
     if (!palItems.length) {
       const li = el('li', 'pal-empty'); li.textContent = 'Aucune app ne correspond à « ' + palQ.value.trim() + ' »';
@@ -1305,7 +1313,7 @@
     const x = palItems[k]; if (!x) return;
     pal.close();
     if (x.i === hubIndex()) { if (actif) montrer(null); setMax(true); }
-    else if (!ouvrirOnglet(x.s.url)) window.open(x.s.url, '_blank', 'noopener');
+    else if (!ouvrirApp(x.s)) window.open(x.s.url, '_blank', 'noopener');
   }
   function palOpen(seed){
     if (!state || pal.open) return;
@@ -1353,7 +1361,7 @@
       const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', x === p);
       const n = el('span'); n.textContent = x.name;
       b.append(avatar(x), n);
-      b.onclick = () => { store.set(LS_WHO, x.id); who.close(); syncWho(); if (x !== p) { toast(`Bonjour ${x.name} 👋`); boite = []; relever(); window.oldaBulle?.relancer(); } };
+      b.onclick = () => { store.set(LS_WHO, x.id); who.close(); syncWho(); if (x !== p) { toast(`Bonjour ${x.name} 👋`); boite = []; relever(); window.oldaBulle?.relancer(); render(); } };
       return b;
     }));
     if (!who.open) who.showModal();
