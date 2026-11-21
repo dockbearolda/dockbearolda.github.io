@@ -1,5 +1,5 @@
 {
-  "rev": 1794488714826,
+  "rev": 1795221119632,
   "shortcuts": [
     {
       "name": "Site B2C",
@@ -36,6 +36,14 @@
       "icon": "box",
       "color": "orange",
       "since": 1794312634885,
+      "side": "left"
+    },
+    {
+      "name": "Stock textile",
+      "url": "https://bat-studio.dockbear.workers.dev/?stock",
+      "icon": "shirt",
+      "color": "menthe",
+      "since": 1795221119632,
       "side": "left"
     },
     {
