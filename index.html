@@ -145,6 +145,9 @@
   .hub-frame{ position:relative; flex:1; min-height:0; background:#f8fafd; border-top:1px solid rgba(32,41,48,.07); }
   .hub-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; display:block; opacity:0; transition:opacity .45s ease; }
   .hub-frame iframe.on{ opacity:1; }
+  /* Une seule barre : quand le planning sait se présenter, il porte lui-même nouvel onglet + Agrandir */
+  .tile--hub.merged .hub-head{ display:none; }
+  .tile--hub.merged .hub-frame{ border-top:0; background:#fff; }
   .hub-wait{ position:absolute; inset:0; display:grid; place-content:center; justify-items:center; gap:14px; font-size:14px; color:var(--muted); }
   .hub-wait::before{ content:""; width:26px; height:26px; border-radius:50%; border:2.5px solid rgba(10,166,201,.18); border-top-color:#0aa6c9; animation:turn .8s linear infinite; }
   @keyframes turn{ to{ transform:rotate(360deg); } }
@@ -160,6 +163,7 @@
     .tile--hub:not(.is-max) .hub-txt small{ font-size:14px; }
     .hub-grow span{ display:none; }
     .hub-grow{ width:44px; padding:0; }
+    .tile--hub.merged:not(.is-max) .hub-head{ display:flex; }
   }
   /* Plein écran : le planning prend toute la place, sans recharger */
   .tile--hub.is-max{ position:fixed; inset:0; z-index:30; animation:none; }
@@ -897,6 +901,21 @@
   const reduced = matchMedia('(prefers-reduced-motion:reduce)');
   let maxed = false;
   frame.addEventListener('load', () => { if (frame.src) frame.classList.add('on'); });
+  // Le planning dans le cadre annonce « hub-ready » : sa barre reprend alors nouvel onglet + Agrandir,
+  // et celle du Dashboard s'efface (une seule barre). Sans réponse, rien ne change.
+  let hubReady = false;
+  const hubOrigin = () => { try { return new URL(frame.src).origin; } catch { return null; } };
+  function tellHub(){
+    if (hubReady) frame.contentWindow?.postMessage({ olda: 'hub', maxed }, hubOrigin());
+    hubTile.classList.toggle('merged', hubReady && !editing);
+  }
+  addEventListener('message', e => {
+    if (e.source !== frame.contentWindow || e.origin !== hubOrigin() || !e.data?.olda) return;
+    const t = e.data.olda;
+    if (t === 'hub-ready') { hubReady = true; tellHub(); }
+    else if (t === 'hub-grow') setMax(!maxed);
+    else if (t === 'hub-ranger' && large.matches && !maxed && !editing) rangerApps(!document.body.classList.contains('side-rangee'));
+  });
   function syncHub(s){
     const ic = iconEl(s); ic.id = 'hub-icon'; $('#hub-icon').replaceWith(ic);
     $('#hub-name').textContent = s.name || 'Planning';
@@ -904,13 +923,14 @@
     $('#hub-date').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
     $('#hub-grow').hidden = editing; $('#hub-edit').hidden = !editing;
     hubTile.dataset.url = s.url;
-    loadFrame();
+    loadFrame(); tellHub();
   }
   // Sur téléphone, le planning ne se charge qu'à la première ouverture.
   function loadFrame(){
     const url = hubTile.dataset.url;
     if (!url || hubTile.hidden || !(wide.matches || maxed) || frame.dataset.src === url) return;
     frame.classList.remove('on'); frame.dataset.src = url; frame.src = url;
+    hubReady = false; tellHub();
   }
   wide.addEventListener('change', loadFrame);
   function applyMax(on){
@@ -923,7 +943,7 @@
       g.querySelector('svg').innerHTML = on
         ? '<path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/>'
         : '<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/>';
-      loadFrame();
+      loadFrame(); tellHub();
     };
     if (document.startViewTransition && !reduced.matches) document.startViewTransition(go); else go();
   }
