@@ -1,5 +1,5 @@
 {
-  "rev": 1795236374227,
+  "rev": 1795237315398,
   "shortcuts": [
     {
       "name": "BAT Studio",
@@ -13,6 +13,14 @@
       "url": "https://logo-maker.dockbear.workers.dev/",
       "icon": "brush",
       "color": "ardoise",
+      "groupe": "Atelier"
+    },
+    {
+      "name": "Logos OLDA",
+      "url": "https://bat-studio.dockbear.workers.dev/?logos",
+      "icon": "image",
+      "color": "turquoise",
+      "since": 1795237315398,
       "groupe": "Atelier"
     },
     {
