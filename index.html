@@ -496,6 +496,9 @@
               <a class="icon-btn" id="onglet-dehors" target="_blank" rel="noopener" aria-label="Ouvrir dans un onglet du navigateur" title="Ouvrir dans un onglet du navigateur">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
               </a>
+              <button type="button" class="icon-btn" id="onglet-double" aria-label="Dupliquer l'onglet" title="Dupliquer l'onglet">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+              </button>
               <button type="button" class="icon-btn" id="onglet-grand" aria-label="Agrandir" title="Agrandir">
                 <svg viewBox="0 0 24 24" aria-hidden="true"></svg>
               </button>
@@ -883,28 +886,40 @@
   const CADRE_OK = /(^|\.)dockbear\.workers\.dev$|^design-olda-production\.up\.railway\.app$/;
   const LS_ONGLETS = 'olda_onglets';
   const hubBox = $('.hub'), hubFrameBox = $('.hub-frame'), ongletsNav = $('#onglets'), ongletsListe = $('#onglets-liste');
-  const onglets = [];          // { url, frame } — frame créé à la première ouverture
-  let actif = null;            // url de l'onglet affiché ; null = le planning
+  // Une même appli peut être ouverte deux fois (bouton Dupliquer) : chaque onglet a son id.
+  const onglets = [];          // { id, url, frame } — frame créé à la première ouverture
+  let actif = null;            // id de l'onglet affiché ; null = le planning
+  let ongletNo = 0;
+  const nouvelOnglet = url => ({ id: 'o' + (++ongletNo), url, frame: null });
+  const ongletDe = id => onglets.find(o => o.id === id);
   {
     const m = store.get(LS_ONGLETS);
-    if (m && Array.isArray(m.ouverts)) m.ouverts.forEach(u => { if (typeof u === 'string' && cadreOk(u) && !onglets.some(o => o.url === u)) onglets.push({ url: u, frame: null }); });
-    if (m && onglets.some(o => o.url === m.actif)) actif = m.actif;
+    if (m && Array.isArray(m.ouverts)) m.ouverts.forEach(u => { if (typeof u === 'string' && cadreOk(u)) onglets.push(nouvelOnglet(u)); });
+    if (m) actif = (Number.isInteger(m.i) ? onglets[m.i] : onglets.find(o => o.url === m.actif))?.id ?? null;
   }
   function cadreOk(url){ try { const u = new URL(url); return u.protocol === 'https:' && CADRE_OK.test(u.hostname); } catch (_) { return false; } }
   const ongletsActifs = () => wide.matches && !editing && !hubTile.hidden;
-  function garderOnglets(){ store.set(LS_ONGLETS, { ouverts: onglets.map(o => o.url), actif }); }
+  function garderOnglets(){ const i = onglets.findIndex(o => o.id === actif); store.set(LS_ONGLETS, { ouverts: onglets.map(o => o.url), i: i < 0 ? null : i }); }
   function ouvrirOnglet(url){
     if (!ongletsActifs() || !cadreOk(url)) return false;
-    if (!onglets.some(o => o.url === url)) onglets.push({ url, frame: null });
-    montrer(url);
+    let o = ongletDe(actif);
+    if (o?.url !== url) o = onglets.find(x => x.url === url);
+    if (!o) onglets.push(o = nouvelOnglet(url));
+    montrer(o.id);
     if (!large.matches) hubTile.scrollIntoView({ block: 'start', behavior: reduced.matches ? 'auto' : 'smooth' });
     return true;
   }
-  function montrer(url){ actif = url; garderOnglets(); majOnglets(); }
-  function fermerOnglet(url){
-    const k = onglets.findIndex(o => o.url === url); if (k < 0) return;
+  function montrer(id){ actif = id; garderOnglets(); majOnglets(); }
+  // Dupliquer : la même appli dans un second onglet, juste à côté, avec son propre cadre.
+  function dupliquerOnglet(id){
+    const k = onglets.findIndex(o => o.id === id); if (k < 0) return;
+    const o = nouvelOnglet(onglets[k].url);
+    onglets.splice(k + 1, 0, o); montrer(o.id);
+  }
+  function fermerOnglet(id){
+    const k = onglets.findIndex(o => o.id === id); if (k < 0) return;
     const [o] = onglets.splice(k, 1); o.frame?.remove();
-    if (actif === url) actif = (onglets[k] || onglets[k - 1])?.url ?? null;
+    if (actif === id) actif = (onglets[k] || onglets[k - 1])?.id ?? null;
     garderOnglets(); majOnglets();
     (ongletsListe.querySelector('.onglet.on .onglet-btn') || $('#hub-id'))?.focus({ preventScroll: true });
   }
@@ -920,20 +935,24 @@
   const raccourci = url => state?.shortcuts.find(s => s.url === url);
   const hoteDe = u => { try { return new URL(u).hostname; } catch (_) { return u; } };
   const nomDe = url => raccourci(url)?.name || hoteDe(url);
-  function ongletEl(s, url){
-    const on = actif === url;
+  function ongletEl(s, o){
+    const id = o ? o.id : null, url = o?.url;
+    const on = actif === id;
     const li = el('div', 'onglet' + (on ? ' on' : ''));
     const b = el('button', 'onglet-btn'); b.type = 'button';
     if (on) b.setAttribute('aria-current', 'page');
     const n = el('span'); n.textContent = s.name || hoteDe(url || s.url);
+    // la même appli ouverte deux fois : « Logo maker 2 »
+    const pareils = o ? onglets.filter(x => x.url === url) : [];
+    if (pareils.length > 1) n.textContent += ' ' + (pareils.indexOf(o) + 1);
     b.append(iconEl(s), n);
-    b.onclick = () => { if (actif !== url) montrer(url); };
+    b.onclick = () => { if (actif !== id) montrer(id); };
     li.append(b);
-    if (url) {
+    if (o) {
       const x = el('button', 'onglet-x'); x.type = 'button';
       x.setAttribute('aria-label', 'Fermer ' + n.textContent); x.title = 'Fermer';
       x.innerHTML = '<span>' + SVG('<path d="M18 6L6 18M6 6l12 12"/>') + '</span>';
-      x.onclick = () => fermerOnglet(url);
+      x.onclick = () => fermerOnglet(id);
       li.append(x);
     }
     return li;
@@ -942,19 +961,19 @@
     if (!state) return;
     // un raccourci retiré (ou dont l'adresse a changé) emporte son onglet
     for (let k = onglets.length - 1; k >= 0; k--) if (!raccourci(onglets[k].url)) { onglets[k].frame?.remove(); onglets.splice(k, 1); }
-    if (actif && !onglets.some(o => o.url === actif)) actif = null;
+    if (actif && !ongletDe(actif)) actif = null;
     const on = ongletsActifs() && onglets.length > 0;
-    const vue = on ? actif : null;
+    const ov = on ? ongletDe(actif) : null, vue = ov?.url ?? null;
     ongletsNav.hidden = !on;
     hubBox.classList.toggle('app-on', !!vue);
     frame.classList.toggle('vue', !vue);
-    onglets.forEach(o => { if (o.url === vue) cadreDe(o); o.frame?.classList.toggle('vue', o.url === vue); });
+    onglets.forEach(o => { if (o === ov) cadreDe(o); o.frame?.classList.toggle('vue', o === ov); });
     document.body.classList.toggle('side-etroite', !!vue && !editing);
     $('.hub-wait').textContent = vue ? 'Chargement de ' + nomDe(vue) + '…' : 'Chargement du planning…';
     if (on) {
       const h = state.shortcuts[hubIndex()];
       ongletsListe.replaceChildren(ongletEl(h || { name: 'Planning', icon: 'calendar' }, null),
-        ...onglets.map(o => ongletEl(raccourci(o.url), o.url)));
+        ...onglets.map(o => ongletEl(raccourci(o.url), o)));
       ongletsListe.querySelector('.onglet.on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     }
     $('#onglets-acts').hidden = !vue;
@@ -973,6 +992,7 @@
     });
   }
   $('#onglet-grand').onclick = () => setMax(!maxed);
+  $('#onglet-double').onclick = () => dupliquerOnglet(actif);
   wide.addEventListener('change', majOnglets);
   // Double-clic dans le vide de la barre d'onglets : les apps se rangent, comme sur la barre du planning
   ongletsNav.addEventListener('dblclick', e => {
