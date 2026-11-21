@@ -105,6 +105,10 @@
     .side-etroite .bento{ gap:6px; }
     .side-etroite .bento .card{ justify-content:center; padding:8px; min-height:56px; }
     .side-etroite .bento-groupe:not(:first-child) + .tile{ margin-top:10px; }
+    /* le nom de l'appli, en bulle à droite de l'icône (survol, clic, clavier) */
+    #rail-nom{ position:fixed; z-index:9; left:0; top:0; padding:7px 12px; border-radius:10px; background:var(--ink); color:#fff; font-size:14px; font-weight:600; white-space:nowrap;
+      pointer-events:none; opacity:0; transform:translate(-4px,-50%); transition:opacity .15s, transform .15s; }
+    #rail-nom.on{ opacity:1; transform:translate(0,-50%); }
   }
 
   /* ---------- Bonjour ---------- */
@@ -535,6 +539,7 @@
   </div>
 </dialog>
 
+<div id="rail-nom" role="tooltip" aria-hidden="true"></div>
 <div class="dock">
   <button type="button" class="btn btn--glass" id="b-revert" hidden>Annuler mes modifs</button>
   <button type="button" class="btn btn--glass" id="b-publish" hidden><span class="dot" aria-hidden="true"></span>Publier</button>
@@ -692,6 +697,21 @@
   store.del('olda_access_v2'); store.del('olda_access_pw');
 
   const grid = $('#bento');
+  // Barre en rail : le nom de l'appli s'affiche à côté de l'icône au survol, au focus et au clic.
+  const railNom = $('#rail-nom'); let railTempo;
+  function nommer(e){
+    const card = e.target.closest?.('.card');
+    if (!card || !document.body.classList.contains('side-etroite')) return;
+    const r = card.getBoundingClientRect();
+    railNom.textContent = card.getAttribute('aria-label') || card.textContent;
+    railNom.style.left = (r.right + 10) + 'px'; railNom.style.top = (r.top + r.height / 2) + 'px';
+    railNom.classList.add('on'); clearTimeout(railTempo);
+    if (e.type === 'click') railTempo = setTimeout(() => railNom.classList.remove('on'), 1500);
+  }
+  const taire = e => { if (e.pointerType !== 'touch') railNom.classList.remove('on'); };
+  grid.addEventListener('pointerover', nommer); grid.addEventListener('focusin', nommer); grid.addEventListener('click', nommer, true);
+  grid.addEventListener('pointerout', taire); grid.addEventListener('focusout', taire);
+  grid.addEventListener('scroll', () => railNom.classList.remove('on'), { passive:true });
   let state = store.get(LS_DATA);      // { rev, shortcuts, dirty, base } — base : rev publiée sur laquelle portent les retouches
   let editing = false;
 
@@ -752,7 +772,7 @@
       const card = el(editing ? 'button' : 'a', 'card');
       if (editing) { card.type = 'button'; card.setAttribute('aria-label', 'Modifier ' + s.name); card.onclick = () => openSheet(i); }
       else {
-        card.href = s.url; card.target = '_blank'; card.rel = 'noopener'; card.dataset.url = s.url; card.title = s.name || '';
+        card.href = s.url; card.target = '_blank'; card.rel = 'noopener'; card.dataset.url = s.url; card.setAttribute('aria-label', s.name || 'Sans nom');
         // Clic simple : l'appli s'ouvre dans un onglet du Dashboard. Ctrl/⌘/Maj/clic molette : onglet du navigateur, comme avant.
         card.onclick = e => { if (!e.button && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && ouvrirOnglet(s.url)) e.preventDefault(); };
       }
