@@ -148,7 +148,32 @@
   .hub-frame{ position:relative; flex:1; min-height:0; background:#f8fafd; border-top:1px solid rgba(32,41,48,.07); }
   .hub-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; display:block; opacity:0; transition:opacity .45s ease; }
   .hub-frame iframe.on{ opacity:1; }
-  .hub-frame:has(iframe.on) .hub-wait{ display:none; }   /* planning là : le rond s'arrête (il tournait caché dessous) */
+  .hub-frame iframe:not(.vue){ visibility:hidden; }   /* caché mais toujours chargé : l'appli garde son état */
+  .hub-frame:has(iframe.vue.on) .hub-wait{ display:none; }   /* cadre affiché prêt : le rond s'arrête (il tournait caché dessous) */
+  /* Les applis ouvertes en onglets dans le Dashboard (≥ 700 px) : une barre au-dessus du planning */
+  .onglets{ display:flex; align-items:center; gap:6px; padding:6px 8px; border-bottom:1px solid rgba(32,41,48,.07); background:rgba(255,255,255,.5); }
+  .onglets-liste{ flex:1; min-width:0; display:flex; align-items:center; gap:4px; overflow-x:auto; overscroll-behavior:contain; scrollbar-width:none; }
+  .onglets-liste::-webkit-scrollbar{ display:none; }
+  .onglet{ flex:none; display:flex; align-items:center; max-width:230px; border-radius:14px; transition:background-color .2s, box-shadow .2s; }
+  .onglet.on{ background:#fff; box-shadow:0 1px 3px rgba(32,41,48,.10), inset 0 0 0 1px rgba(74,98,116,.10); }
+  @media (hover:hover){ .onglet:not(.on):hover{ background:rgba(255,255,255,.7); } .onglet:not(.on):hover .onglet-btn{ color:var(--ink); } }
+  .onglet-btn{ min-width:0; min-height:44px; display:flex; align-items:center; gap:8px; padding:0 12px 0 7px; border:0; border-radius:14px; background:none; font-size:14px; font-weight:600; color:var(--muted); }
+  .onglet.on .onglet-btn{ color:var(--ink); }
+  .onglet-btn .card-icon{ width:30px; height:30px; border-radius:9px; }
+  .onglet-btn .card-icon svg{ width:16px; height:16px; }
+  .onglet-btn .card-letter{ font-size:14px; }
+  .onglet-btn > span:last-child{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .onglet-x{ flex:none; width:44px; height:44px; margin-left:-10px; display:grid; place-items:center; border:0; border-radius:12px; background:none; color:var(--muted); }
+  .onglet-x > span{ width:26px; height:26px; border-radius:50%; display:grid; place-items:center; transition:background-color .2s, color .2s; }
+  .onglet-x svg{ width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2.4; stroke-linecap:round; }
+  @media (hover:hover){ .onglet-x:hover > span{ background:#e9edf0; color:var(--ink); } }
+  .onglet-btn:focus-visible,.onglet-x:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:-3px; }
+  .onglets-acts{ display:flex; align-items:center; gap:2px; flex-shrink:0; }
+  .onglets-acts .icon-btn{ color:var(--duck); }
+  .hub.app-on .hub-head{ display:none; }   /* l'appli affichée a sa propre barre */
+  .hub.app-on .hub-frame{ border-top:0; background:#fff; }
+  .card.actif{ border-color:var(--duck-focus); box-shadow:0 0 0 2px rgba(107,129,145,.22), var(--shadow); }
+  .card.actif .card-name{ color:var(--ink); }
   /* Une seule barre : quand le planning sait se présenter, il porte lui-même nouvel onglet + Agrandir */
   .tile--hub.merged .hub-head{ display:none; }
   .tile--hub.merged .hub-frame{ border-top:0; background:#fff; }
@@ -636,6 +661,17 @@
       </section>
       <div class="tile tile--hub" id="hub" hidden>
         <section class="hub" aria-labelledby="hub-name">
+          <nav class="onglets" id="onglets" aria-label="Applis ouvertes" hidden>
+            <div class="onglets-liste" id="onglets-liste"></div>
+            <div class="onglets-acts" id="onglets-acts" hidden>
+              <a class="icon-btn" id="onglet-dehors" target="_blank" rel="noopener" aria-label="Ouvrir dans un onglet du navigateur" title="Ouvrir dans un onglet du navigateur">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+              </a>
+              <button type="button" class="icon-btn" id="onglet-grand" aria-label="Agrandir" title="Agrandir">
+                <svg viewBox="0 0 24 24" aria-hidden="true"></svg>
+              </button>
+            </div>
+          </nav>
           <header class="hub-head">
             <button type="button" class="hub-id" id="hub-id">
               <span id="hub-icon"></span>
@@ -654,7 +690,7 @@
           </header>
           <div class="hub-frame">
             <div class="hub-wait">Chargement du planning…</div>
-            <iframe id="hub-frame" title="Planning" allow="clipboard-read; clipboard-write; fullscreen; microphone"></iframe>
+            <iframe id="hub-frame" class="vue" title="Planning" allow="clipboard-read; clipboard-write; fullscreen; microphone"></iframe>
           </div>
         </section>
       </div>
@@ -824,6 +860,8 @@
 
 <script>
 (() => {
+  // Ouvert dans un cadre du Dashboard lui-même (bouton « ‹ Dashboard » d'une appli en onglet) : on prévient le Dashboard du dessus.
+  try { if (top !== self && top.location.origin === location.origin) top.postMessage({ olda: 'dash-home' }, location.origin); } catch (_) {}
   const REPO = 'dockbearolda/dockbearolda.github.io', FILE = 'shortcuts.json';
   const LS_DATA = 'olda_portal_v1', LS_TOKEN = 'olda_portal_token';
 
@@ -937,7 +975,11 @@
       tile.style.animationDelay = (.1 + k * .04).toFixed(2) + 's';
       const card = el(editing ? 'button' : 'a', 'card');
       if (editing) { card.type = 'button'; card.setAttribute('aria-label', 'Modifier ' + s.name); card.onclick = () => openSheet(i); }
-      else { card.href = s.url; card.target = '_blank'; card.rel = 'noopener'; }
+      else {
+        card.href = s.url; card.target = '_blank'; card.rel = 'noopener'; card.dataset.url = s.url;
+        // Clic simple : l'appli s'ouvre dans un onglet du Dashboard. Ctrl/⌘/Maj/clic molette : onglet du navigateur, comme avant.
+        card.onclick = e => { if (!e.button && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && ouvrirOnglet(s.url)) e.preventDefault(); };
+      }
       fillCard(card, s);
       tile.append(card);
       if (editing) {
@@ -959,6 +1001,7 @@
     }
     grid.replaceChildren(frag);
     updateDock();
+    majOnglets();
   }
 
   // ---------- Le planning en direct ----------
@@ -1008,7 +1051,7 @@
       g.querySelector('svg').innerHTML = on
         ? '<path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/>'
         : '<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/>';
-      loadFrame(); tellHub();
+      loadFrame(); tellHub(); majOnglets();
     };
     if (document.startViewTransition && !reduced.matches) document.startViewTransition(go); else go();
   }
@@ -1034,6 +1077,119 @@
     rangerApps(!document.body.classList.contains('side-rangee'));
   });
   $('#side-tirer').onclick = () => rangerApps(false);
+
+  // ---------- Les applis en onglets dans le Dashboard ----------
+  // Un clic dans la barre des apps ouvre l'appli dans un onglet ici, au-dessus du planning,
+  // au lieu d'une fenêtre de plus dans le navigateur. Chaque onglet a son cadre, qui reste
+  // chargé en arrière-plan ; l'onglet « Planning » ramène au planning.
+  // Seules les applis qui acceptent d'être affichées dans un cadre y vont : les sites
+  // (myolda.com, B2B, OLDA Pro) l'interdisent (X-Frame-Options: DENY) et s'ouvrent comme avant.
+  const CADRE_OK = /(^|\.)dockbear\.workers\.dev$|^design-olda-production\.up\.railway\.app$/;
+  const LS_ONGLETS = 'olda_onglets';
+  const hubBox = $('.hub'), hubFrameBox = $('.hub-frame'), ongletsNav = $('#onglets'), ongletsListe = $('#onglets-liste');
+  const onglets = [];          // { url, frame } — frame créé à la première ouverture
+  let actif = null;            // url de l'onglet affiché ; null = le planning
+  {
+    const m = store.get(LS_ONGLETS);
+    if (m && Array.isArray(m.ouverts)) m.ouverts.forEach(u => { if (typeof u === 'string' && cadreOk(u) && !onglets.some(o => o.url === u)) onglets.push({ url: u, frame: null }); });
+    if (m && onglets.some(o => o.url === m.actif)) actif = m.actif;
+  }
+  function cadreOk(url){ try { const u = new URL(url); return u.protocol === 'https:' && CADRE_OK.test(u.hostname); } catch (_) { return false; } }
+  const ongletsActifs = () => wide.matches && !editing && !hubTile.hidden;
+  function garderOnglets(){ store.set(LS_ONGLETS, { ouverts: onglets.map(o => o.url), actif }); }
+  function ouvrirOnglet(url){
+    if (!ongletsActifs() || !cadreOk(url)) return false;
+    if (!onglets.some(o => o.url === url)) onglets.push({ url, frame: null });
+    montrer(url);
+    if (!large.matches) hubTile.scrollIntoView({ block: 'start', behavior: reduced.matches ? 'auto' : 'smooth' });
+    return true;
+  }
+  function montrer(url){ actif = url; garderOnglets(); majOnglets(); }
+  function fermerOnglet(url){
+    const k = onglets.findIndex(o => o.url === url); if (k < 0) return;
+    const [o] = onglets.splice(k, 1); o.frame?.remove();
+    if (actif === url) actif = (onglets[k] || onglets[k - 1])?.url ?? null;
+    garderOnglets(); majOnglets();
+    (ongletsListe.querySelector('.onglet.on .onglet-btn') || $('#hub-id'))?.focus({ preventScroll: true });
+  }
+  function cadreDe(o){
+    if (!o.frame) {
+      const f = document.createElement('iframe');
+      f.title = nomDe(o.url); f.allow = 'clipboard-read; clipboard-write; fullscreen; microphone';
+      f.addEventListener('load', () => f.classList.add('on'));
+      f.src = o.url; hubFrameBox.append(f); o.frame = f;
+    }
+    return o.frame;
+  }
+  const raccourci = url => state?.shortcuts.find(s => s.url === url);
+  const hoteDe = u => { try { return new URL(u).hostname; } catch (_) { return u; } };
+  const nomDe = url => raccourci(url)?.name || hoteDe(url);
+  function ongletEl(s, url){
+    const on = actif === url;
+    const li = el('div', 'onglet' + (on ? ' on' : ''));
+    const b = el('button', 'onglet-btn'); b.type = 'button';
+    if (on) b.setAttribute('aria-current', 'page');
+    const n = el('span'); n.textContent = s.name || hoteDe(url || s.url);
+    b.append(iconEl(s), n);
+    b.onclick = () => { if (actif !== url) montrer(url); };
+    li.append(b);
+    if (url) {
+      const x = el('button', 'onglet-x'); x.type = 'button';
+      x.setAttribute('aria-label', 'Fermer ' + n.textContent); x.title = 'Fermer';
+      x.innerHTML = '<span>' + SVG('<path d="M18 6L6 18M6 6l12 12"/>') + '</span>';
+      x.onclick = () => fermerOnglet(url);
+      li.append(x);
+    }
+    return li;
+  }
+  function majOnglets(){
+    if (!state) return;
+    // un raccourci retiré (ou dont l'adresse a changé) emporte son onglet
+    for (let k = onglets.length - 1; k >= 0; k--) if (!raccourci(onglets[k].url)) { onglets[k].frame?.remove(); onglets.splice(k, 1); }
+    if (actif && !onglets.some(o => o.url === actif)) actif = null;
+    const on = ongletsActifs() && onglets.length > 0;
+    const vue = on ? actif : null;
+    ongletsNav.hidden = !on;
+    hubBox.classList.toggle('app-on', !!vue);
+    frame.classList.toggle('vue', !vue);
+    onglets.forEach(o => { if (o.url === vue) cadreDe(o); o.frame?.classList.toggle('vue', o.url === vue); });
+    $('.hub-wait').textContent = vue ? 'Chargement de ' + nomDe(vue) + '…' : 'Chargement du planning…';
+    if (on) {
+      const h = state.shortcuts[hubIndex()];
+      ongletsListe.replaceChildren(ongletEl(h || { name: 'Planning', icon: 'calendar' }, null),
+        ...onglets.map(o => ongletEl(raccourci(o.url), o.url)));
+      ongletsListe.querySelector('.onglet.on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+    $('#onglets-acts').hidden = !vue;
+    if (vue) {
+      $('#onglet-dehors').href = vue;
+      const g = $('#onglet-grand'), t = maxed ? 'Réduire' : 'Agrandir';
+      g.setAttribute('aria-label', t); g.title = t;
+      g.querySelector('svg').innerHTML = maxed
+        ? '<path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/>'
+        : '<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/>';
+    }
+    grid.querySelectorAll('.card[data-url]').forEach(c => {
+      const a = !!vue && c.dataset.url === vue;
+      c.classList.toggle('actif', a);
+      a ? c.setAttribute('aria-current', 'page') : c.removeAttribute('aria-current');
+    });
+  }
+  $('#onglet-grand').onclick = () => setMax(!maxed);
+  wide.addEventListener('change', majOnglets);
+  // Double-clic dans le vide de la barre d'onglets : les apps se rangent, comme sur la barre du planning
+  ongletsNav.addEventListener('dblclick', e => {
+    if (!large.matches || maxed || editing || e.target.closest('a,button')) return;
+    window.getSelection()?.removeAllRanges();
+    rangerApps(!document.body.classList.contains('side-rangee'));
+  });
+  // Le bouton « ‹ Dashboard » d'une appli ouverte en onglet charge le Dashboard DANS le cadre :
+  // ce Dashboard imbriqué nous prévient (voir le tout début du script), on remet l'appli et on revient au planning.
+  addEventListener('message', e => {
+    if (e.origin !== location.origin || e.data?.olda !== 'dash-home') return;
+    const o = onglets.find(x => x.frame && x.frame.contentWindow === e.source); if (!o) return;
+    o.frame.classList.remove('on'); o.frame.src = o.url; montrer(null);
+  });
   function settle(){ requestAnimationFrame(() => setTimeout(() => grid.classList.add('ready'), 1200)); }
 
   // ---------- État ----------
@@ -1318,8 +1474,8 @@
   function palGo(k){
     const x = palItems[k]; if (!x) return;
     pal.close();
-    if (x.i === hubIndex()) setMax(true);
-    else window.open(x.s.url, '_blank', 'noopener');
+    if (x.i === hubIndex()) { if (actif) montrer(null); setMax(true); }
+    else if (!ouvrirOnglet(x.s.url)) window.open(x.s.url, '_blank', 'noopener');
   }
   function palOpen(seed){
     if (!state || pal.open) return;
