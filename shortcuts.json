@@ -1,5 +1,5 @@
 {
-  "rev": 1795274589988,
+  "rev": 1795291370182,
   "shortcuts": [
     {
       "name": "BAT Studio",
@@ -37,6 +37,18 @@
       "color": "orange",
       "since": 1793618018484,
       "groupe": "Atelier"
+    },
+    {
+      "name": "Fast White",
+      "url": "http://127.0.0.1:47831/",
+      "icon": "printer",
+      "color": "ardoise",
+      "since": 1795291370182,
+      "groupe": "Atelier",
+      "pour": [
+        "charlie"
+      ],
+      "externe": true
     },
     {
       "name": "Chiffrage",
