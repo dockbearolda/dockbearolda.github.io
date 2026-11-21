@@ -100,16 +100,16 @@
     touch-action:none; user-select:none; -webkit-user-select:none;
   }
   .chat-orb{
-    position:relative; width:64px; height:64px; border-radius:50%; border:0; padding:0;
+    position:relative; width:56px; height:56px; border-radius:50%; border:0; padding:0;   /* la même taille que la to do list */
     display:grid; place-items:center;
     /* Pleine, couleur de la maison : on la trouve d'un coup d'œil, sur le planning comme sur le fond */
     background:radial-gradient(120% 120% at 30% 20%, #6ff08f 0%, var(--vert) 55%, #14a83f 100%);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(255,255,255,.12), 0 0 0 4px rgba(255,255,255,.75), 0 10px 24px rgba(20,140,60,.38), 0 2px 6px rgba(32,41,48,.18);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.28), inset 0 0 0 1px rgba(255,255,255,.12), 0 0 0 1px rgba(32,41,48,.06), 0 8px 22px rgba(20,140,60,.32), 0 2px 6px rgba(32,41,48,.18);
     transition:transform .35s var(--spring), box-shadow .25s; cursor:grab;
   }
   .chat-orb:hover{ transform:scale(1.05); }
   .chat-orb:active{ cursor:grabbing; }
-  .chat-orb svg{ width:26px; height:26px; fill:none; stroke:#fff; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  .chat-orb svg{ width:24px; height:24px; fill:none; stroke:#fff; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
   /* Du neuf : un halo qui respire doucement, sans clignoter */
   .chat-orb.has-new::before{ content:""; position:absolute; inset:-4px; border-radius:50%; border:3px solid rgba(217,48,37,.4); animation:chatHalo 2.4s ease-out infinite; pointer-events:none; }
   /* Le halo grandit et s'efface : transform + opacity seulement, le GPU n'a rien à repeindre (une ombre animée repeignait à chaque image) */
@@ -460,7 +460,7 @@
   const LS_CHAT = 'olda_chat', LS_CHAT_POS = 'olda_chat_pos', LS_CHAT_VU = 'olda_chat_vu';
   const chat = $('#chat'), chatOrb = $('#chat-orb'), chatPanel = $('#chat-panel'), chatList = $('#chat-list');
   const chatTxt = $('#chat-txt'), chatSend = $('#chat-send'), chatEtat = $('#chat-etat');
-  const ORB = 64, MARGE = 12, AIMANT = 40;   // à moins de 40 px d'un bord, elle s'y colle
+  const ORB = 56, MARGE = 12, AIMANT = 40;   // à moins de 40 px d'un bord, elle s'y colle
   let msgs = [], chatWs = null, chatEssais = 0, chatSonde = null, chatRetry = null, chatMode = 'ws';
   let presents = [], tapeurs = new Map(), derniereTape = 0, chatAffiches = new Set();
   let pauses = {}, chatUrgent = false;   // qui est en « Ne pas déranger » (jusqu'à quand) ; le prochain message est-il urgent ?
