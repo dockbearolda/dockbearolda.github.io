@@ -172,6 +172,11 @@
   .chat-m.moi .chat-b{ background:rgb(var(--a)); color:#fff; box-shadow:0 4px 14px rgba(var(--a),.28); }
   .chat-m.wait .chat-b{ opacity:.6; }
   .chat-m.rate .chat-b{ box-shadow:0 0 0 2px var(--danger); }
+  /* Mon message touché : « Supprimer » paraît à côté (un second toucher le retire pour tous) */
+  .chat-m.moi:not(.wait):not(.rate) .chat-b{ cursor:pointer; }
+  .chat-suppr{ display:none; flex:none; align-self:center; min-height:44px; padding:0 14px; border:0; border-radius:22px; background:#fff; color:var(--danger); font:inherit; font-size:13.5px; font-weight:700; box-shadow:0 1px 3px rgba(32,41,48,.12); cursor:pointer; }
+  .chat-m.choix .chat-suppr{ display:inline-flex; align-items:center; }
+  .chat-suppr:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:2px; }
   /* Les conversations : l'équipe, puis une par personne */
   .chat-pour{ grid-column:1; grid-row:2 / 4; min-height:0; display:flex; flex-direction:column; gap:2px; padding:8px 6px; border-right:1px solid rgba(255,255,255,.55); background:rgba(255,255,255,.22); overflow-y:auto; overscroll-behavior:contain; scrollbar-width:none; }
   .chat-pour button{ position:relative; width:100%; min-height:48px; padding:0; border:0; background:none; display:flex; align-items:center; flex-shrink:0; text-align:left; }
@@ -462,7 +467,7 @@
   const chatTxt = $('#chat-txt'), chatSend = $('#chat-send'), chatEtat = $('#chat-etat');
   const ORB = 56, MARGE = 12, AIMANT = 40;   // à moins de 40 px d'un bord, elle s'y colle
   let msgs = [], chatWs = null, chatEssais = 0, chatSonde = null, chatRetry = null, chatMode = 'ws';
-  let presents = [], tapeurs = new Map(), derniereTape = 0, chatAffiches = new Set();
+  let presents = [], tapeurs = new Map(), derniereTape = 0, chatAffiches = new Set(), chatChoix = null;
   let pauses = {}, chatUrgent = false;   // qui est en « Ne pas déranger » (jusqu'à quand) ; le prochain message est-il urgent ?
   const enPause = id => !!id && Date.parse(pauses[id]) > Date.now();
   // Le dernier message vu, conversation par conversation ({ tous: id, julien: id, … }).
@@ -624,11 +629,19 @@
       if (m.urgent) { const u = el('span', 'chat-tag'); u.textContent = 'Urgent'; b.append(u); }
       if (m.vocal) b.append(lecteurVocal(m), t);
       else b.append(document.createTextNode(m.texte), t);
+      if (moi && !m.wait && !m.rate) {
+        if (m.id === chatChoix) row.classList.add('choix');
+        b.onclick = e => { if (e.target.closest('button,audio,input')) return; chatChoix = chatChoix === m.id ? null : m.id; renderChat(); };
+        const x = el('button', 'chat-suppr'); x.type = 'button'; x.textContent = 'Supprimer';
+        x.setAttribute('aria-label', 'Supprimer ce message pour tout le monde');
+        x.onclick = () => supprimerMsg(m);
+        row.append(x);
+      }
       if (m.rate) {
         row.style.cursor = 'pointer';
         row.onclick = () => { msgs = msgs.filter(x => x !== m); m.vocal ? envoyerVocal(m._blob, m.vocal.duree, m.pour, !!m.urgent) : envoyer(m.texte, m.pour, !!m.urgent); };
       }
-      row.append(de ? avatar(de) : el('span', 'avatar'), b);
+      row.prepend(de ? avatar(de) : el('span', 'avatar'), b);
       out.push(row);
     });
     if (!liste.length) {
@@ -694,6 +707,13 @@
     if (chatWs?.readyState === 1) chatWs.send(JSON.stringify({ type: 'lu', id: m.id }));
     else fetch(`${BAT}/api/chat/lu/${encodeURIComponent(m.id)}?qui=${encodeURIComponent(p.id)}`, { method: 'POST' }).catch(() => {});
   }
+  // Retirer mon message : aussitôt chez moi, le serveur le retire chez les autres.
+  function supprimerMsg(m){
+    const p = me(); if (!p || m.de !== p.id) return;
+    chatChoix = null; msgs = msgs.filter(x => x !== m); garderChat(); renderChat();
+    if (chatWs?.readyState === 1) chatWs.send(JSON.stringify({ type: 'suppr', id: m.id }));
+    else fetch(`${BAT}/api/chat/suppr/${encodeURIComponent(m.id)}?qui=${encodeURIComponent(p.id)}`, { method: 'POST' }).catch(() => {});
+  }
   const garderChat = () => store.set(LS_CHAT, { qui: me()?.id, msgs: msgs.filter(m => !m.wait && !m.rate).slice(-200) });
   // Un « toc » discret, différent du ding-dong des notifications.
   function toc(){
@@ -735,6 +755,7 @@
       else if (e.type === 'msg') recevoir(e.msg);
       else if (e.type === 'presents') { presents = e.presents || []; majEtat(); renderPour(); }
       else if (e.type === 'tape') { clearTimeout(tapeurs.get(e.de)?.t); tapeurs.set(e.de, { prive: !!e.prive, t: setTimeout(() => { tapeurs.delete(e.de); majEtat(); }, 4000) }); majEtat(); }
+      else if (e.type === 'suppr') { const n = msgs.length; msgs = msgs.filter(x => x.id !== e.id); if (msgs.length !== n) { garderChat(); renderChat(); majNonLus(); } }
       else if (e.type === 'lu') { const m = msgs.find(x => x.id === e.id); if (m) { m.lu = e.lu; garderChat(); renderChat(); } }
       else if (e.type === 'refus') { const m = msgs.find(x => x.cle === e.cle); if (m) { m.wait = false; m.rate = true; renderChat(); } }
     };
