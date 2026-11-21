@@ -330,7 +330,7 @@
   .todo-i.raye .todo-tx > span{ animation:raye .45s ease-out; }
   @keyframes raye{ from{ background-size:0 1.5px; } }
   .todo-tag{ padding:1px 8px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.01em; color:#fff; background:var(--duck); }
-  .todo-tag.bat-paiement{ background:#1e8e3e; } .todo-tag.bat-valide{ background:#d97706; } .todo-tag.prt-imprimer, .todo-tag.prt-shop{ background:#1a73e8; }
+  .todo-tag.bat-paiement{ background:#1e8e3e; } .todo-tag.bat-valide{ background:#d97706; } .todo-tag.prt-imprimer, .todo-tag.prt-shop{ background:#1a73e8; } .todo-tag.presse-pret{ background:#12b5cb; }
   .todo-tag.bat-note{ background:#b45309; } .todo-tag.stock-bas{ background:var(--danger); }
   .todo-i.fait .todo-tag{ opacity:.45; }
   .todo-sous{ font-size:12.5px; line-height:1.35; color:var(--muted); }
@@ -1074,7 +1074,7 @@
   const todoPos = Object.assign({ x: null, y: null, ouvert: DASHBOARD && innerWidth >= 720 }, store.get(LS_TODO_POS) || {});
   const todoVus = new Set(store.get(LS_TODO_VUS) || []);
   let taches = [], notifsT = [], todoMinuterie = null, rayes = new Set();
-  const TAGS = { 'bat-paiement': 'Paiement ?', 'bat-valide': 'Cotes à prendre', 'prt-imprimer': 'À imprimer', 'prt-shop': 'PRT shop', 'bat-note': 'Note client', 'stock-bas': 'Stock', 'bat-atelier': 'Atelier' };
+  const TAGS = { 'bat-paiement': 'Paiement ?', 'bat-valide': 'Cotes à prendre', 'prt-imprimer': 'À imprimer', 'presse-pret': 'À presser', 'prt-shop': 'PRT shop', 'bat-note': 'Note client', 'stock-bas': 'Stock', 'bat-atelier': 'Atelier' };
 
   // --- Place et taille, comme la bulle de discussion ---
   const tailleT = () => todoPos.ouvert ? { w: todoPanel.offsetWidth || 340, h: todoPanel.offsetHeight || 480 } : { w: ORB_T, h: ORB_T };
@@ -1182,7 +1182,7 @@
     const out = [];
     for (const n of notifsVisibles()) {
       const li = ligneT({ texte: n.titre, sous: n.texte, tag: TAGS[n.type] || 'BAT Studio', type: n.type, fait: !!n.lu,
-        cocher: n.lu ? null : () => cocherNotif(n), ouvrir: n.type === 'bat-paiement' || (n.lien && n.lien !== '/') ? () => ouvrirNotifT(n) : null });
+        cocher: n.lu ? null : () => cocherNotif(n), ouvrir: n.type === 'bat-paiement' || n.type === 'presse-pret' || (n.lien && n.lien !== '/') ? () => ouvrirNotifT(n) : null });
       if (rayes.has(n.id)) li.classList.add('raye');
       out.push(li);
     }
@@ -1239,6 +1239,8 @@
       if (DASHBOARD) { basculerT(false); document.getElementById('suivi-box')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
       window.open('https://dockbearolda.github.io/', '_blank', 'noopener'); return;
     }
+    // Des PRT imprimés (Print DTF) : le planning, où la bulle montre ce qui est prêt à presser.
+    if (n.type === 'presse-pret') { window.open('https://planning-olda.dockbear.workers.dev/', '_blank', 'noopener'); return; }
     let u; try { u = new URL(n.lien || '/', BAT + '/'); } catch (_) { return; }
     if (u.origin !== BAT_ORIGINE) return;   // le lien ne mène que chez BAT Studio
     u.searchParams.set('poste', me()?.id || '');
