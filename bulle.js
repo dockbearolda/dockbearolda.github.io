@@ -1284,7 +1284,6 @@
       case 'presse-pret': return [{ ...planning, label: 'Ouvrir la presse' }];
       case 'presse-fini': return [{ label: 'Client prévenu', cls: 'oui', fn: () => {} }];
       case 'shop-fini': return [{ label: 'Vu', cls: 'oui', fn: () => {} }];
-      case 'stock-bas': return [{ label: 'Voir le stock', cls: 'go', fn: () => ouvrirBatT('/?stock') }];
       default: return n.lien && n.lien !== '/' ? [{ label: 'Ouvrir', cls: 'go', fn: () => ouvrirBatT(n.lien) }] : [];
     }
   }
