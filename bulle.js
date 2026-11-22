@@ -1382,7 +1382,15 @@
     if (!liste.length) return [];
     if (n.lu) {
       const f = el('span', 'todo-act ok'); f.innerHTML = SVG('<path d="M5 12.5l4.5 4.5L19 7.5"/>');
-      f.append(FAIT[n.type] || 'Fait'); return [f];
+      f.append(FAIT[n.type] || 'Fait');
+      // RENVOYER (22/11/2026) : un PRT mal parti (Planche fermée, envoi raté) se renvoie d'ici.
+      // La Planche remplace le PRT de ce BAT, jamais de doublon.
+      if (n.type === 'prt-imprimer' && n.carte) {
+        const r = el('button', 'todo-act go'); r.type = 'button'; r.textContent = r.title = 'Renvoyer';
+        r.onclick = () => { ouvrirPlancheT(n.carte, true); toast('Renvoyé à la Planche : le PRT se recrée.'); };
+        return [f, r];
+      }
+      return [f];
     }
     return liste.map(a => {
       const b = el('button', 'todo-act ' + (a.cls || '')); b.type = 'button'; b.textContent = a.label; b.title = a.label;
