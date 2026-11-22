@@ -329,11 +329,6 @@
   .todo-i.fait .todo-tx > span{ background-size:100% 1.5px; }
   .todo-i.raye .todo-tx > span{ animation:raye .45s ease-out; }
   @keyframes raye{ from{ background-size:0 1.5px; } }
-  .todo-tag{ padding:1px 8px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.01em; color:#fff; background:var(--duck); }
-  .todo-tag.bat-paiement{ background:#1e8e3e; } .todo-tag.bat-valide{ background:#d97706; } .todo-tag.prt-imprimer, .todo-tag.prt-shop{ background:#1a73e8; } .todo-tag.presse-pret{ background:#12b5cb; } .todo-tag.shop-fini, .todo-tag.presse-fini, .todo-tag.bat-production{ background:#1e8e3e; } .todo-tag.bat-relance, .todo-tag.retards{ background:#d97706; } .todo-tag.a-facturer{ background:var(--duck); }
-  .todo-tag.bat-note{ background:#b45309; } .todo-tag.stock-bas{ background:var(--danger); }
-  .todo-i.fait .todo-tag{ opacity:.45; }
-  .todo-sous{ font-size:12.5px; line-height:1.35; color:var(--muted); }
   .todo-ic{ width:40px; height:48px; flex-shrink:0; border:0; border-radius:12px; background:none; display:grid; place-items:center; color:var(--muted); }
   .todo-ic:hover{ background:rgba(74,98,116,.09); color:var(--ink); }
   .todo-ic svg{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
@@ -1088,7 +1083,6 @@
   const todoPos = Object.assign({ x: null, y: null, ouvert: DASHBOARD && innerWidth >= 720 }, store.get(LS_TODO_POS) || {});
   const todoVus = new Set(store.get(LS_TODO_VUS) || []);
   let taches = [], notifsT = [], todoMinuterie = null, rayes = new Set();
-  const TAGS = { 'bat-paiement': 'Paiement ?', 'bat-valide': 'Cotes à prendre', 'prt-imprimer': 'À imprimer', 'presse-pret': 'À presser', 'presse-fini': 'Terminé', 'bat-production': 'Production ?', 'bat-relance': 'Relance', 'a-facturer': 'Facture', 'retards': 'Délais', 'prt-shop': 'PRT shop', 'shop-fini': 'Shop prêt', 'bat-note': 'Note client', 'stock-bas': 'Stock', 'bat-atelier': 'Atelier' };
 
   // --- Place et taille, comme la bulle de discussion ---
   const tailleT = () => todoPos.ouvert ? { w: todoPanel.offsetWidth || 340, h: todoPanel.offsetHeight || 480 } : { w: ORB_T, h: ORB_T };
@@ -1169,6 +1163,40 @@
   $('#todo-x').onclick = () => basculerT(false);
   todoPanel.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); basculerT(false); todoOrb.focus(); } });
 
+  // --- UNE NOTIFICATION, UNE LIGNE (22/11/2026) : qui a fait quoi, pour quel client. ---
+  // Ni étiquette ni détails : la réponse (« Fait », « Oui, payé »…) reste en dessous.
+  function ligneNotif(n){
+    const t = String(n.titre || ''), x = String(n.texte || '');
+    const avant = t.replace(/^Rappel — /, '').split(' : ')[0];
+    const client = avant.split(' · ')[0].replace(/\s*\(Pro\)$/, '') || 'un client';
+    // L'auteur : celui que la notification nomme, sinon celui que son ancien texte citait.
+    const nomme = profilDe(n.de)?.name
+      || (n.type === 'prt-imprimer' && x.match(/^Cotes prises par ([^:]+?) :/)?.[1])
+      || (n.type === 'prt-shop' && x.match(/ — ([^—]+)$/)?.[1]?.trim()) || '';
+    switch (n.type) {
+      case 'bat-valide':
+        if (/ : payé, en PRT$/.test(t)) return `${nomme || 'Le bureau'} a validé le paiement de ${client}`;
+        if (/ : lancé en production, en PRT$/.test(t)) return `${nomme || 'Le bureau'} a lancé ${client} en production`;
+        return `${client} a validé son BAT`;
+      case 'bat-paiement': case 'bat-production': return `${client} a validé son BAT`;
+      case 'bat-note': return `${client} a laissé une note sur son BAT`;
+      case 'bat-relance': return `${client} n’a pas répondu au BAT`;
+      case 'prt-imprimer': return nomme ? `${nomme} a validé les cotes de ${client}` : `Cotes prises pour ${client}`;
+      case 'prt-shop': return nomme ? `${nomme} a demandé un réassort boutique` : 'Réassort boutique demandé';
+      case 'presse-pret': return `${client} est imprimé, à presser`;
+      case 'presse-fini': return `${nomme || 'Julien'} a terminé ${client}`;
+      case 'a-facturer': return `${client} est à facturer`;
+      case 'shop-fini': return 'Réassort boutique terminé';
+      case 'retards': {
+        const tot = +(t.match(/^\d+/)?.[0] || 0), r = (x.match(/de retard\)/g) || []).length, d = tot - r;
+        const cmd = k => `${k} commande${k > 1 ? 's' : ''}`;
+        if (!tot) return t;
+        return r && d ? `${cmd(r)} en retard, ${d} urgente${d > 1 ? 's' : ''}` : r ? `${cmd(r)} en retard` : `${cmd(d)} urgente${d > 1 ? 's' : ''}`;
+      }
+      default: return t;
+    }
+  }
+
   // --- Afficher ---
   const notifsVisibles = () => notifsT.filter(n => !n.lu || Date.now() - Date.parse(n.lu) < JOUR);
   const aFaire = () => taches.filter(t => !t.fait).length + notifsT.filter(n => !n.lu).length;
@@ -1178,15 +1206,13 @@
     $('#todo-c').textContent = n ? `${n} à faire` : '';
     todoOrb.setAttribute('aria-label', n ? `Ma to do list : ${n} à faire` : 'Ouvrir ma to do list');
   }
-  function ligneT({ texte, sous, tag, type, fait, cocher, ouvrir, suppr, actions }){
+  function ligneT({ texte, fait, cocher, ouvrir, suppr, actions }){
     const li = el('li', 'todo-i' + (fait ? ' fait' : ''));
     const c = el('button', 'todo-cc'); c.type = 'button'; c.setAttribute('role', 'checkbox'); c.setAttribute('aria-checked', String(!!fait));
     c.setAttribute('aria-label', texte); c.innerHTML = SVG('<circle cx="12" cy="12" r="8.5"/><path class="v" d="M7.5 12.5l3 3 6-7"/>');
     if (cocher) c.onclick = cocher; else c.disabled = true;
     const corps = el('div', 'todo-corps');
-    if (tag) { const t = el('span', 'todo-tag ' + (type || '')); t.textContent = tag; corps.append(t); }
     const tx = el('span', 'todo-tx'), sp = el('span'); sp.textContent = texte; tx.append(sp); corps.append(tx);
-    if (sous) { const s2 = el('small', 'todo-sous'); s2.textContent = sous; corps.append(s2); }
     if (actions?.length) { const a = el('div', 'todo-acts'); a.append(...actions); corps.append(a); }
     li.append(c, corps);
     if (ouvrir) { const o = el('button', 'todo-ic'); o.type = 'button'; o.title = 'Ouvrir'; o.setAttribute('aria-label', 'Ouvrir : ' + texte); o.innerHTML = SVG('<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'); o.onclick = ouvrir; li.append(o); }
@@ -1197,8 +1223,7 @@
     const p = me(); if (!p) return;
     const out = [];
     for (const n of notifsVisibles()) {
-      const li = ligneT({ texte: n.titre, sous: n.texte, tag: TAGS[n.type] || 'BAT Studio', type: n.type, fait: !!n.lu,
-        cocher: n.lu ? null : () => cocherNotif(n), actions: boutonsNotif(n) });
+      const li = ligneT({ texte: ligneNotif(n), fait: !!n.lu, cocher: n.lu ? null : () => cocherNotif(n), actions: boutonsNotif(n) });
       if (rayes.has(n.id)) li.classList.add('raye');
       out.push(li);
     }
