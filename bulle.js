@@ -1165,10 +1165,21 @@
 
   // --- UNE NOTIFICATION, UNE LIGNE (22/11/2026) : qui a fait quoi, pour quel client. ---
   // Ni étiquette ni détails : la réponse (« Fait », « Oui, payé »…) reste en dessous.
-  function ligneNotif(n){
+  // Un nom de client trop long tient en ses initiales : « Le temps des cerises » → « LTC ».
+  const PETITS = new Set(['de', 'des', 'du', 'd', 'la', 'le', 'les', 'l', 'et', 'à', 'a', 'au', 'aux', 'en', '&']);
+  function nomCourt(nom){
+    const n = String(nom).trim();
+    if (n.length <= 14) return n;
+    const mots = n.replace(/\([^)]*\)/g, ' ').split(/[\s'’-]+/).filter(m => /\p{L}|\d/u.test(m));
+    const gardes = mots.filter((m, i) => i === 0 || !PETITS.has(m.toLowerCase()));
+    const sigle = gardes.map(m => m.match(/[\p{L}\d]/u)[0]).join('').toUpperCase();
+    return sigle.length >= 2 ? sigle : n;
+  }
+  function ligneNotif(n, court = true){
     const t = String(n.titre || ''), x = String(n.texte || '');
+    const raccourcir = v => (court ? nomCourt(v) : v);
     const avant = t.replace(/^Rappel — /, '').split(' : ')[0];
-    const client = avant.split(' · ')[0].replace(/\s*\(Pro\)$/, '') || 'un client';
+    const client = raccourcir(avant.split(' · ')[0].replace(/\s*\(Pro\)$/, '')) || 'un client';
     // L'auteur : celui que la notification nomme, sinon celui que son ancien texte citait.
     const nomme = profilDe(n.de)?.name
       || (n.type === 'prt-imprimer' && x.match(/^Cotes prises par ([^:]+?) :/)?.[1])
@@ -1191,6 +1202,11 @@
         const tot = +(t.match(/^\d+/)?.[0] || 0), r = (x.match(/de retard\)/g) || []).length, d = tot - r;
         const cmd = k => `${k} commande${k > 1 ? 's' : ''}`;
         if (!tot) return t;
+        // Un seul client : on le nomme.
+        if (tot === 1) {
+          const m = x.match(/^(.*?) \(([^)]*)\)$/), qui = raccourcir((m?.[1] || '').split(' · ')[0]);
+          if (qui) return r ? `${qui} est en retard` : `${qui} est à livrer ${m[2]}`;
+        }
         return r && d ? `${cmd(r)} en retard, ${d} urgente${d > 1 ? 's' : ''}` : r ? `${cmd(r)} en retard` : `${cmd(d)} urgente${d > 1 ? 's' : ''}`;
       }
       default: return t;
@@ -1224,6 +1240,8 @@
     const out = [];
     for (const n of notifsVisibles()) {
       const li = ligneT({ texte: ligneNotif(n), fait: !!n.lu, cocher: n.lu ? null : () => cocherNotif(n), actions: boutonsNotif(n) });
+      const entier = ligneNotif(n, false);
+      if (entier !== ligneNotif(n)) li.querySelector('.todo-tx').title = entier;   // le nom complet, au survol
       if (rayes.has(n.id)) li.classList.add('raye');
       out.push(li);
     }
