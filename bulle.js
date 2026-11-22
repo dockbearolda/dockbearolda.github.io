@@ -279,7 +279,7 @@
   .chat-b .vu{ font-weight:700; opacity:1; }
 
   /* ---------- La to do list : un bloc-notes à soi, coché ici, rayé partout ---------- */
-  .todo{ position:fixed; z-index:34; left:0; top:0; touch-action:none; user-select:none; -webkit-user-select:none;
+  .todo{ position:fixed; z-index:36; left:0; top:0; touch-action:none; user-select:none; -webkit-user-select:none;
     --main:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; --papier:#fff; --encre:#1d2733; --ligne:rgba(74,98,116,.12); }
   .todo-orb{ position:relative; width:56px; height:56px; border-radius:50%; border:0; padding:0; display:grid; place-items:center; -webkit-touch-callout:none;
     background:#fff; color:#1a73e8;   /* blanc et bleu, comme Google Tasks ou Rappels d'Apple */
@@ -1161,7 +1161,8 @@
   }
   todo.addEventListener('transitionend', () => { todo.style.transition = ''; });
   // Celle qu'on touche ou qu'on ouvre passe devant l'autre.
-  const devant = n => { todo.style.zIndex = n === todo ? 36 : 34; chat.style.zIndex = n === chat ? 36 : 35; };
+  // Au-dessus de tout, comme la messagerie ; des deux, celle qu'on touche passe devant.
+  const devant = n => { todo.style.zIndex = n === todo ? 36 : 35; chat.style.zIndex = n === chat ? 36 : 35; };
   todo.addEventListener('pointerdown', () => devant(todo), true);
   chat.addEventListener('pointerdown', () => devant(chat), true);
   todoOrb.onclick = () => { if (!vientDeGlisserT && !appuiLongPris()) basculerT(true); };
@@ -1242,7 +1243,7 @@
   function supprimerTache(t){ taches = taches.filter(x => x !== t); sauverT(); }
   $('#todo-vider').onclick = () => { taches = taches.filter(t => !t.fait); sauverT(); };
 
-  // --- Les notifications pour moi : cocher = lu (la cloche du Dashboard le voit aussi) ---
+  // --- Les notifications pour moi : cocher = lu ---
   function cocherNotif(n){
     if (n.lu) return;
     n.lu = new Date().toISOString(); rayes.add(n.id); renderTodo();
@@ -1327,9 +1328,9 @@
     neuves.forEach(n => todoVus.add(n.id)); store.set(LS_TODO_VUS, [...todoVus].slice(-300));
     if (!todoPos.ouvert) todoOrb.classList.add('has-new');
     $('#rappel').classList.add('neuf');
-    // Le Dashboard sonne déjà de lui-même ; ailleurs, c'est la bulle qui prévient.
+    // Les notifications n'arrivent qu'ici, dans « À faire » : la bulle sonne, rien d'autre ne s'affiche.
     const p = me();
-    if (!DASHBOARD && p && !enPause(p.id)) { sonner(); toast(`🔔 ${neuves[0].titre}`); }
+    if (p && !enPause(p.id)) sonner();
   }
 
   // --- Relever : à l'ouverture, au retour sur l'onglet, et chaque demi-minute ---
