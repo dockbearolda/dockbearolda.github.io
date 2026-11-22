@@ -914,7 +914,7 @@
   function cadreDe(o){
     if (!o.frame) {
       const f = document.createElement('iframe');
-      f.title = nomDe(o.url); f.allow = 'clipboard-read; clipboard-write; fullscreen; microphone; local-network-access; local-network; loopback-network';
+      f.title = nomDe(o.url); f.allow = 'clipboard-read; clipboard-write; fullscreen; microphone; local-network; loopback-network';
       f.addEventListener('load', () => f.classList.add('on'));
       f.src = o.url; hubFrameBox.append(f); o.frame = f;
     }
