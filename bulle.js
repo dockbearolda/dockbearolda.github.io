@@ -448,7 +448,9 @@
   for (const t of ['keydown', 'keyup', 'keypress', 'paste', 'copy', 'cut']) root.addEventListener(t, e => e.stopPropagation());
 
   let toastTimer;
+  // Le toast commun (messages.js) quand l'appli le charge ; sinon celui de la bulle, au même dessin.
   function toast(msg){
+    if (window.oldaMessages) return window.oldaMessages.toast(msg, { ms: 3500 });
     const t = $('#toast'); t.textContent = msg; t.classList.add('show');
     clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
   }

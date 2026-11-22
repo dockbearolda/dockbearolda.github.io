@@ -1,5 +1,5 @@
 {
-  "rev": 1795350319443,
+  "rev": 1795366834172,
   "shortcuts": [
     {
       "name": "BAT Studio",
@@ -13,6 +13,14 @@
       "url": "https://logo-maker.dockbear.workers.dev/",
       "icon": "brush",
       "color": "ardoise",
+      "groupe": "Atelier"
+    },
+    {
+      "name": "Stock textile",
+      "url": "https://bat-studio.dockbear.workers.dev/?stock",
+      "icon": "shirt",
+      "color": "menthe",
+      "since": 1795221119632,
       "groupe": "Atelier"
     },
     {
@@ -62,14 +70,6 @@
       "icon": "box",
       "color": "orange",
       "since": 1794312634885,
-      "groupe": "Stocks"
-    },
-    {
-      "name": "Stock textile",
-      "url": "https://bat-studio.dockbear.workers.dev/?stock",
-      "icon": "shirt",
-      "color": "menthe",
-      "since": 1795221119632,
       "groupe": "Stocks"
     },
     {
