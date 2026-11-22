@@ -1177,7 +1177,7 @@
   }
   function ligneNotif(n, court = true){
     const t = String(n.titre || ''), x = String(n.texte || '');
-    const raccourcir = v => (court ? nomCourt(v) : v);
+    const raccourcir = v => (court ? nomCourt(v) : String(v).trim()).toLocaleUpperCase('fr');   // les clients, toujours en majuscules
     const avant = t.replace(/^Rappel — /, '').split(' : ')[0];
     const client = raccourcir(avant.split(' · ')[0].replace(/\s*\(Pro\)$/, '')) || 'un client';
     // L'auteur : celui que la notification nomme, sinon celui que son ancien texte citait.
