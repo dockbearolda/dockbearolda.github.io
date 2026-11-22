@@ -9,6 +9,7 @@
  *   oldaMessages.toast(texte, { action: { label, onClick }, erreur, ms, onFermer })   → { fermer() }
  *       ms : 3 s par défaut, 6 s avec une action ou une erreur, 0 = reste jusqu'à la croix (onFermer).
  *   oldaMessages.confirmer({ titre, texte, ok, annuler, danger })          → Promise<boolean>
+ *   oldaMessages.choisir({ titre, texte, choix: [{ label, valeur, principal }], annuler })  → valeur | null
  *   oldaMessages.ouverte()  → true quand une fenêtre commune est à l'écran
  *   oldaMessages.demander({ titre, texte, champs: [{ nom, label, type, options, valeur }], ok })
  *       type : 'texte' | 'nombre' | 'choix' (options = liste)              → Promise<{…} | null>
@@ -77,7 +78,7 @@
   .champ :is(input,select){ width:100%; height:48px; padding:0 14px; font-size:16px; border-radius:12px;
     border:1px solid var(--filet); background:var(--surface); transition:border-color .2s, box-shadow .2s; }
   .champ :is(input,select):focus{ outline:none; border-color:#6B8191; box-shadow:0 0 0 3px rgba(107,129,145,.22); }
-  .pied{ display:flex; align-items:center; justify-content:flex-end; gap:8px; padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--filet); }
+  .pied{ display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px; padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--filet); }
   .btn{ min-height:44px; padding:0 18px; border-radius:999px; border:1px solid transparent;
     display:inline-flex; align-items:center; justify-content:center; font-size:15px; font-weight:600; white-space:nowrap;
     transition:background-color .2s, transform .2s var(--ressort); }
@@ -137,7 +138,7 @@
   }
 
   // Une fenêtre : titre, texte, champs éventuels, « Annuler » + le bouton principal.
-  function fenetre({ titre = '', texte = '', champs = [], ok = 'Confirmer', annuler = 'Annuler', danger = false }){
+  function fenetre({ titre = '', texte = '', champs = [], ok = 'Confirmer', annuler = 'Annuler', danger = false, choix = null }){
     monter();
     return new Promise(resoudre => {
       const d = el('dialog'); d.setAttribute('aria-label', titre || texte);
@@ -166,14 +167,17 @@
       const pied = el('footer', 'pied');
       const non = el('button', 'btn second', annuler); non.type = 'button';
       const oui = el('button', 'btn principal' + (danger ? ' danger' : ''), ok); oui.type = 'submit';
-      pied.append(non, oui);
+      // Plusieurs réponses (choisir) : chacune son bouton, la principale en ardoise.
+      const boutons = (choix || []).map(c => { const b = el('button', 'btn ' + (c.principal ? 'principal' : 'second'), c.label); b.type = 'button'; b.onclick = () => finir(c.valeur); return b; });
+      pied.append(non, ...(choix ? boutons : [oui]));
       f.append(tete, corps, pied); d.append(f);
       racine.append(d);
       let rendu = false;
       const finir = v => { if (rendu) return; rendu = true; d.close(); d.remove(); resoudre(v); };
-      x.onclick = non.onclick = () => finir(champs.length ? null : false);
-      d.addEventListener('cancel', e => { e.preventDefault(); finir(champs.length ? null : false); });
-      d.addEventListener('click', e => { if (e.target === d) finir(champs.length ? null : false); });
+      const rien = champs.length || choix ? null : false;
+      x.onclick = non.onclick = () => finir(rien);
+      d.addEventListener('cancel', e => { e.preventDefault(); finir(rien); });
+      d.addEventListener('click', e => { if (e.target === d) finir(rien); });
       f.onsubmit = e => {
         e.preventDefault();
         if (!champs.length) return finir(true);
@@ -187,7 +191,7 @@
       };
       d.showModal();
       // Détruire demande un geste visé : le focus va sur « Annuler ». Un champ, lui, prend le focus.
-      (entrees[0]?.[1] || (danger ? non : oui)).focus();
+      (entrees[0]?.[1] || (choix ? boutons.find(b => b.classList.contains('principal')) || boutons[0] : danger ? non : oui)).focus();
     });
   }
 
@@ -196,6 +200,8 @@
     // Une fenêtre commune est ouverte : l'appli laisse passer Échap et Tab (ses propres modales dessous).
     ouverte: () => !!racine?.querySelector('dialog[open]'),
     confirmer: o => fenetre(o),
-    demander: o => fenetre({ ok: 'Valider', ...o })
+    demander: o => fenetre({ ok: 'Valider', ...o }),
+    // Plusieurs réponses : choix = [{ label, valeur, principal }] → la valeur, ou null (Plus tard, Échap).
+    choisir: o => fenetre({ annuler: 'Plus tard', ...o, choix: o.choix || [] })
   };
 })();
