@@ -1205,6 +1205,8 @@
       case 'shop-fini': return 'Réassort boutique terminé';
       // Un vêtement sous le stock minimum (22/11/2026) : « NS300 · Noir · M : à recommander ».
       case 'stock-bas': return t;
+      // Des articles d'un BAT jamais en stock (22/11/2026) : « MANGO BEACH : 2 articles pas en stock ».
+      case 'stock-manque': return t;
       case 'retards': {
         const tot = +(t.match(/^\d+/)?.[0] || 0), r = (x.match(/de retard\)/g) || []).length, d = tot - r;
         const cmd = k => `${k} commande${k > 1 ? 's' : ''}`;
@@ -1339,6 +1341,12 @@
     if (!r.ok) throw new Error(j.error || 'Erreur ' + r.status);
     if (corps.n) toast(`+${corps.n} au bon de commande.`);
   }
+  async function manqueT(n, reponse){
+    const r = await fetch(`${BAT}/api/stock/manque`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bat: n.stockBat, reponse, par: me()?.name || '' }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'Erreur ' + r.status);
+    if (reponse === 'commande') toast('Ajouté au bon de commande TopTex.');
+  }
   // Le texte prêt à coller (le lien du client, le message « commande prête »).
   async function copierT(n){
     try { await navigator.clipboard.writeText(n.copie); }
@@ -1369,6 +1377,10 @@
       // Mélina et Loïc n'ont que ce bouton à toucher (22/11/2026) ; l'un répond, c'est coché chez l'autre.
       case 'presse-fini': return [{ label: 'Client prévenu', cls: 'oui', fn: () => prevenuT(n) }];
       case 'shop-fini': return [{ label: 'Vu', cls: 'oui', fn: () => {} }];
+      // « Ajouter à la commande » : les articles partent dans le bon TopTex, au nom du client.
+      case 'stock-manque': return n.stockBat
+        ? [{ label: 'Ajouter à la commande', cls: 'oui', fn: () => manqueT(n, 'commande') }, { label: 'Non', fn: () => manqueT(n, 'non') }]
+        : [];
       case 'stock-bas': return n.stockCle
         ? [5, 10, 15].map(k => ({ label: `+${k}`, cls: k === 10 ? 'oui' : '', fn: () => stockT(n, 'bon', { n: k }) }))
           .concat({ label: 'Vu', fn: () => stockT(n, 'vu', {}) })
@@ -1376,7 +1388,7 @@
       default: return n.lien && n.lien !== '/' ? [{ label: 'Ouvrir', cls: 'go', fn: () => ouvrirBatT(n.lien) }] : [];
     }
   }
-  const FAIT = { 'prt-imprimer': 'Envoyé', 'bat-paiement': 'Répondu', 'bat-production': 'Répondu', 'bat-relance': 'Lien copié', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu', 'a-facturer': 'Facturé', 'stock-bas': 'Traité' };
+  const FAIT = { 'prt-imprimer': 'Envoyé', 'bat-paiement': 'Répondu', 'bat-production': 'Répondu', 'bat-relance': 'Lien copié', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu', 'a-facturer': 'Facturé', 'stock-bas': 'Traité', 'stock-manque': 'Répondu' };
   function boutonsNotif(n){
     const liste = reponsesNotif(n);
     if (!liste.length) return [];
