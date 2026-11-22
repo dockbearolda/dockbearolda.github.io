@@ -651,7 +651,7 @@
   </div>
 </dialog>
 <script src="bulle.js" data-dashboard defer></script>
-<div class="toast" id="ring" role="alert"><span id="ring-msg"></span><button type="button" id="ring-act">Ouvrir</button><button type="button" id="ring-x" aria-label="Plus tard">Plus tard</button></div>
+<div class="toast" id="ring" role="alert"><span id="ring-msg"></span><button type="button" id="ring-act">Répondre</button><button type="button" id="ring-x" aria-label="Plus tard">Plus tard</button></div>
 <div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button type="button" id="toast-act" hidden></button></div>
 <div class="toast" id="update" role="status" aria-live="polite"><span>Nouvelle version disponible</span><button type="button" id="update-act">Recharger</button></div>
 
@@ -1425,13 +1425,14 @@
   }
   function annoncer(x){
     $('#ring-msg').textContent = '🔔 ' + x.titre;
-    $('#ring-act').onclick = () => ouvrirNotif(x);
+    // La question et ses réponses (Oui / Non, Prendre les cotes…) attendent dans la to do list.
+    $('#ring-act').onclick = () => { $('#ring').classList.remove('show'); window.oldaBulle?.todo ? window.oldaBulle.todo() : ouvrirNotif(x); };
     $('#ring-x').onclick = () => $('#ring').classList.remove('show');
     $('#ring').classList.add('show');
     sonner();
     // Écran éteint ou autre onglet : la notification du système, quand le navigateur la permet.
     if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
-      try { const n = new Notification(x.titre, { body: x.texte, tag: x.id }); n.onclick = () => { window.focus(); ouvrirNotif(x); }; } catch (_) {}
+      try { const n = new Notification(x.titre, { body: x.texte, tag: x.id }); n.onclick = () => { window.focus(); n.close(); window.oldaBulle?.todo?.(); }; } catch (_) {}
     }
   }
   let relevee = 0, enCours = false;

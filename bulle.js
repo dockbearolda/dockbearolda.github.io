@@ -330,13 +330,27 @@
   .todo-i.raye .todo-tx > span{ animation:raye .45s ease-out; }
   @keyframes raye{ from{ background-size:0 1.5px; } }
   .todo-tag{ padding:1px 8px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.01em; color:#fff; background:var(--duck); }
-  .todo-tag.bat-paiement{ background:#1e8e3e; } .todo-tag.bat-valide{ background:#d97706; } .todo-tag.prt-imprimer, .todo-tag.prt-shop{ background:#1a73e8; } .todo-tag.presse-pret{ background:#12b5cb; } .todo-tag.shop-fini{ background:#1e8e3e; }
+  .todo-tag.bat-paiement{ background:#1e8e3e; } .todo-tag.bat-valide{ background:#d97706; } .todo-tag.prt-imprimer, .todo-tag.prt-shop{ background:#1a73e8; } .todo-tag.presse-pret{ background:#12b5cb; } .todo-tag.shop-fini, .todo-tag.presse-fini{ background:#1e8e3e; }
   .todo-tag.bat-note{ background:#b45309; } .todo-tag.stock-bas{ background:var(--danger); }
   .todo-i.fait .todo-tag{ opacity:.45; }
   .todo-sous{ font-size:12.5px; line-height:1.35; color:var(--muted); }
   .todo-ic{ width:40px; height:48px; flex-shrink:0; border:0; border-radius:12px; background:none; display:grid; place-items:center; color:var(--muted); }
   .todo-ic:hover{ background:rgba(74,98,116,.09); color:var(--ink); }
   .todo-ic svg{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
+  /* LA RÉPONSE EN UN CLIC : des boutons tous pareils (même hauteur, même largeur : deux colonnes
+     égales), et « fait » dans la même case, en vert. */
+  .todo-acts{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:6px; width:100%; margin-top:6px; }
+  .todo-act{ height:44px; min-width:0; padding:0 10px; border:1px solid var(--ligne); border-radius:12px; background:#fff; color:var(--encre);
+    font-family:var(--main); font-size:14px; font-weight:700; line-height:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px; transition:transform .15s, opacity .2s; }
+  .todo-act:active{ transform:scale(.97); }
+  .todo-act:disabled{ opacity:.5; cursor:default; }
+  .todo-act:focus-visible{ outline:3px solid rgba(74,98,116,.4); outline-offset:2px; }
+  .todo-act.go{ background:var(--duck); border-color:var(--duck); color:#fff; }
+  .todo-act.oui, .todo-act.ok{ background:#1e8e3e; border-color:#1e8e3e; color:#fff; }
+  .todo-act.ok{ cursor:default; opacity:.85; }
+  .todo-act svg{ width:16px; height:16px; flex-shrink:0; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
+  @media (hover:hover){ .todo-act:not(.ok):not(:disabled):hover{ filter:brightness(.95); } }
   .todo-vide{ padding:26px 20px 0 56px; font-size:15px; color:var(--muted); }
   .todo-vider{ flex-shrink:0; min-height:44px; border:0; border-top:1px solid var(--ligne); background:none; font-size:13.5px; font-weight:600; color:var(--muted); }
   .todo-vider:hover{ color:var(--danger); }
@@ -1074,7 +1088,7 @@
   const todoPos = Object.assign({ x: null, y: null, ouvert: DASHBOARD && innerWidth >= 720 }, store.get(LS_TODO_POS) || {});
   const todoVus = new Set(store.get(LS_TODO_VUS) || []);
   let taches = [], notifsT = [], todoMinuterie = null, rayes = new Set();
-  const TAGS = { 'bat-paiement': 'Paiement ?', 'bat-valide': 'Cotes à prendre', 'prt-imprimer': 'À imprimer', 'presse-pret': 'À presser', 'prt-shop': 'PRT shop', 'shop-fini': 'Shop prêt', 'bat-note': 'Note client', 'stock-bas': 'Stock', 'bat-atelier': 'Atelier' };
+  const TAGS = { 'bat-paiement': 'Paiement ?', 'bat-valide': 'Cotes à prendre', 'prt-imprimer': 'À imprimer', 'presse-pret': 'À presser', 'presse-fini': 'Terminé', 'prt-shop': 'PRT shop', 'shop-fini': 'Shop prêt', 'bat-note': 'Note client', 'stock-bas': 'Stock', 'bat-atelier': 'Atelier' };
 
   // --- Place et taille, comme la bulle de discussion ---
   const tailleT = () => todoPos.ouvert ? { w: todoPanel.offsetWidth || 340, h: todoPanel.offsetHeight || 480 } : { w: ORB_T, h: ORB_T };
@@ -1163,7 +1177,7 @@
     $('#todo-c').textContent = n ? `${n} à faire` : '';
     todoOrb.setAttribute('aria-label', n ? `Ma to do list : ${n} à faire` : 'Ouvrir ma to do list');
   }
-  function ligneT({ texte, sous, tag, type, fait, cocher, ouvrir, suppr }){
+  function ligneT({ texte, sous, tag, type, fait, cocher, ouvrir, suppr, actions }){
     const li = el('li', 'todo-i' + (fait ? ' fait' : ''));
     const c = el('button', 'todo-cc'); c.type = 'button'; c.setAttribute('role', 'checkbox'); c.setAttribute('aria-checked', String(!!fait));
     c.setAttribute('aria-label', texte); c.innerHTML = SVG('<circle cx="12" cy="12" r="8.5"/><path class="v" d="M7.5 12.5l3 3 6-7"/>');
@@ -1172,6 +1186,7 @@
     if (tag) { const t = el('span', 'todo-tag ' + (type || '')); t.textContent = tag; corps.append(t); }
     const tx = el('span', 'todo-tx'), sp = el('span'); sp.textContent = texte; tx.append(sp); corps.append(tx);
     if (sous) { const s2 = el('small', 'todo-sous'); s2.textContent = sous; corps.append(s2); }
+    if (actions?.length) { const a = el('div', 'todo-acts'); a.append(...actions); corps.append(a); }
     li.append(c, corps);
     if (ouvrir) { const o = el('button', 'todo-ic'); o.type = 'button'; o.title = 'Ouvrir'; o.setAttribute('aria-label', 'Ouvrir : ' + texte); o.innerHTML = SVG('<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'); o.onclick = ouvrir; li.append(o); }
     if (suppr) { const d = el('button', 'todo-ic'); d.type = 'button'; d.title = 'Supprimer'; d.setAttribute('aria-label', 'Supprimer : ' + texte); d.innerHTML = SVG('<path d="M6 6l12 12M18 6L6 18"/>'); d.onclick = suppr; li.append(d); }
@@ -1182,7 +1197,7 @@
     const out = [];
     for (const n of notifsVisibles()) {
       const li = ligneT({ texte: n.titre, sous: n.texte, tag: TAGS[n.type] || 'BAT Studio', type: n.type, fait: !!n.lu,
-        cocher: n.lu ? null : () => cocherNotif(n), ouvrir: n.type === 'bat-paiement' || VERS_PLANNING.has(n.type) || (n.lien && n.lien !== '/') ? () => ouvrirNotifT(n) : null });
+        cocher: n.lu ? null : () => cocherNotif(n), actions: boutonsNotif(n) });
       if (rayes.has(n.id)) li.classList.add('raye');
       out.push(li);
     }
@@ -1233,20 +1248,63 @@
     n.lu = new Date().toISOString(); rayes.add(n.id); renderTodo();
     fetch(`${BAT}/api/notifs/${encodeURIComponent(n.id)}/lu`, { method: 'POST' }).catch(() => {});
   }
-  const VERS_PLANNING = new Set(['presse-pret', 'prt-shop', 'shop-fini']);
-  function ouvrirNotifT(n){
-    // « Le client a-t-il payé ? » se règle sur le Dashboard (« Payé » / « Non payé »).
-    if (n.type === 'bat-paiement') {
-      if (DASHBOARD) { basculerT(false); document.getElementById('suivi-box')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
-      window.open('https://dockbearolda.github.io/', '_blank', 'noopener'); return;
-    }
-    // Des PRT imprimés (Print DTF), une demande du shop à lancer ou terminée :
-    // le planning, où vit la bulle.
-    if (VERS_PLANNING.has(n.type)) { window.open('https://planning-olda.dockbear.workers.dev/', '_blank', 'noopener'); return; }
-    let u; try { u = new URL(n.lien || '/', BAT + '/'); } catch (_) { return; }
+  // LA RÉPONSE EN UN CLIC (21/11/2026) : « tout le travail doit être déjà mâché, on n'a plus qu'à
+  // cliquer ». Chaque notification arrive avec sa question et ses réponses ; répondre la coche.
+  const PLANNING = 'https://planning-olda.dockbear.workers.dev/';
+  const PLANCHE = 'http://127.0.0.1:47831/bat';   // la Planche DTF de Fast White, sur le poste
+  function ouvrirBatT(lien){
+    let u; try { u = new URL(lien || '/', BAT + '/'); } catch (_) { return; }
     if (u.origin !== BAT_ORIGINE) return;   // le lien ne mène que chez BAT Studio
     u.searchParams.set('poste', me()?.id || '');
     window.open(u.toString(), '_blank', 'noopener');
+  }
+  const ouvrirPlanningT = () => window.open(PLANNING, '_blank', 'noopener');
+  const ouvrirPlancheT = c => window.open(`${PLANCHE}?id=${encodeURIComponent(c.id)}&zone=${encodeURIComponent(c.zone)}`, '_blank', 'noopener');
+  // « Le client a-t-il payé ? » — Oui : la bulle part dans PRT, cotes à prendre ; Non : la ligne reste
+  // en rouge en haut du Dashboard. Le serveur coche aussi la question de l'autre (Mélina / Loïc).
+  async function payerT(n, paye){
+    const r = await fetch(`${BAT}/api/suivi/${encodeURIComponent(n.projetId)}/paiement`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paye, qui: me()?.id || '' }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok && r.status !== 404) throw new Error(j.error || 'Erreur ' + r.status);   // 404 : déjà réglé
+    toast(paye ? 'Payé : la bulle est dans PRT, cotes à prendre.' : 'Noté : non payé, la ligne reste en haut du Dashboard.');
+  }
+  // Ce que demande la notification : [{ label, cls, fn }] ; une réponse coche la ligne.
+  function reponsesNotif(n){
+    const planning = { label: 'Ouvrir le planning', cls: 'go', fn: ouvrirPlanningT };
+    switch (n.type) {
+      case 'bat-paiement': return n.projetId
+        ? [{ label: 'Oui, payé', cls: 'oui', fn: () => payerT(n, true) }, { label: 'Non', cls: 'non', fn: () => payerT(n, false) }]
+        : [];
+      case 'bat-valide': return [{ label: 'Prendre les cotes', cls: 'go', fn: () => ouvrirBatT(n.lien) }];
+      case 'bat-note': return [{ label: 'Refaire le BAT', cls: 'go', fn: () => ouvrirBatT(n.projetId ? `/?projet=${encodeURIComponent(n.projetId)}` : n.lien) }];
+      case 'prt-imprimer': return n.carte
+        ? [{ label: 'Ouvrir la Planche', cls: 'go', fn: () => ouvrirPlancheT(n.carte) }, { label: 'Planning', fn: ouvrirPlanningT }]
+        : [planning];
+      case 'prt-shop': return [planning];
+      case 'presse-pret': return [{ ...planning, label: 'Ouvrir la presse' }];
+      case 'presse-fini': return [{ label: 'Client prévenu', cls: 'oui', fn: () => {} }];
+      case 'shop-fini': return [{ label: 'Vu', cls: 'oui', fn: () => {} }];
+      case 'stock-bas': return [{ label: 'Voir le stock', cls: 'go', fn: () => ouvrirBatT('/?stock') }];
+      default: return n.lien && n.lien !== '/' ? [{ label: 'Ouvrir', cls: 'go', fn: () => ouvrirBatT(n.lien) }] : [];
+    }
+  }
+  const FAIT = { 'bat-paiement': 'Répondu', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu' };
+  function boutonsNotif(n){
+    const liste = reponsesNotif(n);
+    if (!liste.length) return [];
+    if (n.lu) {
+      const f = el('span', 'todo-act ok'); f.innerHTML = SVG('<path d="M5 12.5l4.5 4.5L19 7.5"/>');
+      f.append(FAIT[n.type] || 'Fait'); return [f];
+    }
+    return liste.map(a => {
+      const b = el('button', 'todo-act ' + (a.cls || '')); b.type = 'button'; b.textContent = a.label; b.title = a.label;
+      b.onclick = async () => {
+        b.disabled = true;
+        try { await a.fn(); cocherNotif(n); }
+        catch (e) { toast(e.message || 'Réseau indisponible, réessaie.'); b.disabled = false; }
+      };
+      return b;
+    });
   }
   function nouvellesNotifs(){
     const neuves = notifsT.filter(n => !n.lu && !todoVus.has(n.id));
@@ -1380,5 +1438,5 @@
 
   (document.body || document.documentElement).append(hote);
   chatRelancer();
-  window.oldaBulle = { relancer: chatRelancer, ouvrir: () => basculer(true) };
+  window.oldaBulle = { relancer: chatRelancer, ouvrir: () => basculer(true), todo: () => { basculerT(true); devant(todo); } };
 })();
