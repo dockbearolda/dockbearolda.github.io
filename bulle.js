@@ -330,7 +330,7 @@
   .todo-i.raye .todo-tx > span{ animation:raye .45s ease-out; }
   @keyframes raye{ from{ background-size:0 1.5px; } }
   .todo-tag{ padding:1px 8px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.01em; color:#fff; background:var(--duck); }
-  .todo-tag.bat-paiement{ background:#1e8e3e; } .todo-tag.bat-valide{ background:#d97706; } .todo-tag.prt-imprimer, .todo-tag.prt-shop{ background:#1a73e8; } .todo-tag.presse-pret{ background:#12b5cb; } .todo-tag.shop-fini, .todo-tag.presse-fini{ background:#1e8e3e; }
+  .todo-tag.bat-paiement{ background:#1e8e3e; } .todo-tag.bat-valide{ background:#d97706; } .todo-tag.prt-imprimer, .todo-tag.prt-shop{ background:#1a73e8; } .todo-tag.presse-pret{ background:#12b5cb; } .todo-tag.shop-fini, .todo-tag.presse-fini, .todo-tag.bat-production{ background:#1e8e3e; } .todo-tag.bat-relance, .todo-tag.retards{ background:#d97706; } .todo-tag.a-facturer{ background:var(--duck); }
   .todo-tag.bat-note{ background:#b45309; } .todo-tag.stock-bas{ background:var(--danger); }
   .todo-i.fait .todo-tag{ opacity:.45; }
   .todo-sous{ font-size:12.5px; line-height:1.35; color:var(--muted); }
@@ -1088,7 +1088,7 @@
   const todoPos = Object.assign({ x: null, y: null, ouvert: DASHBOARD && innerWidth >= 720 }, store.get(LS_TODO_POS) || {});
   const todoVus = new Set(store.get(LS_TODO_VUS) || []);
   let taches = [], notifsT = [], todoMinuterie = null, rayes = new Set();
-  const TAGS = { 'bat-paiement': 'Paiement ?', 'bat-valide': 'Cotes à prendre', 'prt-imprimer': 'À imprimer', 'presse-pret': 'À presser', 'presse-fini': 'Terminé', 'prt-shop': 'PRT shop', 'shop-fini': 'Shop prêt', 'bat-note': 'Note client', 'stock-bas': 'Stock', 'bat-atelier': 'Atelier' };
+  const TAGS = { 'bat-paiement': 'Paiement ?', 'bat-valide': 'Cotes à prendre', 'prt-imprimer': 'À imprimer', 'presse-pret': 'À presser', 'presse-fini': 'Terminé', 'bat-production': 'Production ?', 'bat-relance': 'Relance', 'a-facturer': 'Facture', 'retards': 'Délais', 'prt-shop': 'PRT shop', 'shop-fini': 'Shop prêt', 'bat-note': 'Note client', 'stock-bas': 'Stock', 'bat-atelier': 'Atelier' };
 
   // --- Place et taille, comme la bulle de discussion ---
   const tailleT = () => todoPos.ouvert ? { w: todoPanel.offsetWidth || 340, h: todoPanel.offsetHeight || 480 } : { w: ORB_T, h: ORB_T };
@@ -1266,7 +1266,15 @@
     const r = await fetch(`${BAT}/api/suivi/${encodeURIComponent(n.projetId)}/paiement`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paye, qui: me()?.id || '' }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok && r.status !== 404) throw new Error(j.error || 'Erreur ' + r.status);   // 404 : déjà réglé
-    toast(paye ? 'Payé : la bulle est dans PRT, cotes à prendre.' : 'Noté : non payé, la ligne reste en haut du Dashboard.');
+    toast(n.type === 'bat-production'
+      ? (paye ? 'En production : la bulle est dans PRT, cotes à prendre.' : 'Noté : la question reviendra demain matin.')
+      : (paye ? 'Payé : la bulle est dans PRT, cotes à prendre.' : 'Noté : non payé, la question reviendra demain matin.'));
+  }
+  // Le texte prêt à coller (le lien du client, le message « commande prête »).
+  async function copierT(n){
+    try { await navigator.clipboard.writeText(n.copie); }
+    catch (_) { const t = document.createElement('textarea'); t.value = n.copie; document.body.append(t); t.select(); const ok = document.execCommand('copy'); t.remove(); if (!ok) throw new Error('Copie refusée par le navigateur.'); }
+    toast('Copié : colle-le dans WhatsApp.');
   }
   // Ce que demande la notification : [{ label, cls, fn }] ; une réponse coche la ligne.
   function reponsesNotif(n){
@@ -1275,6 +1283,12 @@
       case 'bat-paiement': return n.projetId
         ? [{ label: 'Oui, payé', cls: 'oui', fn: () => payerT(n, true) }, { label: 'Non', cls: 'non', fn: () => payerT(n, false) }]
         : [];
+      case 'bat-production': return n.projetId
+        ? [{ label: 'Oui, en production', cls: 'oui', fn: () => payerT(n, true) }, { label: 'Pas encore', cls: 'non', fn: () => payerT(n, false) }]
+        : [];
+      case 'bat-relance': return n.copie ? [{ label: 'Copier le lien', cls: 'go', fn: () => copierT(n) }] : [];
+      case 'a-facturer': return [{ label: 'Facturé', cls: 'oui', fn: () => {} }];
+      case 'retards': return [planning];
       case 'bat-valide': return [{ label: 'Prendre les cotes', cls: 'go', fn: () => ouvrirBatT(n.lien) }];
       case 'bat-note': return [{ label: 'Refaire le BAT', cls: 'go', fn: () => ouvrirBatT(n.projetId ? `/?projet=${encodeURIComponent(n.projetId)}` : n.lien) }];
       case 'prt-imprimer': return n.carte
@@ -1282,12 +1296,14 @@
         : [planning];
       case 'prt-shop': return [planning];
       case 'presse-pret': return [{ ...planning, label: 'Ouvrir la presse' }];
-      case 'presse-fini': return [{ label: 'Client prévenu', cls: 'oui', fn: () => {} }];
+      case 'presse-fini': return n.copie
+        ? [{ label: 'Copier le message', cls: 'go', fn: () => copierT(n) }, { label: 'Client prévenu', cls: 'oui', fn: () => {} }]
+        : [{ label: 'Client prévenu', cls: 'oui', fn: () => {} }];
       case 'shop-fini': return [{ label: 'Vu', cls: 'oui', fn: () => {} }];
       default: return n.lien && n.lien !== '/' ? [{ label: 'Ouvrir', cls: 'go', fn: () => ouvrirBatT(n.lien) }] : [];
     }
   }
-  const FAIT = { 'bat-paiement': 'Répondu', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu' };
+  const FAIT = { 'bat-paiement': 'Répondu', 'bat-production': 'Répondu', 'bat-relance': 'Lien copié', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu', 'a-facturer': 'Facturé' };
   function boutonsNotif(n){
     const liste = reponsesNotif(n);
     if (!liste.length) return [];
