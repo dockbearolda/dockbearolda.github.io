@@ -1196,7 +1196,8 @@
       case 'bat-paiement': case 'bat-production': return `${client} a validé son BAT`;
       case 'bat-note': return `${client} a laissé une note sur son BAT`;
       case 'bat-relance': return `${client} n’a pas répondu au BAT`;
-      case 'prt-imprimer': return nomme ? `${nomme} a validé les cotes de ${client}` : `Cotes prises pour ${client}`;
+      // Le PRT n'est pas arrivé dans le planning 20 min après l'envoi (server/notifs.mjs verifierPrts).
+      case 'prt-imprimer': return n.rate ? `PRT de ${client} pas arrivé : à renvoyer` : nomme ? `${nomme} a validé les cotes de ${client}` : `Cotes prises pour ${client}`;
       case 'prt-shop': return nomme ? `${nomme} a demandé un réassort boutique` : 'Réassort boutique demandé';
       case 'presse-pret': return `${client} est imprimé, à presser`;
       case 'presse-fini': case 'a-facturer': return `La commande ${client} est terminée`;
@@ -1316,6 +1317,14 @@
   const ouvrirPlanningT = () => window.open(PLANNING, '_blank', 'noopener');
   // direct : « Envoyer en production » — la Planche crée le PRT d'elle-même (rien d'autre sur la planche).
   const ouvrirPlancheT = (c, direct) => window.open(`${PLANCHE}?id=${encodeURIComponent(c.id)}&zone=${encodeURIComponent(c.zone)}${direct ? '&auto=1' : ''}`, '_blank', 'noopener');
+  // ENVOYER UN PRT (22/11/2026) : la Planche s'ouvre, BAT Studio note l'heure. Si 20 min plus tard
+  // aucun PRT n'est arrivé sur la bulle du planning (Planche fermée, connexion impossible, RIP raté),
+  // la notification revient : aucun PRT oublié. Pas noté (réseau) : la ligne reste à faire chez BAT Studio.
+  async function envoyerPrtT(n){
+    ouvrirPlancheT(n.carte, true);   // tout de suite, dans le clic : sinon le navigateur bloque la fenêtre
+    const r = await fetch(`${BAT}/api/notifs/${encodeURIComponent(n.id)}/envoi`, { method: 'POST' }).catch(() => null);
+    if (r?.ok) { n.envoi = new Date().toISOString(); delete n.rate; }
+  }
   // « Le client a-t-il payé ? » — Oui : la bulle part dans PRT, cotes à prendre ; Non : la ligne reste
   // en rouge en haut du Dashboard. Le serveur coche aussi la question de l'autre (Mélina / Loïc).
   async function payerT(n, paye){
@@ -1369,7 +1378,7 @@
       case 'bat-valide': return [{ label: 'Prendre les cotes', cls: 'go', fn: () => ouvrirBatT(n.lien) }];
       case 'bat-note': return [{ label: 'Refaire le BAT', cls: 'go', fn: () => ouvrirBatT(n.projetId ? `/?projet=${encodeURIComponent(n.projetId)}` : n.lien) }];
       case 'prt-imprimer': return n.carte
-        ? [{ label: 'En production', cls: 'oui', fn: () => ouvrirPlancheT(n.carte, true) }, { label: 'Planning', fn: ouvrirPlanningT }]
+        ? [{ label: n.rate ? 'Renvoyer' : 'En production', cls: 'oui', fn: () => envoyerPrtT(n) }, { label: 'Planning', fn: ouvrirPlanningT }]
         : [planning];
       case 'prt-shop': return [planning];
       case 'presse-pret': return [{ ...planning, label: 'Ouvrir la presse' }];
@@ -1399,7 +1408,7 @@
       // La Planche remplace le PRT de ce BAT, jamais de doublon.
       if (n.type === 'prt-imprimer' && n.carte) {
         const r = el('button', 'todo-act go'); r.type = 'button'; r.textContent = r.title = 'Renvoyer';
-        r.onclick = () => { ouvrirPlancheT(n.carte, true); toast('Renvoyé à la Planche : le PRT se recrée.'); };
+        r.onclick = () => { envoyerPrtT(n); toast('Renvoyé à la Planche : le PRT se recrée.'); };
         return [f, r];
       }
       return [f];
@@ -1415,9 +1424,11 @@
     });
   }
   function nouvellesNotifs(){
-    const neuves = notifsT.filter(n => !n.lu && !todoVus.has(n.id));
+    // Un PRT revenu (pas arrivé) sonne de nouveau : sa clé change.
+    const cle = n => n.rate ? `${n.id}/${n.rate}` : n.id;
+    const neuves = notifsT.filter(n => !n.lu && !todoVus.has(cle(n)));
     if (!neuves.length) return;
-    neuves.forEach(n => todoVus.add(n.id)); store.set(LS_TODO_VUS, [...todoVus].slice(-300));
+    neuves.forEach(n => todoVus.add(cle(n))); store.set(LS_TODO_VUS, [...todoVus].slice(-300));
     if (!todoPos.ouvert) todoOrb.classList.add('has-new');
     $('#rappel').classList.add('neuf');
     // Les notifications n'arrivent qu'ici, dans « À faire » : la bulle sonne, rien d'autre ne s'affiche.
