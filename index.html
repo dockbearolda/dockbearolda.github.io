@@ -59,20 +59,9 @@
   .side,.main{ display:contents; }
   .me-row{ order:1; }
   .tile--hub{ order:3; }
+  .bento{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
   .bento{ order:4; display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
   .bento > .tile:last-child:nth-child(odd){ grid-column:1 / -1; }
-  /* Les apps rangées par familles : un petit titre au début de chaque groupe */
-  /* Un toucher sur le titre replie / déplie la famille (mémorisé sur ce poste). */
-  .bento-groupe{ grid-column:1 / -1; flex:none; display:flex; align-items:center; gap:6px; width:100%; min-height:44px; padding:8px 10px 0; border:0; border-radius:12px; background:none; cursor:pointer;
-    font:inherit; font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); text-align:left; }
-  .bento-groupe:first-child{ padding-top:0; }
-  .bento-groupe:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:-2px; }
-  @media (hover:hover){ .bento-groupe:hover{ color:var(--ink); } }
-  .bento-groupe .nb{ display:none; min-width:20px; padding:1px 6px; border-radius:99px; background:rgba(74,98,116,.12); text-align:center; letter-spacing:0; }
-  .bento-groupe[aria-expanded="false"] .nb{ display:inline-block; }
-  .bento-groupe svg{ width:14px; height:14px; margin-left:auto; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; transition:transform .2s; }
-  .bento-groupe[aria-expanded="false"] svg{ transform:rotate(-90deg); }
-  .bento > .tile.replie{ display:none; }
   @media (min-width:700px) and (max-width:899px){ .dash{ max-width:820px; } .bento{ grid-template-columns:repeat(3,1fr); } .bento > .tile:last-child:nth-child(odd){ grid-column:auto; } }
   @media (min-width:900px){
     .wrap{ height:100dvh; min-height:560px; padding:max(16px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(16px,var(--safe-b)) max(16px,env(safe-area-inset-left)); }
@@ -93,10 +82,6 @@
     .bento{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-content:start; gap:6px; flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; margin:-6px; padding:6px; scrollbar-width:thin; }
     .bento > *{ grid-column:1 / -1; }
     .bento > .tile{ --fx:-16px; --fy:0px; }
-    /* une famille repliée ne cache plus ses apps : leurs icônes restent, en rangée, sans les noms */
-    .bento > .tile.replie{ display:flex; grid-column:auto; }
-    .bento > .tile.replie .card{ justify-content:center; padding:6px; min-height:48px; }
-    .bento > .tile.replie .card-name{ display:none; }
     .bento .card{ flex-direction:row; align-items:center; justify-content:flex-start; gap:10px; padding:6px 10px 6px 6px; border-radius:14px; min-height:48px; }
     .bento .card-icon{ width:34px; height:34px; border-radius:10px; }
     .bento .card-icon svg{ width:18px; height:18px; }
@@ -109,11 +94,9 @@
     /* Rangées ou planning agrandi : même rail, toutes les icônes restent visibles */
     :is(.side-etroite,.side-rangee,.hub-max) .dash{ grid-template-columns:68px minmax(0,1fr); gap:14px; }
     :is(.side-etroite,.side-rangee,.hub-max) .me{ padding:6px; justify-content:center; }
-    :is(.side-etroite,.side-rangee,.hub-max) .me-txt, :is(.side-etroite,.side-rangee,.hub-max) .me > svg, :is(.side-etroite,.side-rangee,.hub-max) .card-name, :is(.side-etroite,.side-rangee,.hub-max) .bento-groupe{ display:none; }
+    :is(.side-etroite,.side-rangee,.hub-max) .me-txt, :is(.side-etroite,.side-rangee,.hub-max) .me > svg, :is(.side-etroite,.side-rangee,.hub-max) .card-name{ display:none; }
     :is(.side-etroite,.side-rangee,.hub-max) .bento{ grid-template-columns:minmax(0,1fr); gap:6px; }
-    :is(.side-etroite,.side-rangee,.hub-max) .bento > .tile.replie{ grid-column:1 / -1; }
     :is(.side-etroite,.side-rangee,.hub-max) .bento .card{ justify-content:center; padding:8px; min-height:56px; }
-    :is(.side-etroite,.side-rangee,.hub-max) .bento-groupe:not(:first-child) + .tile{ margin-top:10px; }
     /* le nom de l'appli, en bulle à droite de l'icône (survol, clic, clavier) */
     #rail-nom{ position:fixed; z-index:31; left:0; top:0; padding:7px 12px; border-radius:10px; background:var(--ink); color:#fff; font-size:14px; font-weight:600; white-space:nowrap;
       pointer-events:none; opacity:0; transform:translate(-4px,-50%); transition:opacity .15s, transform .15s; }
@@ -673,7 +656,7 @@
   const railNom = $('#rail-nom'); let railTempo;
   function nommer(e){
     const card = e.target.closest?.('.card');
-    if (!card || !(card.closest('.tile.replie') || (large.matches && document.body.matches('.side-etroite,.side-rangee,.hub-max')))) return;
+    if (!card || !((large.matches && document.body.matches('.side-etroite,.side-rangee,.hub-max')))) return;
     const r = card.getBoundingClientRect();
     railNom.textContent = card.getAttribute('aria-label') || card.textContent;
     railNom.style.left = (r.right + 10) + 'px'; railNom.style.top = (r.top + r.height / 2) + 'px';
@@ -711,21 +694,21 @@
     const l = state.shortcuts, i = l.findIndex(s => s.hub);
     return i >= 0 ? i : l.findIndex(s => /planning/i.test(s.name || ''));
   }
-  // Les familles repliées, mémorisées sur ce poste : un toucher sur le titre range ou ressort ses apps.
-  const LS_REPLIES = 'olda_groupes_replies';
-  const replies = new Set(store.get(LS_REPLIES) || []);
-  function titreGroupe(nom, nb){
-    const t = el('button', 'bento-groupe'); t.type = 'button';
-    const n = el('span', 'nb'); n.textContent = nb;
-    t.append(nom, n); t.insertAdjacentHTML('beforeend', SVG('<path d="M6 9l6 6 6-6"/>'));
-    const maj = () => t.setAttribute('aria-expanded', String(!replies.has(nom)));
-    maj();
-    t.onclick = () => {
-      replies.has(nom) ? replies.delete(nom) : replies.add(nom);
-      store.set(LS_REPLIES, [...replies]); maj();
-      grid.querySelectorAll('.tile').forEach(x => { if (x.dataset.groupe === nom) x.classList.toggle('replie', replies.has(nom)); });
-    };
-    return t;
+  // CHACUN COMPOSE SA BARRE (22/11/2026, Charlie) : plus de familles. Chaque profil range
+  // ses bulles comme il veut (glisser, ou Alt + flèches) ; l'ordre est retenu sur ce poste,
+  // par profil, avec les adresses des apps. Une appli nouvelle arrive à sa place publiée.
+  const LS_ORDRE = 'olda_ordre';
+  const ordres = () => store.get(LS_ORDRE) || {};
+  function ordonner(apps){
+    const mien = ordres()[store.raw('olda_poste')];
+    if (!Array.isArray(mien)) return apps;
+    const rang = new Map(mien.map((u, k) => [u, k]));
+    const out = apps.filter(x => rang.has(x.s.url)).sort((a, b) => rang.get(a.s.url) - rang.get(b.s.url));
+    apps.forEach((x, k) => { if (!rang.has(x.s.url)) out.splice(Math.min(k, out.length), 0, x); });
+    return out;
+  }
+  function garderOrdre(urls){
+    const o = ordres(); o[store.raw('olda_poste')] = urls; store.set(LS_ORDRE, o);
   }
   // UNE APPLI POUR UNE SEULE PERSONNE (21/11/2026) : « pour » liste les profils qui la
   // voient (Fast White : Charlie seul) ; sans « pour », tout le monde. En édition, tout paraît.
@@ -736,18 +719,15 @@
     hubTile.hidden = h < 0;
     if (h >= 0) syncHub(state.shortcuts[h]); else if (maxed) setMax(false);
     const frag = document.createDocumentFragment();
-    const apps = state.shortcuts.map((s, i) => ({ s, i })).filter(x => x.i !== h && (editing || pourMoi(x.s)));
-    let groupe = '';
+    let apps = state.shortcuts.map((s, i) => ({ s, i })).filter(x => x.i !== h && (editing || pourMoi(x.s)));
+    if (!editing) apps = ordonner(apps);
     apps.forEach(({ s, i }, k) => {
-      if (!editing && s.groupe && s.groupe !== groupe) frag.append(titreGroupe(s.groupe, apps.filter(x => x.s.groupe === s.groupe).length));
-      groupe = s.groupe || '';
       const tile = el('div', 'tile'); tile.dataset.i = i;
-      if (!editing && s.groupe) { tile.dataset.groupe = s.groupe; tile.classList.toggle('replie', replies.has(s.groupe)); }
       tile.style.animationDelay = (.1 + k * .04).toFixed(2) + 's';
       const card = el(editing ? 'button' : 'a', 'card');
       if (editing) { card.type = 'button'; card.setAttribute('aria-label', 'Modifier ' + s.name); card.onclick = () => openSheet(i); }
       else {
-        card.href = s.url; card.target = '_blank'; card.rel = 'noopener'; card.dataset.url = s.url; card.setAttribute('aria-label', s.name || 'Sans nom');
+        card.href = s.url; card.draggable = false; card.target = '_blank'; card.rel = 'noopener'; card.dataset.url = s.url; card.setAttribute('aria-label', s.name || 'Sans nom');
         // Clic simple : l'appli s'ouvre dans un onglet du Dashboard. Ctrl/⌘/Maj/clic molette : onglet du navigateur, comme avant.
         card.onclick = e => { if (!e.button && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && ouvrirOnglet(s.url)) e.preventDefault(); };
       }
@@ -1056,39 +1036,64 @@
     toast('Modifications annulées', 'Rétablir', () => { state = { ...backup, rev: Date.now() }; save(); render(); });
   };
 
-  // Glisser-déposer pour réordonner (souris : toute la tuile ; tactile : la poignée, pour garder le scroll)
+  // Déplacer ses bulles : souris, on attrape et on glisse ; doigt, on appuie un instant
+  // (le doigt qui glisse tout de suite fait défiler la barre). Lâchée sur une autre bulle,
+  // elle prend sa place. Clavier : Alt + ↑/↓ (ou ←/→) sur une bulle.
   let drag = null, justDragged = false;
+  const tuiles = () => [...grid.querySelectorAll('.tile[data-i]')];
+  function deplacer(tile, vers){
+    const l = tuiles(), de = l.indexOf(tile);
+    if (de < 0 || vers < 0 || vers >= l.length || vers === de) return null;
+    l.splice(de, 1); l.splice(vers, 0, tile);
+    garderOrdre(l.map(t => state.shortcuts[+t.dataset.i].url));
+    if (document.startViewTransition && !reduced.matches) return document.startViewTransition(render).updateCallbackDone;
+    render(); return Promise.resolve();
+  }
+  function lancer(){
+    drag.on = true; drag.tile.classList.add('dragging'); railNom.classList.remove('on');
+    navigator.vibrate?.(15);
+  }
   grid.addEventListener('pointerdown', e => {
-    if (!editing || e.button > 0) return;
-    const tile = e.target.closest('.tile:not(.tile--add):not(.tile--hub)');
-    if (!tile || e.target.closest('.del')) return;
-    if (e.pointerType !== 'mouse' && !e.target.closest('.grip')) return;
-    drag = { tile, from: +tile.dataset.i, x: e.clientX, y: e.clientY, on: false, over: null };
+    if (editing || e.button > 0 || drag) return;
+    const tile = e.target.closest('.tile[data-i]'); if (!tile) return;
+    drag = { tile, id: e.pointerId, x: e.clientX, y: e.clientY, on: false, over: null, souris: e.pointerType === 'mouse' };
+    if (!drag.souris) drag.tempo = setTimeout(() => drag && !drag.on && lancer(), 380);
   });
   window.addEventListener('pointermove', e => {
-    if (!drag) return;
+    if (!drag || e.pointerId !== drag.id) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     if (!drag.on) {
       if (Math.hypot(dx, dy) < 8) return;
-      drag.on = true; drag.tile.classList.add('dragging');
+      if (!drag.souris) { clearTimeout(drag.tempo); drag = null; return; }   // le doigt fait défiler
+      lancer();
     }
-    e.preventDefault();
     drag.tile.style.transform = `translate(${dx}px,${dy}px)`;
-    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.tile:not(.tile--add):not(.tile--hub):not(.dragging)');
+    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.tile[data-i]:not(.dragging)');
     if (over !== drag.over) { drag.over?.classList.remove('drop'); over?.classList.add('drop'); drag.over = over; }
-  }, { passive: false });
+  });
+  // Pendant qu'une bulle suit le doigt, la page ne défile pas.
+  window.addEventListener('touchmove', e => { if (drag?.on) e.preventDefault(); }, { passive: false });
+  grid.addEventListener('contextmenu', e => { if (drag && !drag.souris) e.preventDefault(); });
   const endDrag = e => {
-    if (!drag) return;
-    const d = drag; drag = null;
+    if (!drag || (e.pointerId !== undefined && e.pointerId !== drag.id)) return;
+    const d = drag; drag = null; clearTimeout(d.tempo);
     if (!d.on) return;
     justDragged = true; setTimeout(() => justDragged = false, 50);
     d.tile.classList.remove('dragging'); d.tile.style.transform = '';
     d.over?.classList.remove('drop');
-    if (e.type === 'pointerup' && d.over) move(d.from, +d.over.dataset.i);
+    if (e.type === 'pointerup' && d.over) deplacer(d.tile, tuiles().indexOf(d.over));
   };
   window.addEventListener('pointerup', endDrag);
   window.addEventListener('pointercancel', endDrag);
   grid.addEventListener('click', e => { if (justDragged) { e.preventDefault(); e.stopPropagation(); } }, true);
+  grid.addEventListener('keydown', e => {
+    if (editing || !e.altKey) return;
+    const pas = { ArrowUp: -1, ArrowLeft: -1, ArrowDown: 1, ArrowRight: 1 }[e.key]; if (!pas) return;
+    const tile = e.target.closest('.tile[data-i]'); if (!tile) return;
+    e.preventDefault();
+    const i = tile.dataset.i;
+    deplacer(tile, tuiles().indexOf(tile) + pas)?.then(() => grid.querySelector(`.tile[data-i="${i}"] .card`)?.focus());
+  });
 
   // ---------- Feuille d'édition ----------
   const sheet = $('#sheet'), fName = $('#f-name'), fUrl = $('#f-url');
@@ -1151,7 +1156,6 @@
     const s = { name, url, icon: draft.icon || null, color: draft.color };
     if (draft.img) s.img = draft.img;
     if (draft.hub) s.hub = true;
-    if (draft.groupe) s.groupe = draft.groupe;
     if (Array.isArray(draft.pour)) s.pour = draft.pour;   // retouché ici : reste à qui il était
     s.since = index >= 0 && url === draft.url && draft.since ? draft.since : Date.now();
     if (index >= 0) state.shortcuts[index] = s; else state.shortcuts.push(s);
