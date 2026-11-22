@@ -1198,7 +1198,7 @@
       case 'presse-pret': return `${client} est imprimé, à presser`;
       case 'presse-fini': case 'a-facturer': return `La commande ${client} est terminée`;
       // Une référence finie, la commande pas complète (planning, 22/11/2026) : le texte dit laquelle et ce qui reste.
-      case 'ref-finie': return x ? `${client} : ${x}` : `${client} : une référence terminée, commande pas complète`;
+      case 'ref-finie': return x ? `${client} : ${x.replace(/\s*\(reste [^)]*\)$/, '')}` : `${client} : une référence terminée, commande pas complète`;
       case 'shop-fini': return 'Réassort boutique terminé';
       case 'retards': {
         const tot = +(t.match(/^\d+/)?.[0] || 0), r = (x.match(/de retard\)/g) || []).length, d = tot - r;
@@ -1355,11 +1355,11 @@
       // « Client prévenu » range la bulle du planning : de Terminé aux Archives.
       // Mélina et Loïc n'ont que ce bouton à toucher (22/11/2026) ; l'un répond, c'est coché chez l'autre.
       case 'presse-fini': return [{ label: 'Client prévenu', cls: 'oui', fn: () => prevenuT(n) }];
-      case 'shop-fini': case 'ref-finie': return [{ label: 'Vu', cls: 'oui', fn: () => {} }];
+      case 'shop-fini': return [{ label: 'Vu', cls: 'oui', fn: () => {} }];
       default: return n.lien && n.lien !== '/' ? [{ label: 'Ouvrir', cls: 'go', fn: () => ouvrirBatT(n.lien) }] : [];
     }
   }
-  const FAIT = { 'prt-imprimer': 'Envoyé', 'bat-paiement': 'Répondu', 'bat-production': 'Répondu', 'bat-relance': 'Lien copié', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu', 'ref-finie': 'Vu', 'a-facturer': 'Facturé' };
+  const FAIT = { 'prt-imprimer': 'Envoyé', 'bat-paiement': 'Répondu', 'bat-production': 'Répondu', 'bat-relance': 'Lien copié', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu', 'a-facturer': 'Facturé' };
   function boutonsNotif(n){
     const liste = reponsesNotif(n);
     if (!liste.length) return [];
