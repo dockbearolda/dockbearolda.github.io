@@ -164,7 +164,7 @@
   .hub-acts .icon-btn{ color:var(--duck); }
   .hub-acts .btn svg{ transition:transform .35s var(--spring); }
   .hub-frame{ position:relative; flex:1; min-height:0; background:#f8fafd; border-top:1px solid rgba(32,41,48,.07); }
-  .hub-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; display:block; opacity:0; transition:opacity .45s ease; }
+  .hub-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; display:block; opacity:0; transition:opacity .2s ease; }
   .hub-frame iframe.on{ opacity:1; }
   .hub-frame iframe:not(.vue){ visibility:hidden; }   /* caché mais toujours chargé : l'appli garde son état */
   .hub-frame:has(iframe.vue.on) .hub-wait{ display:none; }   /* cadre affiché prêt : le rond s'arrête (il tournait caché dessous) */
@@ -956,7 +956,8 @@
     hubBox.classList.toggle('app-on', !!vue);
     frame.classList.toggle('vue', !vue);
     onglets.forEach(o => { if (o === ov) cadreDe(o); o.frame?.classList.toggle('vue', o === ov); });
-    document.body.classList.toggle('side-etroite', !!vue && !editing);
+    // la colonne reste étroite tant que des applis sont ouvertes en onglets (Planning compris) : passer d'un onglet à l'autre ne redimensionne plus le cadre
+    document.body.classList.toggle('side-etroite', on && !editing);
     $('.hub-wait').textContent = vue ? 'Chargement de ' + nomDe(vue) + '…' : 'Chargement du planning…';
     if (on) {
       const h = state.shortcuts[hubIndex()];
