@@ -332,12 +332,13 @@
   .todo-ic{ width:40px; height:48px; flex-shrink:0; border:0; border-radius:12px; background:none; display:grid; place-items:center; color:var(--muted); }
   .todo-ic:hover{ background:rgba(74,98,116,.09); color:var(--ink); }
   .todo-ic svg{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
-  /* LA RÉPONSE EN UN CLIC : des boutons tous pareils (même hauteur, même largeur : deux colonnes
-     égales), et « fait » dans la même case, en vert. */
+  /* LA RÉPONSE EN UN CLIC : des boutons tous pareils (même hauteur ; deux côte à côte, de même
+     largeur), et « fait » dans la même case, en vert. Jamais un mot coupé ni qui déborde : un
+     bouton seul prend la ligne, deux qui ne tiennent pas côte à côte passent l'un sous l'autre. */
   .todo-quand{ font-size:12.5px; line-height:1.3; color:var(--muted); }
-  .todo-acts{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:6px; width:100%; margin-top:6px; }
-  .todo-act{ height:44px; min-width:0; padding:0 10px; border:1px solid var(--ligne); border-radius:12px; background:#fff; color:var(--encre);
-    font-family:var(--main); font-size:14px; font-weight:700; line-height:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;
+  .todo-acts{ display:flex; flex-wrap:wrap; gap:6px; width:100%; margin-top:6px; }
+  .todo-act{ flex:1 1 0; height:44px; padding:0 12px; border:1px solid var(--ligne); border-radius:12px; background:#fff; color:var(--encre);
+    font-family:var(--main); font-size:14px; font-weight:700; line-height:1; white-space:nowrap; cursor:pointer;
     display:flex; align-items:center; justify-content:center; gap:6px; transition:transform .15s, opacity .2s; }
   .todo-act:active{ transform:scale(.97); }
   .todo-act:disabled{ opacity:.5; cursor:default; }
