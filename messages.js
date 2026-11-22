@@ -28,7 +28,7 @@
     --encre:#202930; --encre-2:#5b6b78; --filet:#d6dde3; --surface:#fff; --survol:#f1f4f6;
     --ardoise:#4A6274; --ardoise-survol:#42596A; --focus:rgba(107,129,145,.45); --rouge:#d93025;
     --ressort:cubic-bezier(.34,1.56,.64,1);
-    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-family:'Inter','Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
     font-variant-numeric:tabular-nums; color:var(--encre);
   }
   .racine.nuit{ --encre:#e8eaed; --encre-2:#a3b1bc; --filet:#3c4652; --surface:#1f262d; --survol:#2a333b; --ardoise:#5f7d92; --ardoise-survol:#6d8ba0; --rouge:#f28b82; }

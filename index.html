@@ -6,9 +6,10 @@
 <meta name="theme-color" content="#ffffff" />
 <title>OLDA</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" />
+<!-- Inter : les mêmes fichiers que BAT Studio, le planning, le Stock textile et le Logo maker (même dessin partout) -->
+<link rel="preload" href="fonts/Inter-Regular-latin.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="fonts/Inter-SemiBold-latin.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="stylesheet" href="fonts/inter.css" />
 <style>
   :root{
     --duck:#4A6274; --duck-hover:#42596A; --duck-focus:#6B8191;
@@ -25,8 +26,8 @@
   *{ margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
   html,body{ height:100%; }
   body{
-    /* Inter chargée en ligne : même rendu net sur Mac, iPhone et Chrome Windows (comme le Planning) */
-    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    /* Inter servie par le Dashboard (fonts/inter.css) : les mêmes fichiers que toutes les applis OLDA */
+    font-family:'Inter','Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
     background:#f4f6f8;
     color:var(--ink);
     font-variant-numeric:tabular-nums; overflow-x:hidden;
