@@ -1271,6 +1271,13 @@
       ? (paye ? 'En production : la bulle est dans PRT, cotes à prendre.' : 'Noté : la question reviendra demain matin.')
       : (paye ? 'Payé : la bulle est dans PRT, cotes à prendre.' : 'Noté : non payé, la question reviendra demain matin.'));
   }
+  async function prevenuT(n){
+    if (!n.carte?.id) return;   // une notification d'avant : rien à ranger
+    const r = await fetch(`${BAT}/api/suivi/${encodeURIComponent(n.carte.id)}/prevenu`, { method: 'POST' });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'Erreur ' + r.status);
+    toast('Client prévenu : la bulle est aux Archives.');
+  }
   // Le texte prêt à coller (le lien du client, le message « commande prête »).
   async function copierT(n){
     try { await navigator.clipboard.writeText(n.copie); }
@@ -1297,9 +1304,10 @@
         : [planning];
       case 'prt-shop': return [planning];
       case 'presse-pret': return [{ ...planning, label: 'Ouvrir la presse' }];
+      // « Client prévenu » range la bulle du planning : de Terminé aux Archives.
       case 'presse-fini': return n.copie
-        ? [{ label: 'Copier le message', cls: 'go', fn: () => copierT(n) }, { label: 'Client prévenu', cls: 'oui', fn: () => {} }]
-        : [{ label: 'Client prévenu', cls: 'oui', fn: () => {} }];
+        ? [{ label: 'Copier le message', cls: 'go', fn: () => copierT(n) }, { label: 'Client prévenu', cls: 'oui', fn: () => prevenuT(n) }]
+        : [{ label: 'Client prévenu', cls: 'oui', fn: () => prevenuT(n) }];
       case 'shop-fini': return [{ label: 'Vu', cls: 'oui', fn: () => {} }];
       default: return n.lien && n.lien !== '/' ? [{ label: 'Ouvrir', cls: 'go', fn: () => ouvrirBatT(n.lien) }] : [];
     }
