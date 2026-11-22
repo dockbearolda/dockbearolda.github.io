@@ -1460,18 +1460,23 @@
     clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), action ? 6000 : 3000);
   }
 
-  // ---------- Nouvelle version : la page (comparée par ETag) ou les raccourcis publiés ; jamais de rechargement tout seul ----------
+  // ---------- Nouvelle version : la page (comparée par ETag) ou les raccourcis publiés ----------
+  // Onglet caché (22/11/2026) : il se recharge tout seul, pour ne jamais garder un vieux code
+  // (une ancienne version envoyait des notifications macOS). Jamais pendant une retouche ni avec
+  // une appli ouverte en onglet : là, « Recharger » attend qu'on le touche.
   const pageTag = cache => fetch(location.pathname, { cache }).then(r => r.ok ? r.headers.get('etag') || r.headers.get('last-modified') : null).catch(() => null);
   let pageSeen = null, checkedAt = 0, outdated = false;
+  const rechargerSiCache = () => { if (outdated && document.hidden && !editing && !state?.dirty && !onglets.length) location.reload(); };
   async function checkUpdate(){
-    if (outdated || document.hidden || !navigator.onLine || Date.now() - checkedAt < 60000) return;
+    if (outdated) return rechargerSiCache();
+    if (!navigator.onLine || Date.now() - checkedAt < 60000) return;
     checkedAt = Date.now();
     const now = await pageTag('no-cache');
     let fresh = !!(pageSeen && now && now !== pageSeen);
     if (!fresh && state && !state.dirty) {
       try { const r = await fetch(FILE, { cache: 'no-cache' }); fresh = r.ok && (await r.json()).rev > state.rev; } catch (_) {}
     }
-    if (fresh) { outdated = true; $('#update').classList.add('show'); }
+    if (fresh) { outdated = true; $('#update').classList.add('show'); rechargerSiCache(); }
   }
   pageTag('force-cache').then(t => { pageSeen = t; });
   $('#update-act').onclick = () => location.reload();
