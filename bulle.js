@@ -1196,8 +1196,7 @@
       case 'prt-imprimer': return nomme ? `${nomme} a validé les cotes de ${client}` : `Cotes prises pour ${client}`;
       case 'prt-shop': return nomme ? `${nomme} a demandé un réassort boutique` : 'Réassort boutique demandé';
       case 'presse-pret': return `${client} est imprimé, à presser`;
-      case 'presse-fini': return `${nomme || 'Julien'} a terminé ${client}`;
-      case 'a-facturer': return `La commande ${client} est terminée`;
+      case 'presse-fini': case 'a-facturer': return `La commande ${client} est terminée`;
       case 'shop-fini': return 'Réassort boutique terminé';
       case 'retards': {
         const tot = +(t.match(/^\d+/)?.[0] || 0), r = (x.match(/de retard\)/g) || []).length, d = tot - r;
@@ -1352,9 +1351,8 @@
       case 'prt-shop': return [planning];
       case 'presse-pret': return [{ ...planning, label: 'Ouvrir la presse' }];
       // « Client prévenu » range la bulle du planning : de Terminé aux Archives.
-      case 'presse-fini': return n.copie
-        ? [{ label: 'Copier le message', cls: 'go', fn: () => copierT(n) }, { label: 'Client prévenu', cls: 'oui', fn: () => prevenuT(n) }]
-        : [{ label: 'Client prévenu', cls: 'oui', fn: () => prevenuT(n) }];
+      // Mélina n'a que ce bouton à toucher (22/11/2026).
+      case 'presse-fini': return [{ label: 'Client prévenu', cls: 'oui', fn: () => prevenuT(n) }];
       case 'shop-fini': return [{ label: 'Vu', cls: 'oui', fn: () => {} }];
       default: return n.lien && n.lien !== '/' ? [{ label: 'Ouvrir', cls: 'go', fn: () => ouvrirBatT(n.lien) }] : [];
     }
