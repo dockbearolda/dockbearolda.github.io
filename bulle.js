@@ -1197,7 +1197,7 @@
       case 'prt-shop': return nomme ? `${nomme} a demandé un réassort boutique` : 'Réassort boutique demandé';
       case 'presse-pret': return `${client} est imprimé, à presser`;
       case 'presse-fini': return `${nomme || 'Julien'} a terminé ${client}`;
-      case 'a-facturer': return `${client} est à facturer`;
+      case 'a-facturer': return `La commande ${client} est terminée`;
       case 'shop-fini': return 'Réassort boutique terminé';
       case 'retards': {
         const tot = +(t.match(/^\d+/)?.[0] || 0), r = (x.match(/de retard\)/g) || []).length, d = tot - r;
