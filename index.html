@@ -1471,7 +1471,7 @@
       const r = await fetch(`${BAT}/api/suivi/${encodeURIComponent(l.id)}/paiement`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paye, qui: me()?.id || '' }) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || 'Erreur ' + r.status);
-      if (paye) toast('Payé : la bulle est dans PRT, cotes à prendre.');
+      if (paye) toast(`${l.pro ? 'En production' : 'Payé'} : la bulle est dans PRT, cotes à prendre.`);
     } catch (e) { toast(e.message || 'Réseau indisponible, réessayez.'); }
     finally { b.disabled = false; releverSuivi(); }
   }
@@ -1496,7 +1496,7 @@
       if (l.paiement === 'impaye') li.classList.add('impaye');
       const ok = l.textiles.filter(t => t.ok), mod = l.textiles.filter(t => !t.ok);
       const nom = [l.client, l.projet].filter(Boolean).join(' · ') || 'Bon à Tirer';
-      b.textContent = `${nom} · v${l.version} — ${l.etat === 'valide' ? (l.paiement === 'impaye' ? 'Validé, non payé' : 'Validé') : mod.length + (mod.length > 1 ? ' remarques' : ' remarque')}`;
+      b.textContent = `${nom} · v${l.version} — ${l.etat === 'valide' ? (l.pro ? (l.paiement === 'impaye' ? 'Validé (Pro), pas encore lancé' : 'Validé (Pro)') : (l.paiement === 'impaye' ? 'Validé, non payé' : 'Validé')) : mod.length + (mod.length > 1 ? ' remarques' : ' remarque')}`;
       txt.append(b);
       if (mod.length) { const m = el('small', 'mod'); m.textContent = mod.map(t => (t.nom ? t.nom + ' : ' : '') + t.note).join(' · '); txt.append(m); }
       const info = el('small');
@@ -1504,12 +1504,12 @@
       txt.append(info);
       if (mod.length) { const r = el('button', 'refaire'); r.type = 'button'; r.textContent = 'Refaire le BAT'; r.onclick = () => ouvrirBat(l.id); acts.append(r); }
       if (ok.length && !payeDeja) {
-        const p = el('button', 'paye'); p.type = 'button'; p.textContent = 'Payé'; p.onclick = () => payer(l, true, p);
-        const n = el('button', 'nonpaye'); n.type = 'button'; n.textContent = 'Non payé'; n.setAttribute('aria-pressed', String(l.paiement === 'impaye'));
+        const p = el('button', 'paye'); p.type = 'button'; p.textContent = l.pro ? 'En production' : 'Payé'; p.onclick = () => payer(l, true, p);
+        const n = el('button', 'nonpaye'); n.type = 'button'; n.textContent = l.pro ? 'Pas encore' : 'Non payé'; n.setAttribute('aria-pressed', String(l.paiement === 'impaye'));
         n.onclick = () => payer(l, false, n);
         acts.append(p, n);
       }
-      if (payeDeja) { const t = el('span', 'suivi-tag'); t.textContent = 'Payé · en PRT'; acts.append(t); }
+      if (payeDeja) { const t = el('span', 'suivi-tag'); t.textContent = l.pro ? 'En production · en PRT' : 'Payé · en PRT'; acts.append(t); }
       li.append(txt, acts); return li;
     }));
   }
