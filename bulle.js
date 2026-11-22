@@ -1197,6 +1197,8 @@
       case 'prt-shop': return nomme ? `${nomme} a demandé un réassort boutique` : 'Réassort boutique demandé';
       case 'presse-pret': return `${client} est imprimé, à presser`;
       case 'presse-fini': case 'a-facturer': return `La commande ${client} est terminée`;
+      // Une référence finie, la commande pas complète (planning, 22/11/2026) : le texte dit laquelle et ce qui reste.
+      case 'ref-finie': return x ? `${client} : ${x}` : `${client} : une référence terminée, commande pas complète`;
       case 'shop-fini': return 'Réassort boutique terminé';
       case 'retards': {
         const tot = +(t.match(/^\d+/)?.[0] || 0), r = (x.match(/de retard\)/g) || []).length, d = tot - r;
@@ -1322,7 +1324,7 @@
     const r = await fetch(`${BAT}/api/suivi/${encodeURIComponent(n.carte.id)}/prevenu`, { method: 'POST' });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || 'Erreur ' + r.status);
-    toast('Client prévenu : la bulle est aux Archives.');
+    toast('Client prévenu : la commande est aux Archives.');
   }
   // Le texte prêt à coller (le lien du client, le message « commande prête »).
   async function copierT(n){
@@ -1351,13 +1353,13 @@
       case 'prt-shop': return [planning];
       case 'presse-pret': return [{ ...planning, label: 'Ouvrir la presse' }];
       // « Client prévenu » range la bulle du planning : de Terminé aux Archives.
-      // Mélina n'a que ce bouton à toucher (22/11/2026).
+      // Mélina et Loïc n'ont que ce bouton à toucher (22/11/2026) ; l'un répond, c'est coché chez l'autre.
       case 'presse-fini': return [{ label: 'Client prévenu', cls: 'oui', fn: () => prevenuT(n) }];
-      case 'shop-fini': return [{ label: 'Vu', cls: 'oui', fn: () => {} }];
+      case 'shop-fini': case 'ref-finie': return [{ label: 'Vu', cls: 'oui', fn: () => {} }];
       default: return n.lien && n.lien !== '/' ? [{ label: 'Ouvrir', cls: 'go', fn: () => ouvrirBatT(n.lien) }] : [];
     }
   }
-  const FAIT = { 'prt-imprimer': 'Envoyé', 'bat-paiement': 'Répondu', 'bat-production': 'Répondu', 'bat-relance': 'Lien copié', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu', 'a-facturer': 'Facturé' };
+  const FAIT = { 'prt-imprimer': 'Envoyé', 'bat-paiement': 'Répondu', 'bat-production': 'Répondu', 'bat-relance': 'Lien copié', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu', 'ref-finie': 'Vu', 'a-facturer': 'Facturé' };
   function boutonsNotif(n){
     const liste = reponsesNotif(n);
     if (!liste.length) return [];
