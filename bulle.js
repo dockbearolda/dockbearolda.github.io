@@ -1203,6 +1203,8 @@
       // Une référence finie, la commande pas complète (planning, 22/11/2026) : le texte dit laquelle et ce qui reste.
       case 'ref-finie': return x ? `${client} : ${x.replace(/\s*\(reste [^)]*\)$/, '')}` : `${client} : une référence terminée, commande pas complète`;
       case 'shop-fini': return 'Réassort boutique terminé';
+      // Un vêtement sous le stock minimum (22/11/2026) : « NS300 · Noir · M : à recommander ».
+      case 'stock-bas': return t;
       case 'retards': {
         const tot = +(t.match(/^\d+/)?.[0] || 0), r = (x.match(/de retard\)/g) || []).length, d = tot - r;
         const cmd = k => `${k} commande${k > 1 ? 's' : ''}`;
@@ -1329,6 +1331,14 @@
     if (!r.ok) throw new Error(j.error || 'Erreur ' + r.status);
     toast('Client prévenu : la commande est aux Archives.');
   }
+  // À RECOMMANDER (22/11/2026) : +5/10/15 ajoute au bon de commande du Stock textile, Vu l'oublie.
+  // L'un répond, c'est coché chez l'autre (Loïc / Mélina) et retiré du Stock textile.
+  async function stockT(n, chemin, corps){
+    const r = await fetch(`${BAT}/api/stock/${chemin}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cle: n.stockCle, par: me()?.name || '', ...corps }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'Erreur ' + r.status);
+    if (corps.n) toast(`+${corps.n} au bon de commande.`);
+  }
   // Le texte prêt à coller (le lien du client, le message « commande prête »).
   async function copierT(n){
     try { await navigator.clipboard.writeText(n.copie); }
@@ -1359,10 +1369,14 @@
       // Mélina et Loïc n'ont que ce bouton à toucher (22/11/2026) ; l'un répond, c'est coché chez l'autre.
       case 'presse-fini': return [{ label: 'Client prévenu', cls: 'oui', fn: () => prevenuT(n) }];
       case 'shop-fini': return [{ label: 'Vu', cls: 'oui', fn: () => {} }];
+      case 'stock-bas': return n.stockCle
+        ? [5, 10, 15].map(k => ({ label: `+${k}`, cls: k === 10 ? 'oui' : '', fn: () => stockT(n, 'bon', { n: k }) }))
+          .concat({ label: 'Vu', fn: () => stockT(n, 'vu', {}) })
+        : [];
       default: return n.lien && n.lien !== '/' ? [{ label: 'Ouvrir', cls: 'go', fn: () => ouvrirBatT(n.lien) }] : [];
     }
   }
-  const FAIT = { 'prt-imprimer': 'Envoyé', 'bat-paiement': 'Répondu', 'bat-production': 'Répondu', 'bat-relance': 'Lien copié', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu', 'a-facturer': 'Facturé' };
+  const FAIT = { 'prt-imprimer': 'Envoyé', 'bat-paiement': 'Répondu', 'bat-production': 'Répondu', 'bat-relance': 'Lien copié', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu', 'a-facturer': 'Facturé', 'stock-bas': 'Traité' };
   function boutonsNotif(n){
     const liste = reponsesNotif(n);
     if (!liste.length) return [];
