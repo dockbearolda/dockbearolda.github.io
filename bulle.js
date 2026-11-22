@@ -334,6 +334,7 @@
   .todo-ic svg{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
   /* LA RÉPONSE EN UN CLIC : des boutons tous pareils (même hauteur, même largeur : deux colonnes
      égales), et « fait » dans la même case, en vert. */
+  .todo-quand{ font-size:12.5px; line-height:1.3; color:var(--muted); }
   .todo-acts{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:6px; width:100%; margin-top:6px; }
   .todo-act{ height:44px; min-width:0; padding:0 10px; border:1px solid var(--ligne); border-radius:12px; background:#fff; color:var(--encre);
     font-family:var(--main); font-size:14px; font-weight:700; line-height:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;
@@ -1222,13 +1223,15 @@
     $('#todo-c').textContent = n ? `${n} à faire` : '';
     todoOrb.setAttribute('aria-label', n ? `Ma to do list : ${n} à faire` : 'Ouvrir ma to do list');
   }
-  function ligneT({ texte, fait, cocher, ouvrir, suppr, actions }){
+  function ligneT({ texte, quand, fait, cocher, ouvrir, suppr, actions }){
     const li = el('li', 'todo-i' + (fait ? ' fait' : ''));
     const c = el('button', 'todo-cc'); c.type = 'button'; c.setAttribute('role', 'checkbox'); c.setAttribute('aria-checked', String(!!fait));
     c.setAttribute('aria-label', texte); c.innerHTML = SVG('<circle cx="12" cy="12" r="8.5"/><path class="v" d="M7.5 12.5l3 3 6-7"/>');
     if (cocher) c.onclick = cocher; else c.disabled = true;
     const corps = el('div', 'todo-corps');
     const tx = el('span', 'todo-tx'), sp = el('span'); sp.textContent = texte; tx.append(sp); corps.append(tx);
+    // Reçue quand : « Aujourd’hui à 14:32 », « Hier à 09:10 », « samedi 21 novembre à 18:05 ».
+    if (quand && !isNaN(Date.parse(quand))) { const q = el('time', 'todo-quand'); q.dateTime = quand; q.textContent = `${jour(quand)} à ${heure(quand)}`; corps.append(q); }
     if (actions?.length) { const a = el('div', 'todo-acts'); a.append(...actions); corps.append(a); }
     li.append(c, corps);
     if (ouvrir) { const o = el('button', 'todo-ic'); o.type = 'button'; o.title = 'Ouvrir'; o.setAttribute('aria-label', 'Ouvrir : ' + texte); o.innerHTML = SVG('<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'); o.onclick = ouvrir; li.append(o); }
@@ -1239,7 +1242,7 @@
     const p = me(); if (!p) return;
     const out = [];
     for (const n of notifsVisibles()) {
-      const li = ligneT({ texte: ligneNotif(n), fait: !!n.lu, cocher: n.lu ? null : () => cocherNotif(n), actions: boutonsNotif(n) });
+      const li = ligneT({ texte: ligneNotif(n), quand: n.at, fait: !!n.lu, cocher: n.lu ? null : () => cocherNotif(n), actions: boutonsNotif(n) });
       const entier = ligneNotif(n, false);
       if (entier !== ligneNotif(n)) li.querySelector('.todo-tx').title = entier;   // le nom complet, au survol
       if (rayes.has(n.id)) li.classList.add('raye');
@@ -1344,7 +1347,7 @@
       case 'bat-valide': return [{ label: 'Prendre les cotes', cls: 'go', fn: () => ouvrirBatT(n.lien) }];
       case 'bat-note': return [{ label: 'Refaire le BAT', cls: 'go', fn: () => ouvrirBatT(n.projetId ? `/?projet=${encodeURIComponent(n.projetId)}` : n.lien) }];
       case 'prt-imprimer': return n.carte
-        ? [{ label: 'Envoyer en production', cls: 'oui', fn: () => ouvrirPlancheT(n.carte, true) }, { label: 'Planning', fn: ouvrirPlanningT }]
+        ? [{ label: 'En production', cls: 'oui', fn: () => ouvrirPlancheT(n.carte, true) }, { label: 'Planning', fn: ouvrirPlanningT }]
         : [planning];
       case 'prt-shop': return [planning];
       case 'presse-pret': return [{ ...planning, label: 'Ouvrir la presse' }];
