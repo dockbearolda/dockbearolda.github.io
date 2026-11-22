@@ -53,7 +53,7 @@
     --duck:#4A6274; --duck-hover:#42596A; --duck-focus:#6B8191;
     --ink:#202930; --muted:#5b6b78; --line:#d6dde3; --danger:#d93025;
     --spring:cubic-bezier(.34,1.56,.64,1); --safe-b:env(safe-area-inset-bottom,0px);
-    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-family:'Inter','Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
     font-size:16px; line-height:normal; color:var(--ink); font-variant-numeric:tabular-nums; text-align:left;
   }
   *{ margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
