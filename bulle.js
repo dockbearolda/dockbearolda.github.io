@@ -349,8 +349,18 @@
   .todo-act svg{ width:16px; height:16px; flex-shrink:0; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
   @media (hover:hover){ .todo-act:not(.ok):not(:disabled):hover{ filter:brightness(.95); } }
   .todo-vide{ padding:26px 20px 0 56px; font-size:15px; color:var(--muted); }
-  .todo-vider{ flex-shrink:0; min-height:44px; border:0; border-top:1px solid var(--ligne); background:none; font-size:13.5px; font-weight:600; color:var(--muted); }
+  .todo-panel:focus{ outline:none; }
+  .todo-pied{ flex-shrink:0; display:flex; border-top:1px solid var(--ligne); }
+  .todo-pied[hidden]{ display:none; }
+  .todo-vider{ flex:1; min-width:0; min-height:44px; padding:0 10px; border:0; background:none; font-size:13.5px; font-weight:600; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .todo-vider + .todo-vider:not([hidden]){ border-left:1px solid var(--ligne); }
   .todo-vider:hover{ color:var(--danger); }
+  .todo-revenir:hover{ color:var(--duck); }
+  /* Rayée : le trait passe, puis la ligne s'en va. Revenue (Ctrl Z) : elle se rallume. */
+  .todo-i.part{ animation:partir .3s ease-in .55s forwards; pointer-events:none; }
+  @keyframes partir{ to{ opacity:0; transform:translateX(12px); } }
+  .todo-i.revient{ animation:revient 1.2s ease-out; }
+  @keyframes revient{ from{ background:rgba(26,115,232,.14); } }
   /* ---------- Clic droit : cacher / afficher la to do list ou la messagerie ---------- */
   .ctx{ position:fixed; z-index:60; left:0; top:0; min-width:236px; padding:6px; border-radius:14px; background:rgba(255,255,255,.98);
     box-shadow:inset 0 0 0 1px rgba(74,98,116,.14), 0 18px 40px rgba(42,58,72,.24); animation:chatPop .2s var(--spring); }
@@ -362,7 +372,7 @@
   .rappel i{ width:12px; height:12px; border-radius:50%; background:rgba(74,98,116,.38); box-shadow:0 0 0 2px rgba(255,255,255,.85); transition:transform .2s, background-color .2s; }
   .rappel:hover i, .rappel:focus-visible i{ transform:scale(1.4); background:var(--duck); }
   .rappel.neuf i{ background:var(--danger); }
-  @media (prefers-reduced-motion:reduce){ .todo-orb{ transition:none; } .todo-panel, .todo-orb.has-new::before, .todo-i.raye .todo-tx > span, .todo-i.raye .todo-cc .v, .ctx{ animation:none; } }
+  @media (prefers-reduced-motion:reduce){ .todo-orb{ transition:none; } .todo-panel, .todo-orb.has-new::before, .todo-i.raye .todo-tx > span, .todo-i.raye .todo-cc .v, .todo-i.part, .todo-i.revient, .ctx{ animation:none; } }
 </style>
 <div class="chat is-min" id="chat" hidden>
   <button type="button" class="chat-orb" id="chat-orb" aria-label="Ouvrir la discussion de l'équipe">
@@ -410,7 +420,7 @@
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.7 2.7L16 9.7"/></svg>
     <span class="todo-n" id="todo-n" hidden></span>
   </button>
-  <section class="todo-panel" id="todo-panel" aria-label="Ma to do list">
+  <section class="todo-panel" id="todo-panel" aria-label="Ma to do list" tabindex="-1">
     <header class="todo-head" id="todo-head">
       <span class="chat-grip" aria-hidden="true"></span>
       <h2 class="todo-t">À faire</h2>
@@ -424,7 +434,10 @@
       <button type="submit" class="todo-plus" aria-label="Ajouter la tâche"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
     </form>
     <ul class="todo-list" id="todo-list" aria-label="Tâches"></ul>
-    <button type="button" class="todo-vider" id="todo-vider" hidden></button>
+    <div class="todo-pied" id="todo-pied" hidden>
+      <button type="button" class="todo-vider todo-revenir" id="todo-revenir" hidden></button>
+      <button type="button" class="todo-vider" id="todo-vider" hidden></button>
+    </div>
   </section>
 </div>
 <div class="ctx" id="ctx" role="menu" hidden></div>
@@ -1081,12 +1094,23 @@
   // Le clic droit (un appui long au doigt) sur la to do list ou la messagerie les cache sur ce site.
   const LS_TODO = 'olda_todo', LS_TODO_POS = 'olda_todo_pos', LS_TODO_VUS = 'olda_todo_vus', LS_CACHES = 'olda_caches';
   const todo = $('#todo'), todoOrb = $('#todo-orb'), todoPanel = $('#todo-panel'), todoList = $('#todo-list'), todoTxt = $('#todo-txt');
-  const ORB_T = 56, JOUR = 864e5, BAT_ORIGINE = (() => { try { return new URL(BAT).origin; } catch (_) { return ''; } })();
+  const ORB_T = 56, BAT_ORIGINE = (() => { try { return new URL(BAT).origin; } catch (_) { return ''; } })();
   const caches = Object.assign({ todo: false, chat: false }, store.get(LS_CACHES) || {});
   // Ouverte d'office sur le Dashboard, sauf au téléphone (elle couvrirait la discussion).
   const todoPos = Object.assign({ x: null, y: null, ouvert: DASHBOARD && innerWidth >= 720 }, store.get(LS_TODO_POS) || {});
   const todoVus = new Set(store.get(LS_TODO_VUS) || []);
   let taches = [], notifsT = [], todoMinuterie = null, rayes = new Set();
+  // RAYÉE = PARTIE, CTRL Z LA RAMÈNE (22/11/2026) : une notification cochée s'en va après son trait.
+  // Ctrl Z (⌘ Z sur Mac) ou « Faire revenir » rallume les 5 dernières rayées, une à une ;
+  // rayer une revenue la renvoie. Les revenues et l'heure où on les a rayées restent sur l'appareil.
+  const LS_TODO_REV = 'olda_todo_revenues', RETOURS = 5, MAC = /Mac|iP(hone|ad|od)/.test(navigator.platform || navigator.userAgent);
+  let revenues = new Set(), rayeesA = {}, partantes = new Set();
+  function lireRev(){
+    const r = store.get(LS_TODO_REV), ok = r && r.qui === me()?.id;
+    revenues = new Set(ok && Array.isArray(r.ids) ? r.ids : []);
+    rayeesA = ok && r.a && typeof r.a === 'object' ? r.a : {};
+  }
+  const garderRev = () => store.set(LS_TODO_REV, { qui: me()?.id, ids: [...revenues], a: rayeesA });
 
   // --- Place et taille, comme la bulle de discussion ---
   const tailleT = () => todoPos.ouvert ? { w: todoPanel.offsetWidth || 340, h: todoPanel.offsetHeight || 480 } : { w: ORB_T, h: ORB_T };
@@ -1224,7 +1248,11 @@
   }
 
   // --- Afficher ---
-  const notifsVisibles = () => notifsT.filter(n => !n.lu || Date.now() - Date.parse(n.lu) < JOUR);
+  const notifsVisibles = () => notifsT.filter(n => !n.lu || revenues.has(n.id) || partantes.has(n.id));
+  // Les 5 dernières rayées (ici ou ailleurs), la plus récente d'abord ; celles déjà revenues comptent.
+  const rayeeLe = n => Date.parse(rayeesA[n.id] || n.lu) || 0;
+  const aFaireRevenir = () => notifsT.filter(n => n.lu).sort((a, b) => rayeeLe(b) - rayeeLe(a)).slice(0, RETOURS)
+    .filter(n => !revenues.has(n.id) && !partantes.has(n.id));
   const aFaire = () => taches.filter(t => !t.fait).length + notifsT.filter(n => !n.lu).length;
   function majCompteT(){
     const n = aFaire(), c = $('#todo-n');
@@ -1251,7 +1279,10 @@
     const p = me(); if (!p) return;
     const out = [];
     for (const n of notifsVisibles()) {
-      const li = ligneT({ texte: ligneNotif(n), quand: n.at, fait: !!n.lu, cocher: n.lu ? null : () => cocherNotif(n), actions: boutonsNotif(n) });
+      const cocher = !n.lu ? () => cocherNotif(n) : revenues.has(n.id) ? () => rayerNotif(n) : null;
+      const li = ligneT({ texte: ligneNotif(n), quand: n.at, fait: !!n.lu, cocher, actions: boutonsNotif(n) });
+      li.dataset.id = n.id;
+      if (partantes.has(n.id)) li.classList.add('part');
       const entier = ligneNotif(n, false);
       if (entier !== ligneNotif(n)) li.querySelector('.todo-tx').title = entier;   // le nom complet, au survol
       if (rayes.has(n.id)) li.classList.add('raye');
@@ -1267,6 +1298,10 @@
     rayes = new Set();
     const finies = taches.filter(t => t.fait).length, vider = $('#todo-vider');
     vider.hidden = !finies; vider.textContent = `Effacer les terminées (${finies})`;
+    const retours = aFaireRevenir().length, revenir = $('#todo-revenir');
+    revenir.hidden = !retours; revenir.textContent = `↶ Faire revenir (${retours})`;
+    revenir.title = `Faire revenir la dernière notification rayée (${MAC ? '⌘' : 'Ctrl'} Z)`;
+    $('#todo-pied').hidden = vider.hidden && revenir.hidden;
     majCompteT();
   }
 
@@ -1301,9 +1336,41 @@
   // --- Les notifications pour moi : cocher = lu ---
   function cocherNotif(n){
     if (n.lu) return;
-    n.lu = new Date().toISOString(); rayes.add(n.id); renderTodo();
+    n.lu = new Date().toISOString();
     fetch(`${BAT}/api/notifs/${encodeURIComponent(n.id)}/lu`, { method: 'POST' }).catch(() => {});
+    rayerNotif(n);
   }
+  // Le trait, puis la ligne part (elle reste lue chez BAT Studio).
+  function rayerNotif(n){
+    // Le focus vient dans la liste (Safari ne le donne pas au clic) : Ctrl Z marche aussitôt.
+    const garderFocus = !saisie(root.activeElement || document.activeElement);
+    rayeesA[n.id] = new Date().toISOString(); revenues.delete(n.id); garderRev();
+    partantes.add(n.id); rayes.add(n.id); renderTodo();
+    if (garderFocus) todoPanel.focus({ preventScroll: true });
+    setTimeout(() => { if (partantes.delete(n.id)) renderTodo(); }, reduced.matches ? 300 : 900);
+  }
+  function faireRevenir(){
+    const n = aFaireRevenir()[0];
+    if (!n) return toast(`Plus rien à faire revenir : seules les ${RETOURS} dernières rayées reviennent.`);
+    revenues.add(n.id); garderRev();
+    if (!todoPos.ouvert) basculerT(true);
+    renderTodo();
+    const li = [...todoList.children].find(x => x.dataset.id === n.id);
+    if (li) { li.classList.add('revient'); li.scrollIntoView({ block: 'nearest' }); }
+  }
+  $('#todo-revenir').onclick = faireRevenir;
+  const estAnnuler = e => (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === 'z' || e.key === 'Z');
+  const saisie = t => t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+  // Dans la to do list : partout sauf en pleine saisie (le champ vide laisse passer).
+  todoPanel.addEventListener('keydown', e => {
+    if (!estAnnuler(e) || (saisie(e.target) && !(e.target === todoTxt && !todoTxt.value))) return;
+    e.preventDefault(); faireRevenir();
+  });
+  // Sur le Dashboard, n'importe où (les applis gardent leur propre Ctrl Z).
+  if (DASHBOARD) document.addEventListener('keydown', e => {
+    if (!estAnnuler(e) || e.defaultPrevented || todo.hidden || !me() || saisie(e.composedPath()[0])) return;
+    e.preventDefault(); faireRevenir();
+  });
   // LA RÉPONSE EN UN CLIC (21/11/2026) : « tout le travail doit être déjà mâché, on n'a plus qu'à
   // cliquer ». Chaque notification arrive avec sa question et ses réponses ; répondre la coche.
   const PLANNING = 'https://planning-olda.dockbear.workers.dev/';
@@ -1454,7 +1521,17 @@
         const { items } = await rt.json().catch(() => ({}));
         if (Array.isArray(items)) { taches = items; store.set(LS_TODO, { qui: p.id, items, aEnvoyer: false, v: 0 }); }
       }
-      if (rn?.ok) { const { notifs } = await rn.json().catch(() => ({})); if (Array.isArray(notifs)) { notifsT = notifs; nouvellesNotifs(); } }
+      if (rn?.ok) {
+        const { notifs } = await rn.json().catch(() => ({}));
+        if (Array.isArray(notifs)) {
+          notifsT = notifs; nouvellesNotifs();
+          // Revenue mais remise « à faire » ou oubliée chez BAT Studio : on n'en garde plus trace.
+          const lues = new Set(notifs.filter(n => n.lu).map(n => n.id));
+          revenues = new Set([...revenues].filter(id => lues.has(id)));
+          rayeesA = Object.fromEntries(Object.entries(rayeesA).filter(([id]) => lues.has(id)));
+          garderRev();
+        }
+      }
       renderTodo();
     } finally { releveT = false; }
   }
@@ -1465,7 +1542,7 @@
   function todoRelancer(){
     const p = me(), c = store.get(LS_TODO);
     taches = c && c.qui === p?.id && Array.isArray(c.items) ? c.items : [];
-    notifsT = [];
+    notifsT = []; partantes = new Set(); lireRev();
     todo.classList.toggle('is-min', !todoPos.ouvert);
     appliquerCaches();
     if (p) { renderTodo(); relireT(); }
