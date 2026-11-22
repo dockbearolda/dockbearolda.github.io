@@ -13,8 +13,9 @@
  *   oldaMessages.demander({ titre, texte, champs: [{ nom, label, type, options, valeur }], ok })
  *       type : 'texte' | 'nombre' | 'choix' (options = liste)              → Promise<{…} | null>
  *
- * Réglages par l'appli (variables CSS sur :root) : --olda-message-bas (hauteur du toast),
- * --olda-message-x (son centre). De nuit (data-theme="dark" sur <html>), la fenêtre passe sombre.
+ * Les toasts paraissent EN HAUT, au centre, dans toutes les applis (22/11/2026, Charlie : en bas
+ * ils gênaient). Réglages par l'appli (variables CSS sur :root) : --olda-message-haut (écart au
+ * bord haut), --olda-message-x (son centre). De nuit (data-theme="dark" sur <html>), la fenêtre passe sombre.
  */
 (() => {
   if (window.oldaMessages) return;
@@ -35,12 +36,12 @@
 
   /* ---------- Le toast : la pilule d'encre du Dashboard ---------- */
   .pile{ position:fixed; z-index:2147483000; left:var(--olda-message-x,50%); transform:translateX(-50%);
-    bottom:calc(var(--olda-message-bas,24px) + env(safe-area-inset-bottom,0px));
+    top:calc(var(--olda-message-haut,12px) + env(safe-area-inset-top,0px));
     display:flex; flex-direction:column; align-items:center; gap:8px; width:max-content; max-width:calc(100vw - 32px); pointer-events:none; }
   .toast{ display:flex; align-items:center; gap:4px; max-width:100%; min-height:48px; padding:4px 4px 4px 18px;
     border-radius:16px; background:#202930; color:#fff; font-size:14px; font-weight:500; line-height:1.35;
     box-shadow:0 12px 30px rgba(32,41,48,.3); pointer-events:auto;
-    opacity:0; transform:translateY(16px); transition:opacity .25s, transform .35s var(--ressort); }
+    opacity:0; transform:translateY(-16px); transition:opacity .25s, transform .35s var(--ressort); }
   .racine.nuit .toast{ background:#323b44; box-shadow:0 12px 30px rgba(0,0,0,.45); }
   .toast.on{ opacity:1; transform:none; }
   .toast .txt{ padding:10px 14px 10px 0; }
