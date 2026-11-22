@@ -1303,7 +1303,8 @@
     window.open(u.toString(), '_blank', 'noopener');
   }
   const ouvrirPlanningT = () => window.open(PLANNING, '_blank', 'noopener');
-  const ouvrirPlancheT = c => window.open(`${PLANCHE}?id=${encodeURIComponent(c.id)}&zone=${encodeURIComponent(c.zone)}`, '_blank', 'noopener');
+  // direct : « Envoyer en production » — la Planche crée le PRT d'elle-même (rien d'autre sur la planche).
+  const ouvrirPlancheT = (c, direct) => window.open(`${PLANCHE}?id=${encodeURIComponent(c.id)}&zone=${encodeURIComponent(c.zone)}${direct ? '&auto=1' : ''}`, '_blank', 'noopener');
   // « Le client a-t-il payé ? » — Oui : la bulle part dans PRT, cotes à prendre ; Non : la ligne reste
   // en rouge en haut du Dashboard. Le serveur coche aussi la question de l'autre (Mélina / Loïc).
   async function payerT(n, paye){
@@ -1343,7 +1344,7 @@
       case 'bat-valide': return [{ label: 'Prendre les cotes', cls: 'go', fn: () => ouvrirBatT(n.lien) }];
       case 'bat-note': return [{ label: 'Refaire le BAT', cls: 'go', fn: () => ouvrirBatT(n.projetId ? `/?projet=${encodeURIComponent(n.projetId)}` : n.lien) }];
       case 'prt-imprimer': return n.carte
-        ? [{ label: 'Ouvrir la Planche', cls: 'go', fn: () => ouvrirPlancheT(n.carte) }, { label: 'Planning', fn: ouvrirPlanningT }]
+        ? [{ label: 'Envoyer en production', cls: 'oui', fn: () => ouvrirPlancheT(n.carte, true) }, { label: 'Planning', fn: ouvrirPlanningT }]
         : [planning];
       case 'prt-shop': return [planning];
       case 'presse-pret': return [{ ...planning, label: 'Ouvrir la presse' }];
@@ -1355,7 +1356,7 @@
       default: return n.lien && n.lien !== '/' ? [{ label: 'Ouvrir', cls: 'go', fn: () => ouvrirBatT(n.lien) }] : [];
     }
   }
-  const FAIT = { 'bat-paiement': 'Répondu', 'bat-production': 'Répondu', 'bat-relance': 'Lien copié', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu', 'a-facturer': 'Facturé' };
+  const FAIT = { 'prt-imprimer': 'Envoyé', 'bat-paiement': 'Répondu', 'bat-production': 'Répondu', 'bat-relance': 'Lien copié', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu', 'a-facturer': 'Facturé' };
   function boutonsNotif(n){
     const liste = reponsesNotif(n);
     if (!liste.length) return [];
