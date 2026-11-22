@@ -740,9 +740,6 @@
   // UNE APPLI POUR UNE SEULE PERSONNE (21/11/2026) : « pour » liste les profils qui la
   // voient (Fast White : Charlie seul) ; sans « pour », tout le monde. En édition, tout paraît.
   const pourMoi = s => !Array.isArray(s.pour) || s.pour.includes(store.raw('olda_poste'));
-  // Une appli locale (Fast White, http://127.0.0.1) ne tient pas dans un onglet du
-  // Dashboard (page https) : « externe » l'ouvre directement dans le navigateur.
-  const ouvrirApp = s => s.externe ? (window.open(s.url, '_blank', 'noopener'), true) : ouvrirOnglet(s.url);
   // Les apps, dans l'ordre des raccourcis, dans la barre de gauche ; le planning à droite.
   function render(){
     const h = hubIndex();
@@ -762,7 +759,7 @@
       else {
         card.href = s.url; card.target = '_blank'; card.rel = 'noopener'; card.dataset.url = s.url; card.setAttribute('aria-label', s.name || 'Sans nom');
         // Clic simple : l'appli s'ouvre dans un onglet du Dashboard. Ctrl/⌘/Maj/clic molette : onglet du navigateur, comme avant.
-        card.onclick = e => { if (!e.button && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && !s.externe && ouvrirOnglet(s.url)) e.preventDefault(); };
+        card.onclick = e => { if (!e.button && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && ouvrirOnglet(s.url)) e.preventDefault(); };
       }
       fillCard(card, s);
       tile.append(card);
@@ -882,7 +879,13 @@
     if (m && Array.isArray(m.ouverts)) m.ouverts.forEach(u => { if (typeof u === 'string' && cadreOk(u)) onglets.push(nouvelOnglet(u)); });
     if (m) actif = (Number.isInteger(m.i) ? onglets[m.i] : onglets.find(o => o.url === m.actif))?.id ?? null;
   }
-  function cadreOk(url){ try { const u = new URL(url); return u.protocol === 'https:' && CADRE_OK.test(u.hostname); } catch (_) { return false; } }
+  // Une appli locale du poste (Fast White, http://127.0.0.1:47831) s'ouvre aussi en onglet :
+  // Chrome ne bloque pas le http de 127.0.0.1 / localhost dans une page https.
+  const LOCAL = /^(127\.0\.0\.1|localhost)$/;
+  function cadreOk(url){
+    try { const u = new URL(url); return u.protocol === 'https:' ? CADRE_OK.test(u.hostname) : u.protocol === 'http:' && LOCAL.test(u.hostname); }
+    catch (_) { return false; }
+  }
   const ongletsActifs = () => wide.matches && !editing && !hubTile.hidden;
   function garderOnglets(){ const i = onglets.findIndex(o => o.id === actif); store.set(LS_ONGLETS, { ouverts: onglets.map(o => o.url), i: i < 0 ? null : i }); }
   function ouvrirOnglet(url){
@@ -911,7 +914,7 @@
   function cadreDe(o){
     if (!o.frame) {
       const f = document.createElement('iframe');
-      f.title = nomDe(o.url); f.allow = 'clipboard-read; clipboard-write; fullscreen; microphone';
+      f.title = nomDe(o.url); f.allow = 'clipboard-read; clipboard-write; fullscreen; microphone; local-network-access; local-network; loopback-network';
       f.addEventListener('load', () => f.classList.add('on'));
       f.src = o.url; hubFrameBox.append(f); o.frame = f;
     }
@@ -1159,7 +1162,6 @@
     if (draft.hub) s.hub = true;
     if (draft.groupe) s.groupe = draft.groupe;
     if (Array.isArray(draft.pour)) s.pour = draft.pour;   // retouché ici : reste à qui il était
-    if (draft.externe) s.externe = true;
     s.since = index >= 0 && url === draft.url && draft.since ? draft.since : Date.now();
     if (index >= 0) state.shortcuts[index] = s; else state.shortcuts.push(s);
     sheet.close(); commit();
@@ -1279,7 +1281,7 @@
     const x = palItems[k]; if (!x) return;
     pal.close();
     if (x.i === hubIndex()) { if (actif) montrer(null); setMax(true); }
-    else if (!ouvrirApp(x.s)) window.open(x.s.url, '_blank', 'noopener');
+    else if (!ouvrirOnglet(x.s.url)) window.open(x.s.url, '_blank', 'noopener');
   }
   function palOpen(seed){
     if (!state || pal.open) return;
