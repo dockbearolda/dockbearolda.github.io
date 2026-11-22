@@ -104,7 +104,7 @@
     .tile--hub{ flex:1; min-height:0; }
     /* la barre d'action se range au pied de la barre des apps */
     .dock{ left:max(16px,env(safe-area-inset-left)); right:auto; bottom:max(16px,var(--safe-b)); width:196px; flex-wrap:wrap-reverse; }
-    #toast,#update{ left:calc(50% + 105px); }    /* Une appli ouverte dans un onglet : la barre se resserre en rail d'icônes, l'appli prend la place */
+    :root{ --olda-message-x:calc(50% + 105px); }    /* Une appli ouverte dans un onglet : la barre se resserre en rail d'icônes, l'appli prend la place */
     /* Rangées ou planning agrandi : même rail, toutes les icônes restent visibles */
     :is(.side-etroite,.side-rangee,.hub-max) .dash{ grid-template-columns:68px minmax(0,1fr); gap:14px; }
     :is(.side-etroite,.side-rangee,.hub-max) .me{ padding:6px; justify-content:center; }
@@ -431,21 +431,12 @@
   kbd{ display:inline-block; min-width:20px; padding:3px 5px; border-radius:6px; border:1px solid var(--line); border-bottom-width:2px; background:#f7f9fa; font:600 11px/1 inherit; text-align:center; color:var(--ink); }
   .btn kbd{ background:rgba(255,255,255,.6); }
 
-  .toast{
-    position:fixed; z-index:40; left:50%; bottom:calc(76px + var(--safe-b)); transform:translate(-50%,16px);
-    display:flex; align-items:center; gap:4px; max-width:calc(100% - 32px);
-    padding:4px 4px 4px 18px; min-height:48px; border-radius:16px;
-    background:var(--ink); color:#fff; font-size:14px; box-shadow:0 12px 30px rgba(32,41,48,.3);
-    opacity:0; pointer-events:none; transition:opacity .25s, transform .35s var(--spring);
-  }
-  .toast.show{ opacity:1; transform:translate(-50%,0); pointer-events:auto; }
-  #update{ bottom:calc(136px + var(--safe-b)); }
-  .toast button{ min-height:40px; padding:0 14px; border:0; border-radius:12px; background:none; color:#9fd0ff; font-weight:700; }
-  .toast span{ padding:8px 14px 8px 0; }
+  /* Les toasts et les confirmations : messages.js (source unique, le même dans toutes les applis OLDA) */
+  :root{ --olda-message-bas:76px; }
 
   @media (prefers-reduced-motion:reduce){
     .tile,dialog[open]{ animation:none; }
-    .who-grid button,.card,.card::after,.card-icon,.toast,.hub-frame iframe{ transition:none; }
+    .who-grid button,.card,.card::after,.card-icon,.hub-frame iframe{ transition:none; }
     ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){ animation:none !important; }
   }
 </style>
@@ -617,9 +608,8 @@
   </form>
 </dialog>
 
+<script src="messages.js"></script>
 <script src="bulle.js" data-dashboard defer></script>
-<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button type="button" id="toast-act" hidden></button></div>
-<div class="toast" id="update" role="status" aria-live="polite"><span>Nouvelle version disponible</span><button type="button" id="update-act">Recharger</button></div>
 
 <script>
 (() => {
@@ -1453,15 +1443,7 @@
   releverSuivi();
 
   // ---------- Toast ----------
-  let toastTimer;
-  function toast(msg, action, fn){
-    const t = $('#toast'), a = $('#toast-act');
-    $('#toast-msg').textContent = msg;
-    a.hidden = !action; a.textContent = action || '';
-    a.onclick = () => { t.classList.remove('show'); fn && fn(); };
-    t.classList.add('show');
-    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), action ? 6000 : 3000);
-  }
+  function toast(msg, action, fn){ return window.oldaMessages.toast(msg, action ? { action: { label: action, onClick: fn } } : {}); }
 
   // ---------- Nouvelle version : la page (comparée par ETag) ou les raccourcis publiés ----------
   // Onglet caché (22/11/2026) : il se recharge tout seul, pour ne jamais garder un vieux code
@@ -1479,10 +1461,9 @@
     if (!fresh && state && !state.dirty) {
       try { const r = await fetch(FILE, { cache: 'no-cache' }); fresh = r.ok && (await r.json()).rev > state.rev; } catch (_) {}
     }
-    if (fresh) { outdated = true; $('#update').classList.add('show'); rechargerSiCache(); }
+    if (fresh) { outdated = true; window.oldaMessages.toast('Nouvelle version disponible', { action: { label: 'Recharger', onClick: () => location.reload() }, ms: 0 }); rechargerSiCache(); }
   }
   pageTag('force-cache').then(t => { pageSeen = t; });
-  $('#update-act').onclick = () => location.reload();
   setInterval(checkUpdate, 5 * 60000);
   document.addEventListener('visibilitychange', checkUpdate);
 
