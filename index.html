@@ -366,36 +366,6 @@
   @media (hover:hover){ .who-grid button:hover{ border-color:var(--duck-focus); box-shadow:var(--shadow); } }
   .who-grid button[aria-pressed="true"]{ border-color:var(--duck); box-shadow:0 0 0 2px var(--duck) inset; }
 
-  /* ---------- Le suivi des Bons à Tirer (BAT Studio, /api/suivi) : des lignes en haut, pour tous ---------- */
-  .suivi-box{ order:-1; flex:none; display:grid; gap:8px; min-height:0; }
-  .suivi-box[hidden]{ display:none; }
-  .suivi-tete{ display:flex; align-items:center; gap:10px; min-height:44px; padding:0 14px; border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,.8);
-    font:inherit; font-size:15px; font-weight:700; color:var(--ink); text-align:left; cursor:pointer; }
-  .suivi-tete small{ flex:1; min-width:0; font-size:13px; font-weight:500; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .suivi-tete svg{ width:18px; height:18px; flex:none; fill:none; stroke:var(--muted); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; transition:transform .2s; }
-  .suivi-tete[aria-expanded="false"] svg{ transform:rotate(-90deg); }
-  .suivi-tete:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:2px; }
-  @media (hover:hover){ .suivi-tete:hover{ background:#fff; } }
-  /* Jamais plus d'un tiers de l'écran : au-delà, la liste défile (petit portable 14", comme grand écran). */
-  .suivi{ display:grid; gap:8px; list-style:none; max-height:clamp(150px,34dvh,420px); overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; padding:2px 4px 6px 2px; }
-  .suivi[hidden]{ display:none; }
-  .suivi li{ display:flex; align-items:center; gap:10px 12px; flex-wrap:wrap; min-height:64px; padding:10px 12px 10px 16px;
-    background:#fff; border:1px solid var(--line); border-left:6px solid var(--ok,#1e8e3e); border-radius:16px; box-shadow:var(--shadow); }
-  .suivi li.remarque{ border-left-color:#b45309; }
-  .suivi li.impaye{ border-left-color:var(--danger); }
-  .suivi-txt{ flex:1 1 220px; min-width:0; }
-  .suivi-txt b{ display:block; font-size:15px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .suivi-txt small{ display:block; font-size:13px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .suivi-txt small.mod{ color:#b45309; white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-  .suivi-acts{ display:flex; gap:8px; flex-wrap:wrap; }
-  .suivi-acts button{ min-height:44px; padding:0 16px; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--ink); font:inherit; font-size:15px; font-weight:600; cursor:pointer; }
-  .suivi-acts button:active{ transform:scale(.97); }
-  .suivi-acts .paye{ background:#1e8e3e; border-color:#1e8e3e; color:#fff; }
-  .suivi-acts .nonpaye[aria-pressed="true"]{ background:var(--danger); border-color:var(--danger); color:#fff; }
-  .suivi-acts .refaire{ background:#b45309; border-color:#b45309; color:#fff; }
-  .suivi-acts button:disabled{ opacity:.5; cursor:default; }
-  .suivi-tag{ font-size:13px; font-weight:700; color:#1e8e3e; padding:0 6px; }
-  @media (max-width:560px){ .suivi-acts{ width:100%; } .suivi-acts button{ flex:1; } }
 
   /* ---------- Toast ---------- */
   /* ---------- Lanceur rapide (⌘K ou taper une lettre) ---------- */
@@ -448,13 +418,6 @@
       <nav class="bento" id="bento" aria-label="Apps"></nav>
     </aside>
     <div class="main">
-      <section class="suivi-box" id="suivi-box" hidden aria-label="Bons à Tirer : réponses des clients">
-        <button type="button" class="suivi-tete" id="suivi-tete" aria-expanded="true" aria-controls="suivi">
-          <span id="suivi-titre">Bons à Tirer</span><small id="suivi-resume"></small>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <ul class="suivi" id="suivi"></ul>
-      </section>
       <div class="tile tile--hub" id="hub" hidden>
         <section class="hub" aria-labelledby="hub-name">
           <nav class="onglets" id="onglets" aria-label="Applis ouvertes" hidden>
@@ -1360,114 +1323,8 @@
   syncWho();
   if (!me()) openWho();
 
-  // ---------- BAT Studio ----------
-  // Les notifications arrivent dans la bulle « À faire » (bulle.js), nulle part ailleurs : elle les relève et sonne.
-  // Le Dashboard ne garde que le ding-dong des réponses de clients (le suivi, plus bas).
-  // En local (essais), « ?bat=http://localhost:3000 » pointe vers un BAT Studio de développement.
-  const BAT = (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && new URLSearchParams(location.search).get('bat')) || 'https://bat-studio.dockbear.workers.dev';
-  let audio = null;
-  // Le son ne part qu'après un premier geste sur la page (règle des navigateurs) : on prépare
-  // l'audio au premier toucher, ensuite il peut sonner tout seul.
-  const debloquer = () => { try { audio ||= new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); } catch (_) {} };
-  addEventListener('pointerdown', debloquer, { passive: true });
-  debloquer();   // certains navigateurs l'autorisent d'emblée (site déjà utilisé) : autant essayer
-  addEventListener('keydown', debloquer);
-  function sonner(){
-    if (!audio || audio.state !== 'running') return;
-    const t0 = audio.currentTime + .02;
-    // Ding-dong, deux fois : s'entend dans l'atelier sans être agressif.
-    [[880, 0], [659, .22], [880, .7], [659, .92]].forEach(([f, d]) => {
-      const o = audio.createOscillator(), g = audio.createGain();
-      o.type = 'sine'; o.frequency.value = f;
-      g.gain.setValueAtTime(0, t0 + d); g.gain.linearRampToValueAtTime(.32, t0 + d + .02); g.gain.exponentialRampToValueAtTime(.001, t0 + d + .6);
-      o.connect(g).connect(audio.destination); o.start(t0 + d); o.stop(t0 + d + .65);
-    });
-  }
-  const quand = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
-  // ---------- Le suivi des Bons à Tirer : une ligne par BAT auquel le client a répondu ----------
-  // Vue de tous. Remarques : « Refaire le BAT » l'ouvre dans BAT Studio ; la ligne part quand le BAT
-  // est renvoyé. Validé : « Payé » pose la bulle dans PRT (cotes à prendre) ; « Non payé » la laisse en haut.
-  const LS_SUIVI = 'olda_suivi_vus';
-  const suiviVus = new Set(store.get(LS_SUIVI) || []);
-  let lignes = [], suiviPremier = true;
-  function ouvrirBat(id){
-    const u = new URL('/', BAT + '/'); u.searchParams.set('projet', id);
-    const p = me(); if (p) u.searchParams.set('poste', p.id);
-    window.open(u.toString(), '_blank', 'noopener');
-  }
-  async function payer(l, paye, b){
-    b.disabled = true;
-    try {
-      const r = await fetch(`${BAT}/api/suivi/${encodeURIComponent(l.id)}/paiement`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paye, qui: me()?.id || '' }) });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(j.error || 'Erreur ' + r.status);
-      if (paye) toast(`${l.pro ? 'En production' : 'Payé'} : la bulle est dans PRT, cotes à prendre.`);
-    } catch (e) { toast(e.message || 'Réseau indisponible, réessayez.'); }
-    finally { b.disabled = false; releverSuivi(); }
-  }
-  // Replié ou déplié, mémorisé sur ce poste ; une réponse neuve d'un client le redéplie.
-  const LS_SUIVI_REPLIE = 'olda_suivi_replie';
-  let suiviReplie = store.get(LS_SUIVI_REPLIE) === true;
-  function replierSuivi(v){
-    suiviReplie = v; store.set(LS_SUIVI_REPLIE, v);
-    $('#suivi').hidden = v; $('#suivi-tete').setAttribute('aria-expanded', String(!v));
-  }
-  $('#suivi-tete').onclick = () => replierSuivi(!suiviReplie);
-  function afficherSuivi(){
-    const ul = $('#suivi');
-    $('#suivi-box').hidden = !lignes.length;
-    replierSuivi(suiviReplie);
-    const nbRem = lignes.filter(l => l.etat !== 'valide').length, nbVal = lignes.length - nbRem;
-    $('#suivi-titre').textContent = `Bons à Tirer · ${lignes.length}`;
-    $('#suivi-resume').textContent = [nbRem && `${nbRem} à refaire`, nbVal && `${nbVal} validé${nbVal > 1 ? 's' : ''}`].filter(Boolean).join(' · ');
-    ul.replaceChildren(...lignes.map(l => {
-      const li = el('li', l.etat), txt = el('div', 'suivi-txt'), b = el('b'), acts = el('div', 'suivi-acts');
-      const payeDeja = l.paiement && typeof l.paiement === 'object';
-      if (l.paiement === 'impaye') li.classList.add('impaye');
-      const ok = l.textiles.filter(t => t.ok), mod = l.textiles.filter(t => !t.ok);
-      const nom = [l.client, l.projet].filter(Boolean).join(' · ') || 'Bon à Tirer';
-      b.textContent = `${nom} · v${l.version} — ${l.etat === 'valide' ? (l.pro ? (l.paiement === 'impaye' ? 'Validé (Pro), pas encore lancé' : 'Validé (Pro)') : (l.paiement === 'impaye' ? 'Validé, non payé' : 'Validé')) : mod.length + (mod.length > 1 ? ' remarques' : ' remarque')}`;
-      txt.append(b);
-      if (mod.length) { const m = el('small', 'mod'); m.textContent = mod.map(t => (t.nom ? t.nom + ' : ' : '') + t.note).join(' · '); txt.append(m); }
-      const info = el('small');
-      info.textContent = [ok.length && mod.length ? `Validé : ${ok.map(t => t.nom).join(', ')}` : '', quand(l.at)].filter(Boolean).join(' · ');
-      txt.append(info);
-      if (mod.length) { const r = el('button', 'refaire'); r.type = 'button'; r.textContent = 'Refaire le BAT'; r.onclick = () => ouvrirBat(l.id); acts.append(r); }
-      if (ok.length && !payeDeja) {
-        const p = el('button', 'paye'); p.type = 'button'; p.textContent = l.pro ? 'En production' : 'Payé'; p.onclick = () => payer(l, true, p);
-        const n = el('button', 'nonpaye'); n.type = 'button'; n.textContent = l.pro ? 'Pas encore' : 'Non payé'; n.setAttribute('aria-pressed', String(l.paiement === 'impaye'));
-        n.onclick = () => payer(l, false, n);
-        acts.append(p, n);
-      }
-      if (payeDeja) { const t = el('span', 'suivi-tag'); t.textContent = l.pro ? 'En production · en PRT' : 'Payé · en PRT'; acts.append(t); }
-      li.append(txt, acts); return li;
-    }));
-  }
-  let suiviEnCours = false, suiviRelevee = 0;
-  async function releverSuivi(){
-    if (suiviEnCours || !navigator.onLine) return;
-    suiviEnCours = true; suiviRelevee = Date.now();
-    try {
-      const r = await fetch(`${BAT}/api/suivi`, { cache: 'no-store' });
-      if (!r.ok) return;
-      const j = await r.json();
-      const vu = JSON.stringify(lignes);
-      lignes = Array.isArray(j.lignes) ? j.lignes : [];
-      // Une réponse neuve d'un client : le ding-dong (pas au premier chargement).
-      const neuves = lignes.filter(l => !suiviVus.has(l.id + l.at));
-      neuves.forEach(l => suiviVus.add(l.id + l.at));
-      if (neuves.length) { store.set(LS_SUIVI, [...suiviVus].slice(-300)); if (!suiviPremier) { sonner(); suiviReplie = false; } }
-      const pareil = !suiviPremier && JSON.stringify(lignes) === vu;
-      suiviPremier = false;
-      if (!pareil) afficherSuivi();   // rien de neuf : on ne repeint pas
-    } catch (_) { /* hors-ligne passager */ }
-    finally { suiviEnCours = false; }
-  }
-
-  // Toutes les 20 s quand le portail est affiché, toutes les minutes sinon.
-  setInterval(() => { if (Date.now() - suiviRelevee > (document.hidden ? 60000 : 20000)) releverSuivi(); }, 5000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) releverSuivi(); });
-  releverSuivi();
+  // Les notifications (BAT, paiements, remarques, PRT…) arrivent dans la bulle « À faire » (bulle.js),
+  // nulle part ailleurs : plus de bandeau en haut du Dashboard (23/11/2026).
 
   // ---------- Toast ----------
   function toast(msg, action, fn){ return window.oldaMessages.toast(msg, action ? { action: { label: action, onClick: fn } } : {}); }
