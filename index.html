@@ -165,11 +165,15 @@
   .onglet-btn .card-icon svg{ width:16px; height:16px; }
   .onglet-btn .card-letter{ font-size:14px; }
   .onglet-btn > span:last-child{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .onglet-x{ flex:none; width:44px; height:44px; margin-left:-10px; display:grid; place-items:center; border:0; border-radius:12px; background:none; color:var(--muted); }
-  .onglet-x > span{ width:26px; height:26px; border-radius:50%; display:grid; place-items:center; transition:background-color .2s, color .2s; }
-  .onglet-x svg{ width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2.4; stroke-linecap:round; }
+  .onglet-x,.onglet-r{ flex:none; width:44px; height:44px; margin-left:-10px; display:grid; place-items:center; border:0; border-radius:12px; background:none; color:var(--muted); }
+  .onglet-r{ margin-right:-6px; }
+  .onglet-x > span,.onglet-r > span{ width:26px; height:26px; border-radius:50%; display:grid; place-items:center; transition:background-color .2s, color .2s; }
+  .onglet-x svg,.onglet-r svg{ width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2.4; stroke-linecap:round; }
+  .onglet.charge .onglet-r svg{ animation:onglet-tourne .8s linear infinite; }
+  @keyframes onglet-tourne{ to{ transform:rotate(360deg); } }
+  @media (hover:hover){ .onglet-r:hover > span{ background:#e9edf0; color:var(--ink); } }
   @media (hover:hover){ .onglet-x:hover > span{ background:#e9edf0; color:var(--ink); } }
-  .onglet-btn:focus-visible,.onglet-x:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:-3px; }
+  .onglet-btn:focus-visible,.onglet-x:focus-visible,.onglet-r:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:-3px; }
   .onglets-acts{ display:flex; align-items:center; gap:2px; flex-shrink:0; }
   .onglets-acts .icon-btn{ color:var(--duck); }
   .hub.app-on .hub-head{ display:none; }   /* l'appli affichée a sa propre barre */
@@ -759,7 +763,7 @@
   const hubTile = $('#hub'), frame = $('#hub-frame'), wide = matchMedia('(min-width:700px)');
   const reduced = matchMedia('(prefers-reduced-motion:reduce)');
   let maxed = false;
-  frame.addEventListener('load', () => { if (frame.src) frame.classList.add('on'); });
+  frame.addEventListener('load', () => { if (frame.src) { frame.classList.add('on'); majOnglets(); } });
   // Le planning dans le cadre annonce « hub-ready » : sa barre reprend alors nouvel onglet + Agrandir,
   // et celle du Dashboard s'efface (une seule barre). Sans réponse, rien ne change.
   let hubReady = false;
@@ -881,11 +885,19 @@
     garderOnglets(); majOnglets();
     (ongletsListe.querySelector('.onglet.on .onglet-btn') || $('#hub-id'))?.focus({ preventScroll: true });
   }
+  // Recharger : l'appli repart de son adresse (le planning aussi), le petit ↻ tourne jusqu'au chargement.
+  function rechargerOnglet(o){
+    const f = o ? o.frame : frame;
+    if (!f) return;
+    f.classList.remove('on');
+    if (o) f.src = o.url; else { hubReady = false; tellHub(); f.src = frame.dataset.src || hubTile.dataset.url; }
+    majOnglets();
+  }
   function cadreDe(o){
     if (!o.frame) {
       const f = document.createElement('iframe');
       f.title = nomDe(o.url); f.allow = 'clipboard-read; clipboard-write; fullscreen; microphone; local-network; loopback-network';
-      f.addEventListener('load', () => f.classList.add('on'));
+      f.addEventListener('load', () => { f.classList.add('on'); majOnglets(); });
       f.src = o.url; hubFrameBox.append(f); o.frame = f;
     }
     return o.frame;
@@ -906,6 +918,16 @@
     b.append(iconEl(s), n);
     b.onclick = () => { if (actif !== id) montrer(id); };
     li.append(b);
+    // L'onglet devant se recharge d'un clic (22/11 : « on doit pouvoir facilement recharger un onglet »)
+    if (on) {
+      const f = o ? o.frame : frame;
+      if (f && !f.classList.contains('on')) li.classList.add('charge');
+      const r = el('button', 'onglet-r'); r.type = 'button';
+      r.setAttribute('aria-label', 'Recharger ' + n.textContent); r.title = 'Recharger';
+      r.innerHTML = '<span>' + SVG('<path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/>') + '</span>';
+      r.onclick = () => rechargerOnglet(o);
+      li.append(r);
+    }
     if (o) {
       const x = el('button', 'onglet-x'); x.type = 'button';
       x.setAttribute('aria-label', 'Fermer ' + n.textContent); x.title = 'Fermer';
