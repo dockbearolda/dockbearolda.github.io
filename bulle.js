@@ -1409,19 +1409,19 @@
     if (!r.ok) throw new Error(j.error || 'Erreur ' + r.status);
     toast('Client prévenu : la commande est aux Archives.');
   }
-  // À RECOMMANDER (22/11/2026) : +5/10/15 ajoute au bon de commande du Stock textile, Vu l'oublie.
+  // À RECOMMANDER (22/11/2026) : +5/10/15 ajoute à la commande Stock OLDA (Commandes en cours du Stock textile), Vu l'oublie.
   // L'un répond, c'est coché chez l'autre (Loïc / Mélina) et retiré du Stock textile.
   async function stockT(n, chemin, corps){
     const r = await fetch(`${BAT}/api/stock/${chemin}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cle: n.stockCle, par: me()?.name || '', ...corps }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || 'Erreur ' + r.status);
-    if (corps.n) toast(`+${corps.n} au bon de commande.`);
+    if (corps.n) toast(`+${corps.n} à la commande Stock OLDA.`);
   }
   async function manqueT(n, reponse){
     const r = await fetch(`${BAT}/api/stock/manque`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bat: n.stockBat, reponse, par: me()?.name || '' }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || 'Erreur ' + r.status);
-    if (reponse === 'commande') toast('Ajouté au bon de commande TopTex.');
+    toast(reponse === 'commande' ? 'Gardée dans les commandes en cours.' : 'Retirée des commandes en cours.');
   }
   // Le texte prêt à coller (le lien du client, le message « commande prête »).
   async function copierT(n){
@@ -1453,9 +1453,9 @@
       // Mélina et Loïc n'ont que ce bouton à toucher (22/11/2026) ; l'un répond, c'est coché chez l'autre.
       case 'presse-fini': return [{ label: 'Client prévenu', cls: 'oui', fn: () => prevenuT(n) }];
       case 'shop-fini': return [{ label: 'Vu', cls: 'oui', fn: () => {} }];
-      // « Ajouter à la commande » : les articles partent dans le bon TopTex, au nom du client.
+      // La commande est déjà « à commander » dans le Stock textile : « Garder » la laisse, « Non » la retire.
       case 'stock-manque': return n.stockBat
-        ? [{ label: 'Ajouter à la commande', cls: 'oui', fn: () => manqueT(n, 'commande') }, { label: 'Non', fn: () => manqueT(n, 'non') }]
+        ? [{ label: 'Garder', cls: 'oui', fn: () => manqueT(n, 'commande') }, { label: 'Non', fn: () => manqueT(n, 'non') }]
         : [];
       case 'stock-bas': return n.stockCle
         ? [5, 10, 15].map(k => ({ label: `+${k}`, cls: k === 10 ? 'oui' : '', fn: () => stockT(n, 'bon', { n: k }) }))
