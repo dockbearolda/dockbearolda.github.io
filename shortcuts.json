@@ -1,5 +1,5 @@
 {
-  "rev": 1795366834172,
+  "rev": 1795402053445,
   "shortcuts": [
     {
       "name": "BAT Studio",
@@ -19,6 +19,13 @@
       "icon": "shirt",
       "color": "menthe",
       "since": 1795221119632
+    },
+    {
+      "name": "Cotes DTF",
+      "url": "https://cotes-dtf.dockbear.workers.dev/",
+      "icon": "ruler",
+      "color": "ardoise",
+      "since": 1795402053445
     },
     {
       "name": "Design",
