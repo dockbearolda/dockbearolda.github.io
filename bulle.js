@@ -277,6 +277,40 @@
   .lire-ok:disabled{ opacity:.4; box-shadow:none; }
   .lire-ok:not(:disabled):active{ transform:scale(.97); }
   .lire-n{ font-size:12.5px; color:var(--muted); min-height:16px; }
+
+  /* ---------- LA RELANCE DU LENDEMAIN : plein écran, on répond ou on laisse une note ---------- */
+  #relance{ --main:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; --encre:#1d2733; --ligne:rgba(74,98,116,.16);
+    width:100%; height:100%; max-width:none; max-height:none; margin:0; border-radius:0; background:#f4f6f8; box-shadow:none; overflow-y:auto; overscroll-behavior:contain; }
+  #relance[open]{ display:block; animation:relanceIn .3s ease-out; }
+  @keyframes relanceIn{ from{ opacity:0; } }
+  #relance::backdrop{ background:#f4f6f8; }
+  .relance{ width:min(560px, 100%); min-height:100%; margin:0 auto; display:flex; flex-direction:column; justify-content:center; gap:16px;
+    padding:calc(24px + env(safe-area-inset-top,0px)) calc(20px + env(safe-area-inset-right,0px)) calc(24px + var(--safe-b)) calc(20px + env(safe-area-inset-left,0px)); }
+  .relance-haut{ display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:28px; }
+  .relance-badge{ display:inline-flex; align-items:center; gap:7px; height:28px; padding:0 12px; border-radius:14px; background:rgba(217,48,37,.1); color:var(--danger); font-size:13px; font-weight:700; }
+  .relance-badge::before{ content:""; width:8px; height:8px; border-radius:50%; background:currentColor; }
+  .relance-n{ font-size:13px; font-weight:600; color:var(--muted); }
+  .relance-t{ font-size:26px; font-weight:750; letter-spacing:-.02em; line-height:1.15; }
+  .relance-s{ margin-top:-8px; font-size:15px; line-height:1.4; color:var(--muted); }
+  .relance-carte{ display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:18px; border-radius:20px; background:#fff;
+    box-shadow:0 0 0 1px rgba(74,98,116,.12), 0 8px 24px rgba(32,41,48,.08); }
+  .relance-q{ font-family:var(--main); font-size:19px; font-weight:650; line-height:1.35; color:var(--encre); overflow-wrap:anywhere; }
+  .relance-projet{ font-size:15px; font-weight:600; line-height:1.35; color:var(--encre); opacity:.75; overflow-wrap:anywhere; }
+  .relance-quand{ font-size:13px; color:var(--muted); }
+  .relance-avant{ align-self:stretch; margin-top:8px; padding:10px 12px; border-radius:12px; background:#f4f6f8; font-size:14px; line-height:1.4; overflow-wrap:anywhere; }
+  .relance-carte .todo-acts{ margin-top:10px; }
+  .relance-ou{ display:flex; align-items:center; gap:12px; font-size:13px; font-weight:600; color:var(--muted); }
+  .relance-ou::before, .relance-ou::after{ content:""; flex:1; height:1px; background:var(--line); }
+  .relance-l{ font-size:15px; font-weight:650; }
+  #relance-txt{ width:100%; min-height:96px; resize:vertical; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:#fff;
+    font-size:16px; line-height:1.4; outline:none; transition:border-color .2s, box-shadow .2s; }
+  #relance-txt:focus{ border-color:var(--duck); box-shadow:0 0 0 3px rgba(74,98,116,.18); }
+  .relance-ok{ min-height:52px; border:0; border-radius:16px; background:var(--duck); color:#fff; font-size:16px; font-weight:700; transition:opacity .2s, transform .2s var(--spring); }
+  .relance-ok:disabled{ opacity:.4; cursor:default; }
+  .relance-ok:not(:disabled):active{ transform:scale(.97); }
+  .relance-ok:focus-visible{ outline:3px solid rgba(74,98,116,.4); outline-offset:2px; }
+  @media (hover:hover){ .relance-ok:not(:disabled):hover{ background:var(--duck-hover); } }
+  @media (prefers-reduced-motion:reduce){ #relance[open]{ animation:none; } }
   .chat-b .vu{ font-weight:700; opacity:1; }
 
   /* ---------- La to do list : un bloc-notes à soi, coché ici, rayé partout ---------- */
@@ -341,6 +375,8 @@
   .todo-projet{ max-width:100%; font-size:13.5px; font-weight:600; line-height:1.3; color:var(--encre); opacity:.75; overflow-wrap:anywhere;
     display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
   .todo-i.fait .todo-projet{ opacity:.45; }
+  /* La note d'information laissée à la relance du matin */
+  .todo-note{ max-width:100%; margin-top:2px; padding:6px 9px; border-radius:9px; background:rgba(74,98,116,.08); font-size:13px; line-height:1.35; color:var(--encre); overflow-wrap:anywhere; }
   .todo-acts{ display:flex; flex-wrap:wrap; gap:6px; width:100%; margin-top:6px; }
   .todo-act{ flex:1 1 0; height:44px; padding:0 12px; border:1px solid var(--ligne); border-radius:12px; background:#fff; color:var(--encre);
     font-family:var(--main); font-size:14px; font-weight:700; line-height:1; white-space:nowrap; cursor:pointer;
@@ -504,6 +540,24 @@
     <div class="lire-n" id="lire-n"></div>
   </div>
 </dialog>
+<dialog id="relance" aria-labelledby="relance-t" aria-describedby="relance-q">
+  <form class="relance" id="relance-form" autocomplete="off">
+    <div class="relance-haut"><span class="relance-badge" id="relance-depuis"></span><span class="relance-n" id="relance-n"></span></div>
+    <h2 class="relance-t" id="relance-t">Restée sans réponse</h2>
+    <p class="relance-s">Réponds, ou dis où ça en est. Tu continues ensuite.</p>
+    <div class="relance-carte">
+      <p class="relance-q" id="relance-q"></p>
+      <p class="relance-projet" id="relance-projet" hidden></p>
+      <time class="relance-quand" id="relance-quand"></time>
+      <p class="relance-avant" id="relance-avant" hidden></p>
+      <div class="todo-acts" id="relance-acts"></div>
+    </div>
+    <div class="relance-ou">ou</div>
+    <label class="relance-l" for="relance-txt">Pas encore possible ? Laisse une note</label>
+    <textarea id="relance-txt" rows="3" maxlength="500" placeholder="Ex. : virement attendu jeudi, le client rappelle demain…"></textarea>
+    <button type="submit" class="relance-ok" id="relance-ok" disabled>Envoyer la note</button>
+  </form>
+</dialog>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="info" id="info" aria-hidden="true"></div>`;
@@ -518,8 +572,11 @@
   let toastTimer;
   // Le toast commun (messages.js) quand l'appli le charge ; sinon celui de la bulle, au même dessin.
   function toast(msg){
-    if (window.oldaMessages) return window.oldaMessages.toast(msg, { ms: 3500 });
-    const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+    // Une fenêtre qui s'impose (message urgent, relance) couvre tout : le toast passe dedans.
+    const modale = [...root.querySelectorAll('dialog')].reverse().find(d => d.open);
+    if (window.oldaMessages && !modale) return window.oldaMessages.toast(msg, { ms: 3500 });
+    const t = $('#toast'), ici = modale || root; if (t.parentNode !== ici) ici.append(t);
+    t.textContent = msg; t.classList.add('show');
     clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
   }
   // Le son ne part qu'après un premier geste sur la page (règle des navigateurs).
@@ -1092,7 +1149,7 @@
   function aLire(){
     const file = enAttenteDeMoi();
     if (lireCourant && !file.some(m => m.id === lireCourant.id)) lireCourant = null;
-    if (!file.length) { if (lireDlg.open) lireDlg.close(); clearInterval(lireDing); lireDing = null; document.title = titreAvant; return; }
+    if (!file.length) { if (lireDlg.open) lireDlg.close(); clearInterval(lireDing); lireDing = null; document.title = titreAvant; setTimeout(relancer); return; }
     $('#lire-n').textContent = file.length > 1 ? `Encore ${file.length - 1} message${file.length > 2 ? 's' : ''} après celui-ci` : '';
     if (lireCourant) return;
     const m = lireCourant = file[0], de = profilDe(m.de);
@@ -1352,7 +1409,7 @@
     $('#todo-c').textContent = n ? `${n} à faire` : '';
     todoOrb.setAttribute('aria-label', n ? `Ma to do list : ${n} à faire` : 'Ouvrir ma to do list');
   }
-  function ligneT({ texte, projet, quand, qui, fait, cocher, ouvrir, suppr, actions }){
+  function ligneT({ texte, projet, quand, qui, fait, cocher, ouvrir, suppr, actions, note }){
     const li = el('li', 'todo-i' + (fait ? ' fait' : ''));
     const c = el('button', 'todo-cc'); c.type = 'button'; c.setAttribute('role', 'checkbox'); c.setAttribute('aria-checked', String(!!fait));
     c.setAttribute('aria-label', projet ? `${texte} · ${projet}` : texte); c.innerHTML = SVG('<circle cx="12" cy="12" r="8.5"/><path class="v" d="M7.5 12.5l3 3 6-7"/>');
@@ -1362,6 +1419,7 @@
     if (projet) { const pj = el('span', 'todo-projet'); pj.textContent = projet; pj.title = projet; corps.append(pj); }
     // Reçue quand : « Aujourd’hui à 14:32 », « Hier à 09:10 », « samedi 21 novembre à 18:05 ».
     if (quand && !isNaN(Date.parse(quand))) { const q = el('time', 'todo-quand'); q.dateTime = quand; q.textContent = `${qui ? qui + ' · ' : ''}${jour(quand)} à ${heure(quand)}`; corps.append(q); }
+    if (note) { const nt = el('span', 'todo-note'); nt.textContent = `Ta note : ${note}`; corps.append(nt); }
     if (actions?.length) { const a = el('div', 'todo-acts'); a.append(...actions); corps.append(a); }
     li.append(c, corps);
     if (ouvrir) { const o = el('button', 'todo-ic'); o.type = 'button'; o.title = 'Ouvrir'; o.setAttribute('aria-label', 'Ouvrir : ' + texte); o.innerHTML = SVG('<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'); o.onclick = ouvrir; li.append(o); }
@@ -1373,7 +1431,7 @@
     const out = [];
     for (const n of notifsVisibles()) {
       const cocher = !n.lu ? () => cocherNotif(n) : revenues.has(n.id) ? () => rayerNotif(n) : null;
-      const li = ligneT({ texte: ligneNotif(n), projet: projetNotif(n), quand: n.at, fait: !!n.lu, cocher, actions: boutonsNotif(n) });
+      const li = ligneT({ texte: ligneNotif(n), projet: projetNotif(n), quand: n.at, fait: !!n.lu, cocher, actions: boutonsNotif(n), note: !n.lu && n.note?.texte });
       li.dataset.id = n.id;
       if (partantes.has(n.id)) li.classList.add('part');
       const entier = ligneNotif(n, false);
@@ -1596,6 +1654,96 @@
     if (p && !enPause(p.id)) sonner();
   }
 
+  // ---------- LA RELANCE DU LENDEMAIN (24/11/2026, Charlie) ----------
+  // Une notification restée sans réponse la veille s'impose en plein écran dès l'ouverture, le matin :
+  // on y répond (ses boutons, comme dans « À faire »), ou on laisse une note d'information
+  // (« virement attendu jeudi »), gardée chez BAT Studio sur la notification, qui reste à faire.
+  // Pas de fermeture (ni Échap, ni clic à côté). Une note vaut pour la journée : le lendemain, si
+  // c'est toujours en suspens, ça revient. Ne pas déranger et les messages urgents passent avant.
+  const LS_RELANCE = 'olda_relance';
+  const relDlg = $('#relance'), relTxt = $('#relance-txt'), relOk = $('#relance-ok');
+  let relCourant = null;
+  const debutJour = iso => { const d = iso ? new Date(iso) : new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  // Les notes du jour, sur l'appareil aussi : un réseau absent ne fait pas revenir la relance.
+  // { qui, jour, notes: { id: { texte, at, envoyee } } }
+  function notesLocales(){
+    const s = store.get(LS_RELANCE), p = me();
+    return s && s.qui === p?.id && s.jour === debutJour() && s.notes && typeof s.notes === 'object' ? s.notes : {};
+  }
+  const garderNotes = notes => store.set(LS_RELANCE, { qui: me()?.id, jour: debutJour(), notes });
+  const noteDuJour = n => (n.note && Date.parse(n.note.at) >= debutJour()) || !!notesLocales()[n.id];
+  // Le point des retards du matin est remplacé par celui du lendemain : l'ancien ne se relance pas.
+  const perimee = n => n.type === 'retards' && notifsT.some(x => x.type === 'retards' && Date.parse(x.at) > Date.parse(n.at));
+  function aRelancer(){
+    const p = me(); if (!p || enPause(p.id)) return [];
+    const auj = debutJour();
+    return notifsT.filter(n => !n.lu && Date.parse(n.at) < auj && !noteDuJour(n) && !perimee(n))
+      .sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+  }
+  // Après une relève : la note locale reste visible, et celle que le réseau n'a pas prise repart.
+  function reprendreNotes(){
+    const notes = notesLocales(), p = me();
+    for (const [id, nt] of Object.entries(notes)) {
+      const n = notifsT.find(x => x.id === id); if (!n) continue;
+      if (!n.note || Date.parse(n.note.at) < Date.parse(nt.at)) n.note = { texte: nt.texte, par: p?.id, at: nt.at };
+      if (!nt.envoyee) envoyerNote(id, nt.texte);
+    }
+  }
+  async function envoyerNote(id, texte){
+    const p = me(); if (!p) return false;
+    const r = await fetch(`${BAT}/api/notifs/${encodeURIComponent(id)}/note?qui=${encodeURIComponent(p.id)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texte }) }).catch(() => null);
+    // 404 : la notification n'existe plus chez BAT Studio, inutile d'insister.
+    if (!r || (!r.ok && r.status !== 404)) return false;
+    const notes = notesLocales(); if (notes[id]) { notes[id].envoyee = true; garderNotes(notes); }
+    return true;
+  }
+  function relancer(){
+    const file = aRelancer();
+    if (relCourant && !file.some(n => n.id === relCourant.id)) relCourant = null;   // réglée ailleurs entre-temps
+    if (!file.length) { if (relDlg.open) relDlg.close(); return; }
+    $('#relance-n').textContent = file.length > 1 ? `Encore ${file.length - 1} après celle-ci` : '';
+    if (relCourant) return;   // on ne touche pas à la note en cours de frappe
+    if (lireDlg.open) return;   // un message urgent d'abord ; aLire nous rappelle ensuite
+    const n = relCourant = file[0];
+    const j = Math.round((debutJour() - debutJour(n.at)) / 864e5);
+    $('#relance-depuis').textContent = j <= 1 ? 'Depuis hier' : `Depuis ${j} jours`;
+    $('#relance-q').textContent = ligneNotif(n, false);
+    const pj = projetNotif(n), pjEl = $('#relance-projet'); pjEl.textContent = pj; pjEl.hidden = !pj;
+    const q = $('#relance-quand'); q.dateTime = n.at;
+    q.textContent = `Reçue ${j === 1 ? 'hier' : jour(n.at)} à ${heure(n.at)}`;
+    const av = $('#relance-avant'); av.hidden = !n.note?.texte;
+    if (n.note?.texte) av.textContent = `Ta note ${jour(n.note.at) === 'Hier' ? 'd’hier' : `du ${jour(n.note.at)}`} : ${n.note.texte}`;
+    const liste = reponsesNotif(n);
+    $('#relance-acts').replaceChildren(...(liste.length ? liste : [{ label: 'C’est fait', cls: 'oui', fn: () => {} }]).map(a => {
+      const b = el('button', 'todo-act ' + (a.cls || '')); b.type = 'button'; b.textContent = b.title = a.label;
+      b.onclick = async () => {
+        b.disabled = true;
+        try { await a.fn(); cocherNotif(n); relCourant = null; relancer(); }
+        catch (e) { toast(e.message || 'Réseau indisponible, réessaie.'); b.disabled = false; }
+      };
+      return b;
+    }));
+    relTxt.value = ''; relOk.disabled = true;
+    if (!relDlg.open) { relDlg.showModal(); sonner(); }
+    relDlg.scrollTop = 0;
+    $('#relance-acts button')?.focus({ preventScroll: true });
+  }
+  relDlg.addEventListener('cancel', e => e.preventDefault());
+  // Chrome ferme quand même au second Échap : on la remet aussitôt.
+  relDlg.addEventListener('close', () => { if (aRelancer().length) { relCourant = null; requestAnimationFrame(relancer); } });
+  relTxt.addEventListener('input', () => { relOk.disabled = relTxt.value.trim().length < 2; });
+  relTxt.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); $('#relance-form').requestSubmit(); } });
+  $('#relance-form').onsubmit = e => {
+    e.preventDefault();
+    const n = relCourant, texte = relTxt.value.replace(/\s+/g, ' ').trim().slice(0, 500);
+    if (!n || texte.length < 2) return;
+    const at = new Date().toISOString();
+    const notes = notesLocales(); notes[n.id] = { texte, at, envoyee: false }; garderNotes(notes);
+    n.note = { texte, par: me()?.id, at };
+    relCourant = null; renderTodo(); relancer();
+    envoyerNote(n.id, texte).then(ok => toast(ok ? 'Note envoyée. Elle reste dans « À faire ».' : 'Note gardée sur cet appareil : elle partira dès que le réseau revient.'));
+  };
+
   // --- Relever : à l'ouverture, au retour sur l'onglet, et chaque demi-minute ---
   let releveT = false;
   async function relireT(){
@@ -1617,7 +1765,7 @@
       if (rn?.ok) {
         const { notifs } = await rn.json().catch(() => ({}));
         if (Array.isArray(notifs)) {
-          notifsT = notifs; nouvellesNotifs();
+          notifsT = notifs; reprendreNotes(); nouvellesNotifs();
           // Revenue mais remise « à faire » ou oubliée chez BAT Studio : on n'en garde plus trace.
           const lues = new Set(notifs.filter(n => n.lu).map(n => n.id));
           revenues = new Set([...revenues].filter(id => lues.has(id)));
@@ -1625,7 +1773,7 @@
           garderRev();
         }
       }
-      renderTodo();
+      renderTodo(); relancer();
     } finally { releveT = false; }
   }
   setInterval(() => { if (!document.hidden) { relireT(); relireM(); } }, 30000);
@@ -1635,7 +1783,7 @@
   function todoRelancer(){
     const p = me(), c = store.get(LS_TODO);
     taches = c && c.qui === p?.id && Array.isArray(c.items) ? c.items : [];
-    notifsT = []; partantes = new Set(); lireRev();
+    notifsT = []; partantes = new Set(); lireRev(); relCourant = null; relancer();
     todo.classList.toggle('is-min', !todoPos.ouvert);
     appliquerCaches();
     if (p) { renderTodo(); relireT(); }
