@@ -337,6 +337,10 @@
      largeur), et « fait » dans la même case, en vert. Jamais un mot coupé ni qui déborde : un
      bouton seul prend la ligne, deux qui ne tiennent pas côte à côte passent l'un sous l'autre. */
   .todo-quand{ font-size:12.5px; line-height:1.3; color:var(--muted); }
+  /* LE PROJET sous la notification (24/11/2026) : en entier, sur deux lignes au plus ; le nom complet au survol. */
+  .todo-projet{ max-width:100%; font-size:13.5px; font-weight:600; line-height:1.3; color:var(--encre); opacity:.75; overflow-wrap:anywhere;
+    display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+  .todo-i.fait .todo-projet{ opacity:.45; }
   .todo-acts{ display:flex; flex-wrap:wrap; gap:6px; width:100%; margin-top:6px; }
   .todo-act{ flex:1 1 0; height:44px; padding:0 12px; border:1px solid var(--ligne); border-radius:12px; background:#fff; color:var(--encre);
     font-family:var(--main); font-size:14px; font-weight:700; line-height:1; white-space:nowrap; cursor:pointer;
@@ -1305,6 +1309,24 @@
     }
   }
 
+  // LE PROJET DE LA NOTIFICATION (24/11/2026, Charlie : un client a souvent plusieurs projets en cours).
+  // BAT Studio et le planning l'envoient (`projet`) ; une notification d'avant le dit dans son titre
+  // (« CLIENT · Projet : … »). Rien quand la ligne le dit déjà (« … a validé sa commande mix »).
+  function projetNotif(n){
+    const t = String(n.titre || ''), x = String(n.texte || '');
+    let p = String(n.projet || '').trim();
+    if (!p && n.type === 'prt-shop') p = t.match(/« ([^»]+) »/)?.[1] || '';
+    else if (!p && n.type === 'retards') p = +(t.match(/^\d+/)?.[0] || 0) === 1 ? (x.match(/^(.*?) \([^)]*\)$/)?.[1] || '').split(' · ').slice(1).join(' · ') : '';
+    else if (!p && !/^(stock-|shop-fini)/.test(n.type)) {
+      const avant = t.replace(/^Rappel — /, '').split(' : ')[0], i = avant.indexOf(' · ');
+      if (i > 0) p = avant.slice(i + 3);
+    }
+    p = p.replace(/\s*\(Pro\)$/, '').replace(/^Réassort boutique\s*·\s*/i, '').trim();
+    return p && !ligneNotif(n, false).toLocaleLowerCase('fr').includes(p.toLocaleLowerCase('fr')) ? p : '';
+  }
+  // La ligne et son projet, d'un trait (l'info au survol de la bulle, la case à cocher lue à voix haute).
+  const ligneEtProjet = n => { const p = projetNotif(n); return p ? `${ligneNotif(n)} · ${p}` : ligneNotif(n); };
+
   // --- Afficher ---
   const notifsVisibles = () => notifsT.filter(n => !n.lu || revenues.has(n.id) || partantes.has(n.id));
   // Les 5 dernières rayées (ici ou ailleurs), la plus récente d'abord ; celles déjà revenues comptent.
@@ -1318,13 +1340,14 @@
     $('#todo-c').textContent = n ? `${n} à faire` : '';
     todoOrb.setAttribute('aria-label', n ? `Ma to do list : ${n} à faire` : 'Ouvrir ma to do list');
   }
-  function ligneT({ texte, quand, qui, fait, cocher, ouvrir, suppr, actions }){
+  function ligneT({ texte, projet, quand, qui, fait, cocher, ouvrir, suppr, actions }){
     const li = el('li', 'todo-i' + (fait ? ' fait' : ''));
     const c = el('button', 'todo-cc'); c.type = 'button'; c.setAttribute('role', 'checkbox'); c.setAttribute('aria-checked', String(!!fait));
-    c.setAttribute('aria-label', texte); c.innerHTML = SVG('<circle cx="12" cy="12" r="8.5"/><path class="v" d="M7.5 12.5l3 3 6-7"/>');
+    c.setAttribute('aria-label', projet ? `${texte} · ${projet}` : texte); c.innerHTML = SVG('<circle cx="12" cy="12" r="8.5"/><path class="v" d="M7.5 12.5l3 3 6-7"/>');
     if (cocher) c.onclick = cocher; else c.disabled = true;
     const corps = el('div', 'todo-corps');
     const tx = el('span', 'todo-tx'), sp = el('span'); sp.textContent = texte; tx.append(sp); corps.append(tx);
+    if (projet) { const pj = el('span', 'todo-projet'); pj.textContent = projet; pj.title = projet; corps.append(pj); }
     // Reçue quand : « Aujourd’hui à 14:32 », « Hier à 09:10 », « samedi 21 novembre à 18:05 ».
     if (quand && !isNaN(Date.parse(quand))) { const q = el('time', 'todo-quand'); q.dateTime = quand; q.textContent = `${qui ? qui + ' · ' : ''}${jour(quand)} à ${heure(quand)}`; corps.append(q); }
     if (actions?.length) { const a = el('div', 'todo-acts'); a.append(...actions); corps.append(a); }
@@ -1338,7 +1361,7 @@
     const out = [];
     for (const n of notifsVisibles()) {
       const cocher = !n.lu ? () => cocherNotif(n) : revenues.has(n.id) ? () => rayerNotif(n) : null;
-      const li = ligneT({ texte: ligneNotif(n), quand: n.at, fait: !!n.lu, cocher, actions: boutonsNotif(n) });
+      const li = ligneT({ texte: ligneNotif(n), projet: projetNotif(n), quand: n.at, fait: !!n.lu, cocher, actions: boutonsNotif(n) });
       li.dataset.id = n.id;
       if (partantes.has(n.id)) li.classList.add('part');
       const entier = ligneNotif(n, false);
@@ -1980,7 +2003,7 @@
   }
   function infoTodo(){
     if (!me()) return null;
-    const tout = [...notifsT.filter(n => !n.lu).map(n => ligneNotif(n)), ...taches.filter(t => !t.fait).map(t => t.texte)], n = tout.length;
+    const tout = [...notifsT.filter(n => !n.lu).map(ligneEtProjet), ...taches.filter(t => !t.fait).map(t => t.texte)], n = tout.length;
     if (!n) return ['To do list · rien à faire'];
     return [`${n} à faire`, ...tout.slice(0, INFO_MAX).map(x => '• ' + extrait(x, 70)), ...(n > INFO_MAX ? [`+ ${pluriel(n - INFO_MAX, 'autre')}`] : [])];
   }
