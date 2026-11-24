@@ -546,6 +546,20 @@
   const chat = $('#chat'), chatOrb = $('#chat-orb'), chatPanel = $('#chat-panel'), chatList = $('#chat-list');
   const chatTxt = $('#chat-txt'), chatSend = $('#chat-send'), chatEtat = $('#chat-etat');
   const ORB = 56, MARGE = 12, AIMANT = 40;   // à moins de 40 px d'un bord, elle s'y colle
+  // BAS À DROITE (24/11/2026, Charlie : « les 3 bulles par défaut en bas à droite, toujours déplaçables ») :
+  // la première fois, discussion, À faire puis Tâches se rangent de droite à gauche le long du bas ;
+  // plus de place à gauche, la suivante monte au-dessus. Ensuite chacune reste où on la lâche.
+  // La place du premier jour se prend bulle visible (vraie taille) et se garde tout de suite : bouger l'une ne déplace pas les autres.
+  // PLACE_V : une place gardée d'avant cette règle est oubliée une fois (taille et ouverture restent).
+  const PLACE_V = 2, ECART = 16;
+  const lirePos = (cle, base) => { const s = store.get(cle) || {}; if (s.v !== PLACE_V) { delete s.x; delete s.y; } return Object.assign(base, s, { v: PLACE_V }); };
+  // La première laisse 54 px sous sa pastille (les avatars en ligne sous la discussion), 24 px sous un panneau ;
+  // les suivantes s'alignent sur le bas de leur voisine.
+  function enBasADroite(voisin, w, h){
+    if (!voisin) return { x: innerWidth - w - 24, y: innerHeight - h - (h <= ORB ? 54 : 24) };
+    const x = voisin.x - ECART - w;
+    return x >= MARGE ? { x, y: voisin.y + voisin.h - h } : { x: innerWidth - w - 24, y: voisin.y - ECART - h };
+  }
   let msgs = [], chatWs = null, chatEssais = 0, chatSonde = null, chatRetry = null, chatMode = 'ws';
   let presents = [], tapeurs = new Map(), derniereTape = 0, chatAffiches = new Set(), chatChoix = null;
   let pauses = {}, chatUrgent = false;   // qui est en « Ne pas déranger » (jusqu'à quand) ; le prochain message est-il urgent ?
@@ -562,16 +576,17 @@
   { const c = store.get(LS_CHAT); if (c && c.qui === me()?.id && Array.isArray(c.msgs)) msgs = c.msgs; }
 
   // --- Place à l'écran : une position (coin haut-gauche), bornée à la fenêtre ---
-  const chatPos = Object.assign({ x: null, y: null, ouvert: DASHBOARD }, store.get(LS_CHAT_POS) || {});
+  const chatPos = lirePos(LS_CHAT_POS, { x: null, y: null, ouvert: DASHBOARD });
   const taille = () => chatPos.ouvert ? { w: chatPanel.offsetWidth || 372, h: chatPanel.offsetHeight || 520 } : { w: ORB, h: ORB };
   function borner(){
     const { w, h } = taille(), vw = innerWidth, vh = innerHeight;
-    if (chatPos.x == null) { if (vw < 200 || vh < 200) return; chatPos.x = vw - w - 24; chatPos.y = vh - h - 92; }   // fenêtre pas encore dimensionnée : on attend le resize
+    if (chatPos.x == null) { if (chat.hidden || vw < 200 || vh < 200) return; Object.assign(chatPos, enBasADroite(null, w, h)); store.set(LS_CHAT_POS, chatPos); }   // fenêtre pas encore dimensionnée : on attend le resize
     chatPos.x = Math.min(Math.max(MARGE, chatPos.x), Math.max(MARGE, vw - w - MARGE));
     chatPos.y = Math.min(Math.max(MARGE, chatPos.y), Math.max(MARGE, vh - h - MARGE));
   }
   function placer(){ borner(); chat.style.transform = `translate3d(${Math.round(chatPos.x)}px,${Math.round(chatPos.y)}px,0)`; }
   const garderPos = () => store.set(LS_CHAT_POS, chatPos);
+  const rectChat = () => !chat.hidden && chatPos.x != null ? { x: chatPos.x, y: chatPos.y, ...taille() } : null;
   // Ouvrir / réduire : le panneau pousse vers le milieu de l'écran depuis la pastille, et inversement.
   function basculer(ouvrir){
     if (ouvrir === chatPos.ouvert) return;
@@ -1157,8 +1172,8 @@
   const todo = $('#todo'), todoOrb = $('#todo-orb'), todoPanel = $('#todo-panel'), todoList = $('#todo-list'), todoTxt = $('#todo-txt');
   const ORB_T = 56, BAT_ORIGINE = (() => { try { return new URL(BAT).origin; } catch (_) { return ''; } })();
   const caches = Object.assign({ todo: false, chat: false, mis: false }, store.get(LS_CACHES) || {});
-  // Ouverte d'office sur le Dashboard, sauf au téléphone (elle couvrirait la discussion).
-  const todoPos = Object.assign({ x: null, y: null, ouvert: DASHBOARD && innerWidth >= 720 }, store.get(LS_TODO_POS) || {});
+  // Ouverte d'office sur le Dashboard quand elle tient à gauche de la discussion ouverte.
+  const todoPos = lirePos(LS_TODO_POS, { x: null, y: null, ouvert: DASHBOARD && innerWidth >= 960 });
   const todoVus = new Set(store.get(LS_TODO_VUS) || []);
   let taches = [], notifsT = [], todoMinuterie = null, rayes = new Set();
   // RAYÉE = PARTIE, CTRL Z LA RAMÈNE (22/11/2026) : une notification cochée s'en va après son trait.
@@ -1177,16 +1192,13 @@
   const tailleT = () => todoPos.ouvert ? { w: todoPanel.offsetWidth || 340, h: todoPanel.offsetHeight || 480 } : { w: ORB_T, h: ORB_T };
   function bornerT(){
     const { w, h } = tailleT(), vw = innerWidth, vh = innerHeight;
-    if (todoPos.x == null) {
-      if (vw < 200 || vh < 200) return;
-      // Le Dashboard l'ouvre en bas à gauche ; ailleurs, la pastille se pose au-dessus de celle de la discussion.
-      if (DASHBOARD) { todoPos.x = 24; todoPos.y = vh - h - 24; } else { todoPos.x = vw - w - 28; todoPos.y = vh - ORB - 92 - h - 18; }
-    }
+    if (todoPos.x == null) { if (todo.hidden || vw < 200 || vh < 200) return; Object.assign(todoPos, enBasADroite(rectChat(), w, h)); store.set(LS_TODO_POS, todoPos); }   // à gauche de la discussion
     todoPos.x = Math.min(Math.max(MARGE, todoPos.x), Math.max(MARGE, vw - w - MARGE));
     todoPos.y = Math.min(Math.max(MARGE, todoPos.y), Math.max(MARGE, vh - h - MARGE));
   }
   function placerT(){ bornerT(); todo.style.transform = `translate3d(${Math.round(todoPos.x)}px,${Math.round(todoPos.y)}px,0)`; }
   const garderPosT = () => store.set(LS_TODO_POS, todoPos);
+  const rectTodo = () => !todo.hidden && todoPos.x != null ? { x: todoPos.x, y: todoPos.y, ...tailleT() } : null;
   function basculerT(ouvrir){
     if (ouvrir === todoPos.ouvert) return;
     const vw = innerWidth, vh = innerHeight;
@@ -1633,12 +1645,12 @@
   // ---------- Une bulle flottante : pastille ⇄ panneau, déplacée au doigt, aimantée aux bords, place gardée ----------
   // Le même geste que la discussion et la to do list. defaut({ w, h }) dit où la poser la première fois.
   function flottante({ boite, orb, panel, tete, cle, ouvert, defaut, auOuvrir, auBasculer }){
-    const pos = Object.assign({ x: null, y: null, ouvert }, store.get(cle) || {});
+    const pos = lirePos(cle, { x: null, y: null, ouvert });
     const taille = () => pos.ouvert ? { w: panel.offsetWidth || 340, h: panel.offsetHeight || 480 } : { w: ORB, h: ORB };
     const f = { pos, vientDeGlisser: false, glisse: null };
     function borner(){
       const { w, h } = taille(), vw = innerWidth, vh = innerHeight;
-      if (pos.x == null) { if (vw < 200 || vh < 200) return; Object.assign(pos, defaut({ w, h })); }
+      if (pos.x == null) { if (boite.hidden || vw < 200 || vh < 200) return; Object.assign(pos, defaut({ w, h })); store.set(cle, pos); }
       pos.x = Math.min(Math.max(MARGE, pos.x), Math.max(MARGE, vw - w - MARGE));
       pos.y = Math.min(Math.max(MARGE, pos.y), Math.max(MARGE, vh - h - MARGE));
     }
@@ -1718,10 +1730,8 @@
   const misNom = id => profilDe(id)?.name || '?';
   const misF = flottante({
     boite: mis, orb: misOrb, panel: $('#mis-panel'), tete: $('#mis-head'), cle: LS_MIS_POS, ouvert: false,
-    // La première fois : à côté de la to do list sur le Dashboard, au-dessus d'elle ailleurs.
-    defaut: () => DASHBOARD
-      ? { x: 24 + (todoPos.ouvert ? (todoPanel.offsetWidth || 340) : ORB) + 16, y: innerHeight - ORB - 24 }
-      : { x: innerWidth - ORB - 28, y: innerHeight - ORB - 92 - 2 * (ORB + 18) },
+    // La première fois : à gauche de la to do list (ou de la discussion si elle est cachée).
+    defaut: ({ w, h }) => enBasADroite(rectTodo() || rectChat(), w, h),
     auOuvrir: () => { devant(mis); misOrb.classList.remove('has-new'); voirMis(); relireM(); if (chef() && matchMedia('(hover:hover)').matches) misTxt.focus({ preventScroll: true }); },
     auBasculer: () => majCompteM(),
   });
@@ -1939,9 +1949,10 @@
   }
 
   function chatRelancer(){
-    const p = me(); chat.classList.toggle('sans-nom', !p); todoRelancer();
+    const p = me(); chat.classList.toggle('sans-nom', !p);
+    chat.classList.toggle('is-min', !chatPos.ouvert);   // avant todoRelancer : la discussion se mesure ouverte ou en pastille pour poser les autres à côté
+    todoRelancer();
     if (!p) { if (chatWs) { chatWs.onclose = null; chatWs.close(); chatWs = null; } clearInterval(chatSonde); chatSonde = null; renderQui(); placer(); return; }
-    chat.classList.toggle('is-min', !chatPos.ouvert);
     // Un autre prénom au poste : on repart de sa conversation à lui (ses messages privés ne sont pas ceux d'avant).
     const c = store.get(LS_CHAT); msgs = c && c.qui === p.id && Array.isArray(c.msgs) ? c.msgs : [];
     chatPour = 'tous'; renderPour(); modeSaisie();
