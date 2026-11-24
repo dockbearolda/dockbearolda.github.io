@@ -49,7 +49,7 @@
   const root = hote.attachShadow({ mode: 'open' });
   root.innerHTML = `<style>
   :host{ all:initial; position:fixed; left:0; top:0; width:0; height:0; z-index:2147483000; }
-  .chat, .todo, .ctx, .rappel, dialog, .toast{
+  .chat, .todo, .ctx, .rappel, dialog, .toast, .info{
     --duck:#4A6274; --duck-hover:#42596A; --duck-focus:#6B8191;
     --ink:#202930; --muted:#5b6b78; --line:#d6dde3; --danger:#d93025;
     --spring:cubic-bezier(.34,1.56,.64,1); --safe-b:env(safe-area-inset-bottom,0px);
@@ -373,6 +373,14 @@
   .rappel:hover i, .rappel:focus-visible i{ transform:scale(1.4); background:var(--duck); }
   .rappel.neuf i{ background:var(--danger); }
   @media (prefers-reduced-motion:reduce){ .todo-orb{ transition:none; } .todo-panel, .todo-orb.has-new::before, .todo-i.raye .todo-tx > span, .todo-i.raye .todo-cc .v, .todo-i.part, .todo-i.revient, .ctx{ animation:none; } }
+  /* ---------- L'info au survol : presque tout de suite, et à jour en direct ---------- */
+  .info{ position:fixed; z-index:70; left:0; top:0; max-width:min(320px, calc(100vw - 16px)); padding:8px 12px; border-radius:12px;
+    background:var(--ink); color:#fff; font-size:13.5px; font-weight:500; line-height:1.4; overflow-wrap:anywhere;
+    box-shadow:0 10px 28px rgba(32,41,48,.28); pointer-events:none; opacity:0; transition:opacity .1s; }
+  .info.on{ opacity:1; }
+  .info b{ display:block; font-weight:700; }
+  .info span{ display:block; color:rgba(255,255,255,.8); }
+  @media (prefers-reduced-motion:reduce){ .info{ transition:none; } }
 </style>
 <div class="chat is-min" id="chat" hidden>
   <button type="button" class="chat-orb" id="chat-orb" aria-label="Ouvrir la discussion de l'équipe">
@@ -452,7 +460,8 @@
   </div>
 </dialog>
 
-<div class="toast" id="toast" role="status" aria-live="polite"></div>`;
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="info" id="info" aria-hidden="true"></div>`;
   const $ = s => root.querySelector(s);
   const el = (tag, cls) => { const n = document.createElement(tag); if (cls) n.className = cls; return n; };
   const SVG = inner => `<svg viewBox="0 0 24 24" aria-hidden="true">${inner}</svg>`;
@@ -1638,6 +1647,100 @@
     chatList.replaceChildren(t, s, g);
   }
   function oublierQui(){ store.del(LS_WHO); store.del('bat.poste'); chatRelancer(); }
+
+  // ---------- L'info au survol (24/11/2026, Charlie : « qu'elle s'affiche pratiquement instantanément ») ----------
+  // L'infobulle du navigateur (title) attend ~1 s. Ici 0,15 s : assez pour ne pas clignoter quand la souris ne
+  // fait que passer, et d'une bulle à l'autre elle suit tout de suite. Sur les deux pastilles, l'état en direct
+  // (qui m'a écrit et quoi, qui est là, ce qui attend dans la to do list) ; il se refait s'il change sous la souris.
+  // Tous les title de la bulle passent par elle (gardés en aria-description pour les lecteurs d'écran).
+  const info = $('#info'), INFO_DELAI = 150, INFO_CHAUD = 500, INFO_MAX = 5;
+  const INFO_SEL = '#chat-orb, #todo-orb, [data-info]';
+  const survol = matchMedia('(hover:hover)');
+  let infoCible = null, infoTempo = null, infoFin = 0, infoXY = null, infoRaf = 0;
+  const extrait = (s, n) => { s = String(s || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
+  const pluriel = (n, mot) => `${n} ${mot}${n > 1 ? 's' : ''}`;
+  function versInfo(n){
+    const t = n.getAttribute('title'); n.removeAttribute('title');
+    if (t) { n.dataset.info = t; n.setAttribute('aria-description', t); }
+  }
+  function infoChat(){
+    const p = me(); if (!p) return ['Discussion de l’équipe', 'Toucher pour choisir ton prénom'];
+    const fils = [{ id: 'tous', name: 'Équipe' }, ...PROFILES.filter(x => x.id !== p.id)].map(f => [f, nonLus(f.id)]).filter(([, n]) => n);
+    const tot = fils.reduce((t, [, n]) => t + n, 0);
+    const l = [tot ? `${pluriel(tot, 'message')} non lu${tot > 1 ? 's' : ''}` : 'Discussion · rien de nouveau'];
+    for (const [f, n] of fils) {
+      const m = msgs.filter(x => filDe(x) === f.id && !x.wait && x.de !== p.id).at(-1);
+      const de = f.id === 'tous' && m ? (profilDe(m.de)?.name || '') + ' : ' : '';
+      l.push(`${f.name} (${n}) — ${de}${!m ? '' : m.vocal ? 'note vocale' : `« ${extrait(m.texte, 60)} »`}`);
+    }
+    const autres = PROFILES.filter(x => x.id !== p.id);
+    const ecrit = autres.filter(x => tapeurs.has(x.id)).map(x => x.name);
+    if (ecrit.length) l.push(`${ecrit.join(' et ')} ${ecrit.length > 1 ? 'écrivent' : 'écrit'}…`);
+    if (chatMode === 'coupe') l.push('Reconnexion…');
+    else { const la = autres.filter(x => presents.includes(x.id)).map(x => x.name); l.push(la.length ? `● En ligne : ${la.join(', ')}` : 'Personne d’autre en ligne'); }
+    for (const x of autres) if (enPause(x.id)) l.push(`${x.name} en pause jusqu’à ${heure(pauses[x.id])}`);
+    if (enPause(p.id)) l.push(`Ne pas déranger : toi, jusqu’à ${heure(pauses[p.id])}`);
+    return l;
+  }
+  function infoTodo(){
+    if (!me()) return null;
+    const tout = [...notifsT.filter(n => !n.lu).map(n => ligneNotif(n)), ...taches.filter(t => !t.fait).map(t => t.texte)], n = tout.length;
+    if (!n) return ['To do list · rien à faire'];
+    return [`${n} à faire`, ...tout.slice(0, INFO_MAX).map(x => '• ' + extrait(x, 70)), ...(n > INFO_MAX ? [`+ ${pluriel(n - INFO_MAX, 'autre')}`] : [])];
+  }
+  function infoMontrer(){
+    const c = infoCible, r = c?.isConnected && c.getBoundingClientRect();
+    const l = r && r.width && (c === chatOrb ? infoChat() : c === todoOrb ? infoTodo() : [c.dataset.info]);
+    if (!l?.[0]) return infoCacher();
+    const [t, ...reste] = l, b = el('b'); b.textContent = t;
+    info.replaceChildren(b, ...reste.map(x => { const s = el('span'); s.textContent = x; return s; }));
+    // Au-dessus de ce qu'on survole, sinon dessous ; toujours dans l'écran.
+    const w = info.offsetWidth, h = info.offsetHeight;
+    const x = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 8));
+    const y = r.top - h - 10 >= 8 ? r.top - h - 10 : Math.min(r.bottom + 10, innerHeight - h - 8);
+    info.style.transform = `translate(${Math.round(x)}px,${Math.round(y)}px)`;
+    info.classList.add('on');
+  }
+  function infoCacher(){
+    clearTimeout(infoTempo); infoCible = null;
+    if (info.classList.contains('on')) { infoFin = Date.now(); info.classList.remove('on'); }
+  }
+  function infoViser(c){
+    if (c === infoCible) return;
+    const chaud = info.classList.contains('on') || Date.now() - infoFin < INFO_CHAUD;
+    clearTimeout(infoTempo); infoCible = c;
+    if (!c) return infoCacher();
+    if (c.hasAttribute('title')) versInfo(c);
+    if (chaud) infoMontrer(); else infoTempo = setTimeout(infoMontrer, INFO_DELAI);
+  }
+  root.addEventListener('pointerover', e => {
+    if (e.pointerType === 'touch' || !survol.matches || e.buttons || glisse || glisseT) return;
+    infoXY = [e.clientX, e.clientY];
+    const c = e.target.closest?.(INFO_SEL + ', [title]');
+    if (c) infoViser(c);
+  });
+  root.addEventListener('pointermove', e => { if (e.pointerType !== 'touch') infoXY = [e.clientX, e.clientY]; }, { passive: true });
+  root.addEventListener('pointerout', e => { if (infoCible && !infoCible.contains(e.relatedTarget)) infoCacher(); });
+  root.addEventListener('pointerdown', infoCacher, true);
+  root.addEventListener('wheel', infoCacher, { passive: true });
+  root.addEventListener('scroll', infoCacher, true);
+  addEventListener('blur', infoCacher);
+  // Plus aucune infobulle lente : chaque title posé dans la bulle devient une info rapide. Et ce qui change sous
+  // la souris (un message arrive, quelqu'un se connecte, une tâche est cochée) refait l'info tout de suite.
+  root.querySelectorAll('[title]').forEach(versInfo);
+  new MutationObserver(ms => {
+    for (const m of ms) {
+      if (m.type === 'attributes') { if (m.target.hasAttribute('title')) versInfo(m.target); continue; }
+      for (const n of m.addedNodes) if (n.nodeType === 1) { if (n.hasAttribute('title')) versInfo(n); n.querySelectorAll('[title]').forEach(versInfo); }
+    }
+    if (!infoCible || infoRaf || ms.every(m => info.contains(m.target))) return;
+    infoRaf = requestAnimationFrame(() => {
+      infoRaf = 0; if (!infoCible) return;
+      // La liste des conversations se redessine : on retrouve ce qui est sous la souris.
+      if (!infoCible.isConnected) { infoCible = infoXY && root.elementFromPoint(...infoXY)?.closest?.(INFO_SEL) || null; }
+      if (info.classList.contains('on')) infoMontrer();
+    });
+  }).observe(root, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['title', 'aria-label'] });
 
   (document.body || document.documentElement).append(hote);
   chatRelancer();
