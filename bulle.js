@@ -496,8 +496,13 @@
   let presents = [], tapeurs = new Map(), derniereTape = 0, chatAffiches = new Set(), chatChoix = null;
   let pauses = {}, chatUrgent = false;   // qui est en « Ne pas déranger » (jusqu'à quand) ; le prochain message est-il urgent ?
   const enPause = id => !!id && Date.parse(pauses[id]) > Date.now();
-  // Le dernier message vu, conversation par conversation ({ tous: id, julien: id, … }).
+  // L'heure du dernier message vu, conversation par conversation ({ tous: 1795…, julien: 1795…, … }).
+  // (24/11/2026) Avant, on retenait son id : à la reconnexion le serveur ne renvoie que les 80 derniers
+  // messages, l'id sorti de la liste (ou supprimé), tout le fil redevenait « non lu » et la pastille rouge restait.
+  // Un ancien id se relit en heure : il commence par l'instant d'envoi, en base 36.
+  const heureId = id => { const t = parseInt(String(id || '').slice(0, 8), 36); return t > 1.6e12 && t < 4e12 ? t : 0; };
   let chatVu = (() => { const v = store.get(LS_CHAT_VU); return v && typeof v === 'object' ? v : {}; })();
+  for (const [fil, v] of Object.entries(chatVu)) if (typeof v !== 'number') chatVu[fil] = heureId(v);
   let chatPour = 'tous';   // à qui part le prochain message : l'équipe, ou une seule personne
   // Le cache est rangé au nom de la personne au poste : un message privé ne s'affiche jamais chez un autre prénom.
   { const c = store.get(LS_CHAT); if (c && c.qui === me()?.id && Array.isArray(c.msgs)) msgs = c.msgs; }
@@ -702,11 +707,12 @@
     chatEtat.classList.toggle('en', chatMode !== 'coupe' && la.length > 0);
     chatEtat.textContent = chatMode === 'coupe' ? 'Reconnexion…' : la.length ? `● En ligne : ${la.join(', ')}` : '';
   }
-  // Non lus d'une conversation : les messages des autres après le dernier vu de ce fil.
+  // Non lus d'une conversation : les messages des autres arrivés après le dernier vu de ce fil.
+  // Un message privé confirmé « Lu » (ici, sur un autre appareil ou une autre appli) ne compte plus.
+  const vuA = fil => Number(chatVu[fil]) || 0;
   function nonLus(fil){
-    const p = me(), l = msgs.filter(m => filDe(m) === fil && !m.wait);
-    const i = l.findIndex(m => m.id === chatVu[fil]);
-    return l.slice(i + 1).filter(m => m.de !== p.id).length;
+    const p = me(), vu = vuA(fil);
+    return msgs.filter(m => filDe(m) === fil && !m.wait && m.de !== p?.id && !(m.pour === p?.id && m.lu) && Date.parse(m.at) > vu).length;
   }
   function majNonLus(){
     const p = me(); if (!p) return;
@@ -719,7 +725,8 @@
   function lireTout(){
     const dernier = msgs.filter(m => !m.wait && filDe(m) === chatPour).at(-1);
     if (dernier && chatPos.ouvert && !document.hidden) {
-      chatVu[chatPour] = dernier.id; store.set(LS_CHAT_VU, chatVu);
+      const t = Date.parse(dernier.at) || 0;
+      if (t > vuA(chatPour)) { chatVu[chatPour] = t; store.set(LS_CHAT_VU, chatVu); }
       // Un message privé discret est « Lu » dès que sa conversation est sous mes yeux (l'urgent, lui, se confirme).
       const p = me();
       msgs.filter(m => filDe(m) === chatPour && m.pour === p?.id && m.lu === null && !m.urgent && !m.wait).forEach(confirmerLu);
