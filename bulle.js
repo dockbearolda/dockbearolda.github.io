@@ -1233,7 +1233,8 @@
         if (/ : payé, en PRT$/.test(t)) return `${nomme || 'Le bureau'} a validé le paiement de ${client}`;
         if (/ : lancé en production, en PRT$/.test(t)) return `${nomme || 'Le bureau'} a lancé ${client} en production`;
         return `${client} a validé son BAT`;
-      case 'bat-paiement': case 'bat-production': return `${client} a validé son BAT`;
+      // Une commande mix (BAT Studio, « Commande mix client ») suit le circuit d'un BAT.
+      case 'bat-paiement': case 'bat-production': return /Commande mix/.test(t) ? `${client} a validé sa commande mix` : `${client} a validé son BAT`;
       case 'bat-note': return `${client} a laissé une note sur son BAT`;
       case 'bat-relance': return `${client} n’a pas répondu au BAT`;
       // Le PRT n'est pas arrivé dans le planning 20 min après l'envoi (server/notifs.mjs verifierPrts).
@@ -1416,7 +1417,7 @@
     if (!r.ok && r.status !== 404) throw new Error(j.error || 'Erreur ' + r.status);   // 404 : déjà réglé
     toast(n.type === 'bat-production'
       ? (paye ? 'En production : la bulle est dans PRT, cotes à prendre.' : 'Noté : la question reviendra demain matin.')
-      : (paye ? 'Payé : la bulle est dans PRT, cotes à prendre.' : 'Noté : non payé, la question reviendra demain matin.'));
+      : (paye ? (/Commande mix/.test(n.titre || '') ? 'Payé : la commande mix est débloquée dans PRT.' : 'Payé : la bulle est dans PRT, cotes à prendre.') : 'Noté : non payé, la question reviendra demain matin.'));
   }
   async function prevenuT(n){
     if (!n.carte?.id) return;   // une notification d'avant : rien à ranger
