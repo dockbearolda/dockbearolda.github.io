@@ -4,6 +4,7 @@
  *
  * Trois bulles : la discussion, la To Do List (à soi seul) et les Tâches (tout ce qu'on doit faire :
  * les notifications de BAT Studio et du planning, et les tâches que Loïc donne).
+ * Chez Loïc, une quatrième : « Pour l'équipe », où il écrit, envoie et suit les tâches qu'il donne.
  * Elles flottent au-dessus de l'appli, dans leur propre Shadow DOM (ni ses styles ni ses raccourcis
  * clavier ne fuient dans l'appli, et inversement). Les messages passent par BAT Studio (/api/chat,
  * WebSocket /api/chat/ws). Qui écrit : le prénom choisi sur l'appareil (pas de PIN, choix assumé) ;
@@ -415,10 +416,13 @@
   .rappel:hover i, .rappel:focus-visible i{ transform:scale(1.4); background:var(--duck); }
   .rappel.neuf i{ background:var(--danger); }
   /* ---------- Les Tâches (notifications + tâches que Loïc donne) : la même bulle que la To Do List, en orange ---------- */
+  /* ---------- Pour l'équipe (Loïc seul : les tâches qu'il donne) : la même bulle, en violet ---------- */
   .mis-orb{ background:radial-gradient(120% 120% at 30% 20%, #ffc163 0%, #f59e0b 55%, #d97706 100%); color:#fff;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 0 0 1px rgba(32,41,48,.06), 0 8px 22px rgba(217,119,6,.32), 0 2px 6px rgba(32,41,48,.18); }
-  .mis-orb svg{ width:26px; height:26px; }
-  .mis .todo-add{ margin-left:16px; }
+  .don-orb{ background:radial-gradient(120% 120% at 30% 20%, #b9a2ff 0%, #7c5cf0 55%, #5b3fd6 100%); color:#fff;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 0 0 1px rgba(32,41,48,.06), 0 8px 22px rgba(91,63,214,.32), 0 2px 6px rgba(32,41,48,.18); }
+  .mis-orb svg, .don-orb svg{ width:26px; height:26px; }
+  .don .todo-add{ margin-left:16px; }
   .mis-pour{ display:flex; flex-wrap:wrap; gap:6px; padding:8px 10px 10px 16px; border-bottom:1px solid var(--ligne); }
   .mis-chip{ --a:74,98,116; min-height:44px; padding:0 13px; border:1px solid var(--ligne); border-radius:22px; background:#fff;
     font-family:var(--main); font-size:14px; font-weight:600; color:var(--encre); transition:background-color .15s, color .15s, transform .15s; }
@@ -516,17 +520,36 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>
       </button>
     </header>
-    <form id="mis-add" autocomplete="off" hidden>
-      <div class="todo-add">
-        <input id="mis-txt" type="text" maxlength="300" placeholder="Donner une tâche…" enterkeyhint="send" aria-label="Nouvelle tâche à donner">
-        <button type="submit" class="todo-plus" aria-label="Envoyer la tâche"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
-      </div>
-      <div class="mis-pour" id="mis-pour" role="group" aria-label="Pour qui"></div>
-    </form>
     <ul class="todo-list" id="mis-list" aria-label="Tâches"></ul>
     <div class="todo-pied" id="mis-pied" hidden>
-      <button type="button" class="todo-vider todo-revenir" id="mis-revenir" hidden></button>
-      <button type="button" class="todo-vider" id="mis-vider" hidden></button>
+      <button type="button" class="todo-vider todo-revenir" id="mis-revenir"></button>
+    </div>
+  </section>
+</div>
+<div class="todo don is-min" id="don" hidden>
+  <button type="button" class="todo-orb don-orb" id="don-orb" aria-label="Ouvrir les tâches pour l'équipe">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L10.5 13.5"/><path d="M21 3l-6.5 18-4-7.5-7.5-4z"/></svg>
+    <span class="todo-n" id="don-n" hidden></span>
+  </button>
+  <section class="todo-panel" id="don-panel" aria-label="Pour l'équipe" tabindex="-1">
+    <header class="todo-head" id="don-head">
+      <span class="chat-grip" aria-hidden="true"></span>
+      <h2 class="todo-t">Pour l'équipe</h2>
+      <small class="todo-c" id="don-c" aria-live="polite"></small>
+      <button type="button" class="chat-x" id="don-x" aria-label="Réduire les tâches pour l'équipe" title="Réduire (Échap)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>
+      </button>
+    </header>
+    <form id="don-add" autocomplete="off">
+      <div class="todo-add">
+        <input id="don-txt" type="text" maxlength="300" placeholder="Donner une tâche…" enterkeyhint="send" aria-label="Nouvelle tâche à donner">
+        <button type="submit" class="todo-plus" aria-label="Envoyer la tâche"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
+      </div>
+      <div class="mis-pour" id="don-pour" role="group" aria-label="Pour qui"></div>
+    </form>
+    <ul class="todo-list" id="don-list" aria-label="Tâches données"></ul>
+    <div class="todo-pied" id="don-pied" hidden>
+      <button type="button" class="todo-vider" id="don-vider"></button>
     </div>
   </section>
 </div>
@@ -709,7 +732,7 @@
   chatOrb.onclick = () => { if (!vientDeGlisser && !appuiLongPris()) basculer(true); };
   $('#chat-x').onclick = () => basculer(false);
   chatPanel.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); basculer(false); chatOrb.focus(); } });
-  addEventListener('resize', () => { if (!chat.hidden) { appliquerTaille(); placer(); } if (!todo.hidden) placerT(); if (!mis.hidden) misF.placer(); });
+  addEventListener('resize', () => { if (!chat.hidden) { appliquerTaille(); placer(); } if (!todo.hidden) placerT(); if (!mis.hidden) misF.placer(); if (!don.hidden) donF.placer(); });
 
   // --- Taille : on tire un bord ou un coin du panneau ouvert ; elle est gardée sur l'appareil ---
   const BORD = 8, COIN = 20, MIN_W = 380, MIN_H = 360;
@@ -1231,7 +1254,7 @@
   const LS_TODO = 'olda_todo', LS_TODO_POS = 'olda_todo_pos', LS_TODO_VUS = 'olda_todo_vus', LS_CACHES = 'olda_caches';
   const todo = $('#todo'), todoOrb = $('#todo-orb'), todoPanel = $('#todo-panel'), todoList = $('#todo-list'), todoTxt = $('#todo-txt');
   const ORB_T = 56, BAT_ORIGINE = (() => { try { return new URL(BAT).origin; } catch (_) { return ''; } })();
-  const caches = Object.assign({ todo: false, chat: false, mis: false }, store.get(LS_CACHES) || {});
+  const caches = Object.assign({ todo: false, chat: false, mis: false, don: false }, store.get(LS_CACHES) || {});
   const todoPos = lirePos(LS_TODO_POS, { x: null, y: null, ouvert: false });
   const todoVus = new Set(store.get(LS_TODO_VUS) || []);
   let taches = [], notifsT = [], todoMinuterie = null, rayes = new Set();
@@ -1316,7 +1339,7 @@
   todo.addEventListener('transitionend', () => { todo.style.transition = ''; });
   // Celle qu'on touche ou qu'on ouvre passe devant l'autre.
   // Au-dessus de tout, comme la messagerie ; des deux, celle qu'on touche passe devant.
-  const devant = n => { for (const b of [todo, chat, mis]) b.style.zIndex = b === n ? 36 : 35; };
+  const devant = n => { for (const b of [todo, chat, mis, don]) b.style.zIndex = b === n ? 36 : 35; };
   todo.addEventListener('pointerdown', () => devant(todo), true);
   chat.addEventListener('pointerdown', () => devant(chat), true);
   todoOrb.onclick = () => { if (!vientDeGlisserT && !appuiLongPris()) basculerT(true); };
@@ -1517,9 +1540,9 @@
   $('#mis-revenir').onclick = faireRevenir;
   const estAnnuler = e => (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === 'z' || e.key === 'Z');
   const saisie = t => t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
-  // Dans la bulle Tâches : partout sauf en pleine saisie (le champ vide laisse passer).
+  // Dans la bulle Tâches : partout (elle n'a plus de champ).
   $('#mis-panel').addEventListener('keydown', e => {
-    if (!estAnnuler(e) || (saisie(e.target) && !(e.target === misTxt && !misTxt.value))) return;
+    if (!estAnnuler(e) || saisie(e.target)) return;
     e.preventDefault(); faireRevenir();
   });
   // Sur le Dashboard, n'importe où (les applis gardent leur propre Ctrl Z).
@@ -1792,6 +1815,7 @@
       pos.y = Math.min(Math.max(MARGE, pos.y), Math.max(MARGE, vh - h - MARGE));
     }
     f.placer = () => { borner(); boite.style.transform = `translate3d(${Math.round(pos.x)}px,${Math.round(pos.y)}px,0)`; };
+    f.rect = () => !boite.hidden && pos.x != null ? { x: pos.x, y: pos.y, ...taille() } : null;
     const garder = () => store.set(cle, pos);
     f.basculer = ouvrir => {
       if (ouvrir === pos.ouvert) return;
@@ -1855,9 +1879,13 @@
   // se rattrape). Loïc : écrire, toucher les prénoms, envoyer ; il voit qui a fini (son, pastille, message).
   // Depuis le 25/11/2026, les notifications pour moi (BAT, paiements, PRT…) arrivent ici aussi, pour chacun,
   // Loïc compris : tout ce qu'on doit faire est dans Tâches. La To Do List (au-dessus) reste à soi seul.
+  // POUR L'ÉQUIPE (25/11/2026, Charlie : « l'autre bulle est exclusivement réservée à la todolist de Loïc ») :
+  // Tâches ne fait plus que recevoir, Loïc compris. Écrire, envoyer et suivre les tâches données
+  // (qui a fini, en cours, effacer les terminées) passent dans une bulle à part, chez Loïc seul.
   const CHEFS = ['loic'];
-  const LS_MIS = 'olda_taches', LS_MIS_POS = 'olda_taches_pos', LS_MIS_VUS = 'olda_taches_vus', LS_MIS_POUR = 'olda_taches_pour';
-  const mis = $('#mis'), misOrb = $('#mis-orb'), misList = $('#mis-list'), misTxt = $('#mis-txt');
+  const LS_MIS = 'olda_taches', LS_MIS_POS = 'olda_taches_pos', LS_MIS_VUS = 'olda_taches_vus', LS_MIS_POUR = 'olda_taches_pour', LS_DON_POS = 'olda_taches_don_pos';
+  const mis = $('#mis'), misOrb = $('#mis-orb'), misList = $('#mis-list');
+  const don = $('#don'), donOrb = $('#don-orb'), donList = $('#don-list'), donTxt = $('#don-txt');
   let missions = [], misRayes = new Set(), misEclat = new Set(), releveM = false;
   const misVus = new Set(store.get(LS_MIS_VUS) || []), misPour = new Set(store.get(LS_MIS_POUR) || []);
   const misAttente = new Map();   // id → fait, le temps que BAT Studio confirme (une relève ne la décoche pas entre-temps)
@@ -1871,10 +1899,18 @@
     boite: mis, orb: misOrb, panel: $('#mis-panel'), tete: $('#mis-head'), cle: LS_MIS_POS, ouvert: DASHBOARD && innerWidth >= 960,
     // La première fois : à gauche de la To Do List (ou de la discussion si elle est cachée).
     defaut: ({ w, h }) => enBasADroite(rectTodo() || rectChat(), w, h),
-    auOuvrir: () => { devant(mis); misOrb.classList.remove('has-new'); voirMis(); relireM(); relireT(); if (chef() && matchMedia('(hover:hover)').matches) misTxt.focus({ preventScroll: true }); },
+    auOuvrir: () => { devant(mis); misOrb.classList.remove('has-new'); relireM(); relireT(); },
     auBasculer: () => majCompteM(),
   });
   $('#mis-x').onclick = () => misF.basculer(false);
+  const donF = flottante({
+    boite: don, orb: donOrb, panel: $('#don-panel'), tete: $('#don-head'), cle: LS_DON_POS, ouvert: false,
+    // La première fois : à gauche des Tâches.
+    defaut: ({ w, h }) => enBasADroite(misF.rect() || rectTodo() || rectChat(), w, h),
+    auOuvrir: () => { devant(don); donOrb.classList.remove('has-new'); voirMis(); relireM(); if (matchMedia('(hover:hover)').matches) donTxt.focus({ preventScroll: true }); },
+    auBasculer: () => majCompteD(),
+  });
+  $('#don-x').onclick = () => donF.basculer(false);
   const garderMis = () => store.set(LS_MIS, { qui: me()?.id, taches: missions.filter(t => !t.wait) });
   const posterM = async (chemin, corps) => {
     const r = await fetch(`${BAT}/api/taches${chemin}?qui=${encodeURIComponent(me()?.id || '')}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps || {}) });
@@ -1885,13 +1921,21 @@
 
   // --- Afficher ---
   function majCompteM(){
-    const a = recues().filter(t => !t.fait).length + notifsAFaire().length, fin = donnees().filter(t => t.fait && !t.vu).length, enCours = donnees().filter(t => !t.fait).length;
-    const n = a + fin, c = $('#mis-n');
+    const n = recues().filter(t => !t.fait).length + notifsAFaire().length, c = $('#mis-n');
     c.hidden = !n || misF.pos.ouvert; c.textContent = n > 9 ? '9+' : String(n);
-    $('#mis-c').textContent = [a && `${a} à faire`, fin && `${fin} terminée${fin > 1 ? 's' : ''}`, enCours && `${enCours} en cours`].filter(Boolean).join(' · ');
-    misOrb.setAttribute('aria-label', n ? `Tâches : ${[a && `${a} à faire`, fin && `${fin} terminée${fin > 1 ? 's' : ''}`].filter(Boolean).join(', ')}` : 'Ouvrir mes tâches');
+    $('#mis-c').textContent = n ? `${n} à faire` : '';
+    misOrb.setAttribute('aria-label', n ? `Tâches : ${n} à faire` : 'Ouvrir mes tâches');
   }
-  function renderMis(){
+  function majCompteD(){
+    const fin = donnees().filter(t => t.fait && !t.vu).length, enCours = donnees().filter(t => !t.fait).length, c = $('#don-n');
+    const finT = fin && `${fin} terminée${fin > 1 ? 's' : ''}`;
+    c.hidden = !fin || donF.pos.ouvert; c.textContent = fin > 9 ? '9+' : String(fin);
+    $('#don-c').textContent = [finT, enCours && `${enCours} en cours`].filter(Boolean).join(' · ');
+    donOrb.setAttribute('aria-label', fin ? `Pour l'équipe : ${finT}` : 'Ouvrir les tâches pour l\'équipe');
+  }
+  // Tâches (ce que je dois faire) et, chez Loïc, Pour l'équipe (ce qu'il a donné) se redessinent ensemble.
+  function renderMis(){ renderRecues(); if (chef()) renderDon(); }
+  function renderRecues(){
     const p = me(); if (!p) return;
     const recent = t => Date.parse(t.fait || t.at) || 0, out = [];
     // Les miennes : celles que Loïc m'a données (la plus récente en haut), les notifications,
@@ -1903,24 +1947,31 @@
     };
     const miennes = recues().sort((a, b) => recent(b) - recent(a));
     out.push(...miennes.filter(t => !t.fait).map(recue), ...lignesNotifs(), ...miennes.filter(t => t.fait).map(recue));
-    // Celles que j'ai données : les juste finies, puis en cours, puis les finies déjà vues.
-    const rang = t => t.fait ? (t.vu && !misEclat.has(t.id) ? 2 : 0) : 1;
-    for (const t of donnees().sort((a, b) => rang(a) - rang(b) || recent(b) - recent(a))) {
+    if (!out.length) { const v = el('li', 'todo-vide'); v.textContent = 'Aucune tâche pour l’instant ✌️'; out.push(v); }
+    misList.replaceChildren(...out);
+    misRayes = new Set();
+    const retours = aFaireRevenir().length;
+    $('#mis-revenir').textContent = `↶ Faire revenir (${retours})`;
+    $('#mis-revenir').title = `Faire revenir la dernière notification rayée (${MAC ? '⌘' : 'Ctrl'} Z)`;
+    $('#mis-pied').hidden = !retours;
+    majCompteM();
+  }
+  // Celles que Loïc a données : les juste finies, puis en cours, puis les finies déjà vues.
+  function renderDon(){
+    const recent = t => Date.parse(t.fait || t.at) || 0, rang = t => t.fait ? (t.vu && !misEclat.has(t.id) ? 2 : 0) : 1;
+    const out = donnees().sort((a, b) => rang(a) - rang(b) || recent(b) - recent(a)).map(t => {
       const li = ligneT({ texte: t.texte, quand: t.fait || t.at, qui: t.fait ? `✓ Fait par ${misNom(t.pour)}` : `Pour ${misNom(t.pour)}`, fait: !!t.fait, suppr: t.wait ? null : () => retirerMis(t) });
       if (t.wait) li.classList.add('wait');
       if (misEclat.has(t.id)) li.classList.add('revient');
-      out.push(li);
-    }
-    if (!out.length) { const v = el('li', 'todo-vide'); v.textContent = chef() ? 'Écris une tâche, touche pour qui, envoie.' : 'Aucune tâche pour l’instant ✌️'; out.push(v); }
-    misList.replaceChildren(...out);
-    misRayes = new Set(); misEclat = new Set();
-    const finies = donnees().filter(t => t.fait).length, vider = $('#mis-vider');
-    vider.hidden = !finies; vider.textContent = `Effacer les terminées (${finies})`;
-    const retours = aFaireRevenir().length, revenir = $('#mis-revenir');
-    revenir.hidden = !retours; revenir.textContent = `↶ Faire revenir (${retours})`;
-    revenir.title = `Faire revenir la dernière notification rayée (${MAC ? '⌘' : 'Ctrl'} Z)`;
-    $('#mis-pied').hidden = vider.hidden && revenir.hidden;
-    majCompteM();
+      return li;
+    });
+    if (!out.length) { const v = el('li', 'todo-vide'); v.textContent = 'Écris une tâche, touche pour qui, envoie.'; out.push(v); }
+    donList.replaceChildren(...out);
+    misEclat = new Set();
+    const finies = donnees().filter(t => t.fait).length;
+    $('#don-vider').textContent = `Effacer les terminées (${finies})`;
+    $('#don-pied').hidden = !finies;
+    majCompteD();
   }
   // Pour qui : un ou plusieurs prénoms (« Tous » les prend tous) ; le choix reste pour la prochaine.
   function renderPourM(){
@@ -1932,7 +1983,7 @@
       b.onclick = () => { fn(); garder(); };
       return b;
     };
-    $('#mis-pour').replaceChildren(
+    $('#don-pour').replaceChildren(
       puce('Tous', tous, () => tous ? misPour.clear() : autres.forEach(x => misPour.add(x.id))),
       ...autres.map(x => puce(x.name, misPour.has(x.id), () => misPour.has(x.id) ? misPour.delete(x.id) : misPour.add(x.id), x)));
   }
@@ -1956,22 +2007,22 @@
   }
 
   // --- Donner (Loïc) : la ligne paraît tout de suite, en attente, puis BAT Studio la confirme ---
-  $('#mis-add').onsubmit = async e => {
+  $('#don-add').onsubmit = async e => {
     e.preventDefault();
-    const p = me(), texte = misTxt.value.replace(/\s+/g, ' ').trim().slice(0, 300);
+    const p = me(), texte = donTxt.value.replace(/\s+/g, ' ').trim().slice(0, 300);
     if (!p || !texte) return;
     const pour = PROFILES.filter(x => x.id !== p.id && misPour.has(x.id)).map(x => x.id);
-    if (!pour.length) { toast('Pour qui ? Touche un prénom.'); $('#mis-pour button')?.focus(); return; }
+    if (!pour.length) { toast('Pour qui ? Touche un prénom.'); $('#don-pour button')?.focus(); return; }
     const at = new Date().toISOString();
     const temp = pour.map(x => ({ id: 'w' + nouvelId(), de: p.id, pour: x, texte, at, fait: null, vu: null, wait: true }));
-    missions = [...temp, ...missions]; misTxt.value = ''; renderMis(); misList.scrollTop = 0;
+    missions = [...temp, ...missions]; donTxt.value = ''; renderMis(); donList.scrollTop = 0;
     try {
       const { taches = [] } = await posterM('', { texte, pour });
       missions = [...taches, ...missions.filter(t => !temp.includes(t))];
       toast(`Envoyée à ${pour.map(misNom).join(', ').replace(/, ([^,]*)$/, ' et $1')}.`);
     } catch (err) {
       missions = missions.filter(t => !temp.includes(t));
-      if (!misTxt.value) misTxt.value = texte;
+      if (!donTxt.value) donTxt.value = texte;
       toast(err.statut ? err.message : 'Réseau indisponible : la tâche n’est pas partie.');
     }
     garderMis(); renderMis();
@@ -1982,7 +2033,7 @@
     try { await posterM(`/${encodeURIComponent(t.id)}/retirer`); }
     catch (e) { missions = avant; garderMis(); renderMis(); toast(e.message); }
   }
-  $('#mis-vider').onclick = async () => {
+  $('#don-vider').onclick = async () => {
     const avant = missions, p = me();
     missions = missions.filter(t => !(t.de === p?.id && t.fait)); garderMis(); renderMis();
     try { await posterM('/effacer'); }
@@ -1991,7 +2042,7 @@
   // Loïc a la bulle ouverte sous les yeux : les tâches finies sont vues (elles s'éclairent une fois).
   function voirMis(){
     const l = donnees().filter(t => t.fait && !t.vu);
-    if (!l.length || !misF.pos.ouvert || document.hidden) return;
+    if (!l.length || !donF.pos.ouvert || document.hidden) return;
     const at = new Date().toISOString();
     l.forEach(t => { t.vu = at; misEclat.add(t.id); });
     garderMis(); renderMis();
@@ -2005,10 +2056,12 @@
     const neuves = missions.filter(t => !t.wait && ((t.pour === p.id && !t.fait) || (t.de === p.id && t.fait && !t.vu)) && !misVus.has(cle(t)));
     if (!neuves.length) return;
     neuves.forEach(t => misVus.add(cle(t))); store.set(LS_MIS_VUS, [...misVus].slice(-300));
-    if (!misF.pos.ouvert) misOrb.classList.add('has-new');
+    const finies = neuves.filter(t => t.de === p.id), recue = neuves.filter(t => t.pour === p.id);
+    // Une tâche reçue fait signe sur Tâches, une tâche finie (chez Loïc) sur Pour l'équipe.
+    if (recue.length && !misF.pos.ouvert) misOrb.classList.add('has-new');
+    if (finies.length && !donF.pos.ouvert) donOrb.classList.add('has-new');
     $('#rappel').classList.add('neuf');
     if (!enPause(p.id)) sonner();
-    const finies = neuves.filter(t => t.de === p.id), recue = neuves.filter(t => t.pour === p.id);
     if (finies.length === 1) toast(`${misNom(finies[0].pour)} a terminé : ${finies[0].texte}`);
     else if (finies.length > 1) toast(`${finies.length} tâches terminées`);
     else if (recue.length === 1) toast(`Nouvelle tâche de ${misNom(recue[0].de)} : ${recue[0].texte}`);
@@ -2031,7 +2084,7 @@
     const p = me(), c = store.get(LS_MIS);
     missions = c && c.qui === p?.id && Array.isArray(c.taches) ? c.taches : [];
     mis.classList.toggle('is-min', !misF.pos.ouvert);
-    $('#mis-add').hidden = !chef();
+    don.classList.toggle('is-min', !donF.pos.ouvert);
     if (p) { renderPourM(); renderMis(); relireM(); }
   }
 
@@ -2042,16 +2095,18 @@
     chat.hidden = (!p && DASHBOARD) || caches.chat;
     todo.hidden = !p || caches.todo;
     mis.hidden = !p || caches.mis;
-    rappel.hidden = !(chat.hidden && todo.hidden && mis.hidden && (caches.chat || caches.todo || caches.mis));
+    don.hidden = !p || !chef() || caches.don;
+    rappel.hidden = !(chat.hidden && todo.hidden && mis.hidden && don.hidden && (caches.chat || caches.todo || caches.mis || caches.don));
     if (!chat.hidden) placer();
     if (!todo.hidden) placerT();
     if (!mis.hidden) misF.placer();
+    if (!don.hidden) donF.placer();
   }
   function cacher(k, v){
     caches[k] = v; store.set(LS_CACHES, caches); ctx.hidden = true;
     appliquerCaches();
-    const nom = { todo: 'La To Do List', mis: 'La bulle Tâches', chat: 'La messagerie' }[k];
-    toast(!v ? `${nom} est de retour.` : caches.todo && caches.chat && caches.mis ? 'Tout est caché sur ce site : le petit point en bas à droite les remet.' : `${nom} est cachée sur ce site. Clic droit sur une autre bulle pour la remettre.`);
+    const nom = { todo: 'La To Do List', mis: 'La bulle Tâches', don: 'La bulle Pour l’équipe', chat: 'La messagerie' }[k];
+    toast(!v ? `${nom} est de retour.` : [chat, todo, mis, don].every(b => b.hidden) ? 'Tout est caché sur ce site : le petit point en bas à droite les remet.' : `${nom} est cachée sur ce site. Clic droit sur une autre bulle pour la remettre.`);
   }
   const ICO_CACHER = '<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c5 0 9 5 10 7a17 17 0 0 1-3.2 4.2"/><path d="M6.6 6.6A17 17 0 0 0 2 12c1 2 5 7 10 7a9.6 9.6 0 0 0 4.4-1.1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>';
   const ICO_VOIR = '<path d="M2 12c1-2 5-7 10-7s9 5 10 7c-1 2-5 7-10 7S3 14 2 12z"/><circle cx="12" cy="12" r="3"/>';
@@ -2060,6 +2115,7 @@
     ctx.replaceChildren(
       ligne(caches.todo ? 'Afficher la To Do List' : 'Cacher la To Do List', caches.todo ? ICO_VOIR : ICO_CACHER, () => cacher('todo', !caches.todo)),
       ligne(caches.mis ? 'Afficher les Tâches' : 'Cacher les Tâches', caches.mis ? ICO_VOIR : ICO_CACHER, () => cacher('mis', !caches.mis)),
+      ...(chef() ? [ligne(caches.don ? 'Afficher Pour l’équipe' : 'Cacher Pour l’équipe', caches.don ? ICO_VOIR : ICO_CACHER, () => cacher('don', !caches.don))] : []),
       ligne(caches.chat ? 'Afficher la messagerie' : 'Cacher la messagerie', caches.chat ? ICO_VOIR : ICO_CACHER, () => cacher('chat', !caches.chat)));
     ctx.hidden = false;
     const w = ctx.offsetWidth, h = ctx.offsetHeight;
@@ -2073,21 +2129,21 @@
     e.preventDefault(); e.stopPropagation();
     ouvrirCtx(e.clientX, e.clientY);
   }
-  for (const n of [chat, todo, mis, rappel]) n.addEventListener('contextmenu', surClicDroit);
+  for (const n of [chat, todo, mis, don, rappel]) n.addEventListener('contextmenu', surClicDroit);
   rappel.onclick = () => { rappel.classList.remove('neuf'); ouvrirCtx(innerWidth, innerHeight - 52); };   // juste au-dessus du point
   document.addEventListener('pointerdown', e => { if (!ctx.hidden && !ctx.contains(e.composedPath()[0])) ctx.hidden = true; });
   ctx.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); ctx.hidden = true; } });
   // Au doigt (iPhone : pas de clic droit), un appui long sur la pastille ou l'en-tête ouvre le même menu.
   let appui = null, appuiLong = false;
   const appuiLongPris = () => { const v = appuiLong; appuiLong = false; return v; };
-  for (const n of [chatOrb, $('#chat-head'), todoOrb, $('#todo-head'), misOrb, $('#mis-head')]) {
+  for (const n of [chatOrb, $('#chat-head'), todoOrb, $('#todo-head'), misOrb, $('#mis-head'), donOrb, $('#don-head')]) {
     n.style.webkitTouchCallout = 'none';
     n.addEventListener('pointerdown', e => {
       appuiLong = false;
       if (e.pointerType === 'mouse') return;
       clearTimeout(appui?.t);
       const x = e.clientX, y = e.clientY;
-      appui = { x, y, t: setTimeout(() => { appui = null; appuiLong = true; glisse = null; glisseT = null; misF.lacher(); chat.classList.remove('drag'); todo.classList.remove('drag'); ouvrirCtx(x, y); }, 550) };
+      appui = { x, y, t: setTimeout(() => { appui = null; appuiLong = true; glisse = null; glisseT = null; misF.lacher(); donF.lacher(); chat.classList.remove('drag'); todo.classList.remove('drag'); ouvrirCtx(x, y); }, 550) };
     });
     n.addEventListener('pointermove', e => { if (appui && Math.hypot(e.clientX - appui.x, e.clientY - appui.y) > 10) { clearTimeout(appui.t); appui = null; } });
     for (const t of ['pointerup', 'pointercancel']) n.addEventListener(t, () => { if (appui) { clearTimeout(appui.t); appui = null; } });
@@ -2129,7 +2185,7 @@
   // (qui m'a écrit et quoi, qui est là, ce qui attend dans Tâches et la To Do List) ; il se refait s'il change sous la souris.
   // Tous les title de la bulle passent par elle (gardés en aria-description pour les lecteurs d'écran).
   const info = $('#info'), INFO_DELAI = 150, INFO_CHAUD = 500, INFO_MAX = 5;
-  const INFO_SEL = '#chat-orb, #todo-orb, #mis-orb, [data-info]';
+  const INFO_SEL = '#chat-orb, #todo-orb, #mis-orb, #don-orb, [data-info]';
   const survol = matchMedia('(hover:hover)');
   let infoCible = null, infoTempo = null, infoFin = 0, infoXY = null, infoRaf = 0;
   const extrait = (s, n) => { s = String(s || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
@@ -2166,17 +2222,21 @@
   function infoMis(){
     if (!me()) return null;
     const a = [...recues().filter(t => !t.fait).map(t => t.texte), ...notifsAFaire().map(ligneEtProjet)];
+    if (!a.length) return ['Tâches · rien à faire'];
+    return [`${a.length} à faire`, ...a.slice(0, INFO_MAX).map(x => '• ' + extrait(x, 70)), ...(a.length > INFO_MAX ? [`+ ${pluriel(a.length - INFO_MAX, 'autre')}`] : [])];
+  }
+  function infoDon(){
+    if (!me()) return null;
     const fin = donnees().filter(t => t.fait && !t.vu), enCours = donnees().filter(t => !t.fait);
-    if (!a.length && !fin.length && !enCours.length) return [chef() ? 'Tâches · en donner une' : 'Tâches · rien à faire'];
+    if (!fin.length && !enCours.length) return ['Pour l’équipe · donner une tâche'];
     const l = [];
-    if (a.length) l.push(`${a.length} à faire`, ...a.slice(0, INFO_MAX).map(x => '• ' + extrait(x, 70)), ...(a.length > INFO_MAX ? [`+ ${pluriel(a.length - INFO_MAX, 'autre')}`] : []));
     if (fin.length) l.push(`${pluriel(fin.length, 'tâche')} terminée${fin.length > 1 ? 's' : ''}`, ...fin.slice(0, INFO_MAX).map(t => `✓ ${misNom(t.pour)} : ${extrait(t.texte, 60)}`));
     if (enCours.length) l.push(`${enCours.length} en cours`);
     return l;
   }
   function infoMontrer(){
     const c = infoCible, r = c?.isConnected && c.getBoundingClientRect();
-    const l = r && r.width && (c === chatOrb ? infoChat() : c === todoOrb ? infoTodo() : c === misOrb ? infoMis() : [c.dataset.info]);
+    const l = r && r.width && (c === chatOrb ? infoChat() : c === todoOrb ? infoTodo() : c === misOrb ? infoMis() : c === donOrb ? infoDon() : [c.dataset.info]);
     if (!l?.[0]) return infoCacher();
     const [t, ...reste] = l, b = el('b'); b.textContent = t;
     info.replaceChildren(b, ...reste.map(x => { const s = el('span'); s.textContent = x; return s; }));
@@ -2200,7 +2260,7 @@
     if (chaud) infoMontrer(); else infoTempo = setTimeout(infoMontrer, INFO_DELAI);
   }
   root.addEventListener('pointerover', e => {
-    if (e.pointerType === 'touch' || !survol.matches || e.buttons || glisse || glisseT || misF.glisse) return;
+    if (e.pointerType === 'touch' || !survol.matches || e.buttons || glisse || glisseT || misF.glisse || donF.glisse) return;
     infoXY = [e.clientX, e.clientY];
     const c = e.target.closest?.(INFO_SEL + ', [title]');
     if (c) infoViser(c);
@@ -2230,5 +2290,5 @@
 
   (document.body || document.documentElement).append(hote);
   chatRelancer();
-  window.oldaBulle = { relancer: chatRelancer, ouvrir: () => basculer(true), todo: () => { basculerT(true); devant(todo); }, taches: () => { misF.basculer(true); devant(mis); } };
+  window.oldaBulle = { relancer: chatRelancer, ouvrir: () => basculer(true), todo: () => { basculerT(true); devant(todo); }, taches: () => { misF.basculer(true); devant(mis); }, equipe: () => { if (chef()) { donF.basculer(true); devant(don); } } };
 })();
