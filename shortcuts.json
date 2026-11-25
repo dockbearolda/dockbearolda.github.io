@@ -1,5 +1,5 @@
 {
-  "rev": 1795402053445,
+  "rev": 1795574801805,
   "shortcuts": [
     {
       "name": "BAT Studio",
@@ -62,6 +62,13 @@
       "icon": "euro",
       "color": "rouge",
       "since": 1793030196023
+    },
+    {
+      "name": "Gabarits laser",
+      "url": "https://gabarits-laser.dockbear.workers.dev/",
+      "icon": "bolt",
+      "color": "rouge",
+      "since": 1795574801805
     },
     {
       "name": "Stock",
