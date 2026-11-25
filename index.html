@@ -890,6 +890,9 @@
     let nom; try { nom = 'olda-' + new URL(url).host.replace(/[^\w-]/g, '-'); } catch (_) { return; }
     const f = fenetres.get(nom);
     if (f && !f.w.closed && f.url === url) { f.w.focus(); return; }   // déjà là : on y retourne, sans recharger
+    // Un site de l'équipe (une appli du Dashboard) garde le lien avec nous : c'est ce qui permet de retrouver son onglet.
+    // Tout autre site (Dropbox, WhatsApp… cliqués dans une appli) s'ouvre détaché : il ne peut pas toucher au Dashboard.
+    if (!appDe(url)) { window.open(url, '_blank', 'noopener'); return; }
     const w = window.open(url, nom);
     if (w) fenetres.set(nom, { w, url });
   }
