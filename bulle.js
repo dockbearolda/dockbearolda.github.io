@@ -1350,6 +1350,7 @@
         if (/ : lancé en production, en PRT$/.test(t)) return `${nomme || 'Le bureau'} a lancé ${client} en production`;
         return `${client} a validé son BAT`;
       // Une commande mix (BAT Studio, « Commande mix client ») suit le circuit d'un BAT.
+      case 'mix-valide': return /crée le PRT/.test(t) ? `${client} a validé sa commande mix : crée le PRT` : `${client} : commande mix payée, à envoyer en production`;
       case 'bat-paiement': case 'bat-production': return /Commande mix/.test(t) ? `${client} a validé sa commande mix` : `${client} a validé son BAT`;
       case 'bat-note': return `${client} a laissé une note sur son BAT`;
       case 'bat-relance': return `${client} n’a pas répondu au BAT`;
@@ -1593,6 +1594,8 @@
         ? [{ label: n.rate ? 'Renvoyer' : 'En production', cls: 'oui', fn: () => envoyerPrtT(n) }, { label: 'Planning', fn: ouvrirPlanningT }]
         : [planning];
       case 'prt-shop': return [planning];
+      // Une commande mix validée par le client (25/11/2026) : la suite, c'est le PRT, dans BAT Studio.
+      case 'mix-valide': return [{ label: 'Créer le PRT', cls: 'go', fn: () => ouvrirBatT(n.lien) }];
       case 'presse-pret': return [{ ...planning, label: 'Ouvrir la presse' }];
       // « Client prévenu » range la bulle du planning : de Terminé aux Archives.
       // Mélina et Loïc n'ont que ce bouton à toucher (22/11/2026) ; l'un répond, c'est coché chez l'autre.
