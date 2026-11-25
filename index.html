@@ -696,8 +696,9 @@
       if (editing) { card.type = 'button'; card.setAttribute('aria-label', 'Modifier ' + s.name); card.onclick = () => openSheet(i); }
       else {
         card.href = s.url; card.draggable = false; card.target = '_blank'; card.rel = 'noopener'; card.dataset.url = s.url; card.setAttribute('aria-label', s.name || 'Sans nom');
-        // Clic simple : l'appli s'ouvre dans un onglet du Dashboard. Ctrl/⌘/Maj/clic molette : onglet du navigateur, comme avant.
-        card.onclick = e => { if (!e.button && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && ouvrirOnglet(s.url)) e.preventDefault(); };
+        // Clic simple : l'appli s'ouvre dans un onglet du Dashboard (sinon dans SON onglet du navigateur, jamais un de plus).
+        // Ctrl/⌘/Maj/clic molette : un nouvel onglet du navigateur, voulu.
+        card.onclick = e => { if (!e.button && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) { e.preventDefault(); ouvrir(s.url); } };
       }
       fillCard(card, s);
       tile.append(card);
@@ -827,10 +828,17 @@
   const ongletsActifs = () => wide.matches && !editing && !hubTile.hidden;
   function garderOnglets(){ const i = onglets.findIndex(o => o.id === actif); store.set(LS_ONGLETS, { ouverts: onglets.map(o => o.url), i: i < 0 ? null : i }); }
   function ouvrirOnglet(url){
-    if (!ongletsActifs() || !cadreOk(url)) return false;
+    const app = appDe(url);
+    if (!ongletsActifs() || !app || !cadreOk(url)) return false;
+    // une page du planning : le planning lui-même, pas un second onglet
+    if (app === state.shortcuts[hubIndex()]?.url) {
+      if (url !== app) { frame.classList.remove('on'); hubReady = false; tellHub(); frame.src = url; }
+      montrer(null); return true;
+    }
     let o = ongletDe(actif);
-    if (o?.url !== url) o = onglets.find(x => x.url === url);
-    if (!o) onglets.push(o = nouvelOnglet(url));
+    if (o?.url !== app) o = onglets.find(x => x.url === app);
+    if (!o) onglets.push(o = nouvelOnglet(app));
+    if (url !== app) { o.src = url; if (o.frame) { o.frame.classList.remove('on'); o.frame.src = url; } }
     montrer(o.id);
     if (!large.matches) hubTile.scrollIntoView({ block: 'start', behavior: reduced.matches ? 'auto' : 'smooth' });
     return true;
@@ -862,10 +870,54 @@
       const f = document.createElement('iframe');
       f.title = nomDe(o.url); f.allow = 'clipboard-read; clipboard-write; fullscreen; microphone; local-network; loopback-network';
       f.addEventListener('load', () => { f.classList.add('on'); majOnglets(); });
-      f.src = o.url; hubFrameBox.append(f); o.frame = f;
+      f.src = o.src || o.url; hubFrameBox.append(f); o.frame = f;
     }
     return o.frame;
   }
+  // UN SEUL ONGLET PAR APPLI (25/11/2026, Charlie : « ce que j'ouvre dans le Dashboard s'ouvre dans un onglet,
+  // j'ai encore trop de fenêtres partout »). Tout ce qui s'ouvre depuis le Dashboard passe par ouvrir() :
+  // la carte, la recherche ⌘K, la bulle, et les liens « ↗ » des applis ouvertes ici (barre.js nous les envoie).
+  // L'appli dans un cadre : son onglet du Dashboard. Sinon (myolda.com, B2B, téléphone…) : SON onglet du
+  // navigateur, nommé d'après le site — re-cliquer y ramène au lieu d'en ouvrir un de plus.
+  function ouvrir(url){
+    let u; try { u = new URL(url, location.href); } catch (_) { return; }
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return;   // ni javascript:, ni data:
+    if (!ouvrirOnglet(u.href)) ouvrirDehors(u.href);
+  }
+  window.oldaOuvrir = ouvrir;
+  const fenetres = new Map();   // nom → { w, url } : les onglets du navigateur ouverts d'ici
+  function ouvrirDehors(url){
+    let nom; try { nom = 'olda-' + new URL(url).host.replace(/[^\w-]/g, '-'); } catch (_) { return; }
+    const f = fenetres.get(nom);
+    if (f && !f.w.closed && f.url === url) { f.w.focus(); return; }   // déjà là : on y retourne, sans recharger
+    const w = window.open(url, nom);
+    if (w) fenetres.set(nom, { w, url });
+  }
+  // L'appli d'une adresse : le raccourci lui-même, ou celui du même site dont le chemin la contient
+  // (bat-studio…/?projet=12 → BAT Studio, pas Stock textile ; 127.0.0.1:47831/bat → Fast White).
+  function appDe(url){
+    if (raccourci(url)) return url;
+    let u; try { u = new URL(url); } catch (_) { return null; }
+    let app = null, best = -1;
+    for (const s of state?.shortcuts || []) {
+      let v; try { v = new URL(s.url); } catch (_) { continue; }
+      if (v.origin !== u.origin || !u.pathname.startsWith(v.pathname)) continue;
+      const p = v.pathname.length * 2 + (v.search ? (u.search.includes(v.search.slice(1)) ? 1 : -1) : 0);
+      if (p > best) { best = p; app = s.url; }
+    }
+    return app;
+  }
+  // Un lien « nouvel onglet » cliqué dans une appli ouverte ici (planning compris) : barre.js nous l'envoie.
+  addEventListener('message', e => {
+    if (e.data?.olda !== 'ouvrir' || typeof e.data.url !== 'string' || !e.source) return;
+    if (e.source !== frame.contentWindow && !onglets.some(o => o.frame?.contentWindow === e.source)) return;
+    ouvrir(e.data.url);
+  });
+  // « Ouvrir dans un onglet du navigateur » : l'onglet de cette appli, pas un de plus.
+  [$('#hub-tab'), $('#onglet-dehors')].forEach(a => a.addEventListener('click', e => {
+    if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault(); ouvrirDehors(a.href);
+  }));
   const raccourci = url => state?.shortcuts.find(s => s.url === url);
   const hoteDe = u => { try { return new URL(u).hostname; } catch (_) { return u; } };
   const nomDe = url => raccourci(url)?.name || hoteDe(url);
@@ -1262,7 +1314,7 @@
     const x = palItems[k]; if (!x) return;
     pal.close();
     if (x.i === hubIndex()) { if (actif) montrer(null); setMax(true); }
-    else if (!ouvrirOnglet(x.s.url)) window.open(x.s.url, '_blank', 'noopener');
+    else ouvrir(x.s.url);
   }
   function palOpen(seed){
     if (!state || pal.open) return;
