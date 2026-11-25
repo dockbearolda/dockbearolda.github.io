@@ -217,6 +217,9 @@
   .chat-urg:hover{ background:rgba(74,98,116,.1); }
   .chat-urg svg{ width:21px; height:21px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   .chat-urg[aria-pressed="true"]{ background:var(--danger); color:#fff; box-shadow:0 4px 12px rgba(217,48,37,.3); }
+  /* Tâche (Loïc) : le message part comme une tâche, dans la bulle Tâches des autres */
+  .chat-tache[aria-pressed="true"]{ background:#f59e0b; color:#fff; box-shadow:0 4px 12px rgba(217,119,6,.3); }
+  .chat.tache .chat-form textarea{ border-color:rgba(217,119,6,.6) !important; box-shadow:0 0 0 3px rgba(245,158,11,.16) !important; }
   .chat.urgent .chat-form textarea{ border-color:rgba(217,48,37,.6) !important; box-shadow:0 0 0 3px rgba(217,48,37,.14) !important; }
   .chat-tag{ display:inline-block; margin:0 6px 2px 0; padding:1px 7px; border-radius:999px; background:var(--danger); color:#fff; font-size:11px; font-weight:700; vertical-align:1px; }
   .chat-m.moi .chat-tag{ background:#fff; color:var(--danger); }
@@ -422,14 +425,6 @@
   .don-orb{ background:radial-gradient(120% 120% at 30% 20%, #b9a2ff 0%, #7c5cf0 55%, #5b3fd6 100%); color:#fff;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 0 0 1px rgba(32,41,48,.06), 0 8px 22px rgba(91,63,214,.32), 0 2px 6px rgba(32,41,48,.18); }
   .mis-orb svg, .don-orb svg{ width:26px; height:26px; }
-  .don .todo-add{ margin-left:16px; }
-  .mis-pour{ display:flex; flex-wrap:wrap; gap:6px; padding:8px 10px 10px 16px; border-bottom:1px solid var(--ligne); }
-  .mis-chip{ --a:74,98,116; min-height:44px; padding:0 13px; border:1px solid var(--ligne); border-radius:22px; background:#fff;
-    font-family:var(--main); font-size:14px; font-weight:600; color:var(--encre); transition:background-color .15s, color .15s, transform .15s; }
-  .mis-chip:active{ transform:scale(.96); }
-  .mis-chip[aria-pressed="true"]{ background:rgb(var(--a)); border-color:rgb(var(--a)); color:#fff; }
-  .mis-chip:focus-visible{ outline:3px solid rgba(74,98,116,.4); outline-offset:2px; }
-  @media (hover:hover){ .mis-chip[aria-pressed="false"]:hover{ background:rgba(74,98,116,.08); } }
   .todo-i.wait{ opacity:.55; }
   @media (prefers-reduced-motion:reduce){ .todo-orb{ transition:none; } .todo-panel, .todo-orb.has-new::before, .todo-i.raye .todo-tx > span, .todo-i.raye .todo-cc .v, .todo-i.part, .todo-i.revient, .ctx{ animation:none; } }
   /* ---------- L'info au survol : presque tout de suite, et à jour en direct ---------- */
@@ -469,6 +464,9 @@
         <span class="chat-rec-dot" aria-hidden="true"></span><span id="chat-rec-t">0:00</span>
         <span class="chat-rec-onde" id="chat-rec-onde" aria-hidden="true"></span>
       </div>
+      <button type="button" class="chat-urg chat-tache" id="chat-tache" aria-pressed="false" hidden title="Tâche : elle arrive dans sa bulle Tâches, tu es prévenu quand c'est fait" aria-label="Envoyer comme tâche">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2.2"/><path d="M9.5 3h5v3h-5z"/><path d="M9 13.2l2.2 2.2 4-4.4"/></svg>
+      </button>
       <button type="button" class="chat-urg" id="chat-urg" aria-pressed="false" hidden title="Urgent : il devra confirmer « J'ai lu » avant de continuer" aria-label="Marquer urgent">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0-6 6c0 5-2 6.5-2 6.5h16S18 14 18 9a6 6 0 0 0-6-6z"/><path d="M10.3 19.5a2 2 0 0 0 3.4 0"/><path d="M12 7.5v3.5"/><path d="M12 13.4v.1"/></svg>
       </button>
@@ -540,13 +538,6 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>
       </button>
     </header>
-    <form id="don-add" autocomplete="off">
-      <div class="todo-add">
-        <input id="don-txt" type="text" maxlength="300" placeholder="Donner une tâche…" enterkeyhint="send" aria-label="Nouvelle tâche à donner">
-        <button type="submit" class="todo-plus" aria-label="Envoyer la tâche"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
-      </div>
-      <div class="mis-pour" id="don-pour" role="group" aria-label="Pour qui"></div>
-    </form>
     <ul class="todo-list" id="don-list" aria-label="Tâches données"></ul>
     <div class="todo-pied" id="don-pied" hidden>
       <button type="button" class="todo-vider" id="don-vider"></button>
@@ -643,7 +634,7 @@
   }
   let msgs = [], chatWs = null, chatEssais = 0, chatSonde = null, chatRetry = null, chatMode = 'ws';
   let presents = [], tapeurs = new Map(), derniereTape = 0, chatAffiches = new Set(), chatChoix = null;
-  let pauses = {}, chatUrgent = false;   // qui est en « Ne pas déranger » (jusqu'à quand) ; le prochain message est-il urgent ?
+  let pauses = {}, chatUrgent = false, chatTache = false;   // qui est en « Ne pas déranger » (jusqu'à quand) ; le prochain message est-il urgent ?
   const enPause = id => !!id && Date.parse(pauses[id]) > Date.now();
   // L'heure du dernier message vu, conversation par conversation ({ tous: 1795…, julien: 1795…, … }).
   // (24/11/2026) Avant, on retenait son id : à la reconnexion le serveur ne renvoie que les 80 derniers
@@ -847,7 +838,8 @@
     const la = autres.filter(x => presents.includes(x.id)).map(x => x.name);
     chatOrb.classList.toggle('is-live', la.length > 0);
     let en = chatOrb.querySelector('.chat-en');
-    if (!la.length) en?.remove();
+    // Pas sur le Dashboard (25/11/2026, Charlie : « je ne veux plus que les bulles en ligne apparaissent sur le dashboard »).
+    if (!la.length || DASHBOARD) en?.remove();
     else { en = en || chatOrb.appendChild(el('span', 'chat-en')); en.replaceChildren(...autres.filter(x => presents.includes(x.id)).map(x => avatar(x))); }
     chatEtat.classList.remove('en');
     if (ecrit.length) { chatEtat.textContent = `${ecrit.join(' et ')} ${ecrit.length > 1 ? 'écrivent' : 'écrit'}…`; return; }
@@ -995,9 +987,12 @@
     const dest = profilDe(chatPour);
     chat.classList.toggle('prive', !!dest);
     if (!dest) chatUrgent = false;
+    if (!chef()) chatTache = false;
     $('#chat-urg').hidden = !dest; $('#chat-urg').setAttribute('aria-pressed', String(chatUrgent));
-    chat.classList.toggle('urgent', chatUrgent);
-    chatTxt.placeholder = !dest ? 'Écrire à l’équipe…' : chatUrgent ? `Urgent pour ${dest.name}…` : `Écrire à ${dest.name}…`;
+    $('#chat-tache').hidden = !chef(); $('#chat-tache').setAttribute('aria-pressed', String(chatTache));
+    chat.classList.toggle('urgent', chatUrgent); chat.classList.toggle('tache', chatTache);
+    chatTxt.placeholder = chatTache ? `Tâche pour ${dest ? dest.name : 'toute l’équipe'}…`
+      : !dest ? 'Écrire à l’équipe…' : chatUrgent ? `Urgent pour ${dest.name}…` : `Écrire à ${dest.name}…`;
   }
 
   // --- Envoyer (texte ou note vocale) ---
@@ -1099,7 +1094,7 @@
   function modeSaisie(){
     const rec = !!enregistreur, texte = !!chatTxt.value.trim();
     $('#chat-rec').hidden = !rec; chatTxt.hidden = rec;
-    $('#chat-mic').hidden = rec || texte || !window.MediaRecorder;
+    $('#chat-mic').hidden = rec || texte || chatTache || !window.MediaRecorder;
     chatSend.hidden = !(rec || texte);
     chatSend.setAttribute('aria-label', rec ? 'Envoyer la note vocale' : 'Envoyer');
   }
@@ -1153,7 +1148,14 @@
   });
   // Entrée envoie, Maj+Entrée va à la ligne (au doigt, le bouton envoie).
   chatTxt.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && matchMedia('(hover:hover)').matches) { e.preventDefault(); $('#chat-form').requestSubmit(); } });
-  $('#chat-form').onsubmit = e => { e.preventDefault(); if (enregistreur) return finirVocal(); const t = chatTxt.value; chatTxt.value = ''; ajuster(); envoyer(t); };
+  $('#chat-form').onsubmit = e => {
+    e.preventDefault(); if (enregistreur) return finirVocal();
+    const t = chatTxt.value; chatTxt.value = ''; ajuster();
+    if (!chatTache) return envoyer(t);
+    const p = me(), pour = chatPour === 'tous' ? PROFILES.filter(x => x.id !== p?.id).map(x => x.id) : [chatPour];
+    chatTache = false; renderPour(); modeSaisie();
+    donnerTache(t, pour).then(ok => { if (!ok && !chatTxt.value) { chatTxt.value = t; ajuster(); } });
+  };
   chatList.addEventListener('scroll', () => { if (chatList.scrollHeight - chatList.scrollTop - chatList.clientHeight < 40) lireTout(); }, { passive: true });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) return;
@@ -1198,7 +1200,11 @@
     aLire();
   };
 
-  $('#chat-urg').onclick = () => { chatUrgent = !chatUrgent; renderPour(); chatTxt.focus({ preventScroll: true }); };
+  $('#chat-urg').onclick = () => { chatUrgent = !chatUrgent; if (chatUrgent) chatTache = false; renderPour(); modeSaisie(); chatTxt.focus({ preventScroll: true }); };
+  // TÂCHE DEPUIS LE CHAT (25/11/2026, Charlie : « Loïc doit pouvoir envoyer une tâche directement depuis le chat ») :
+  // bouton Tâche enfoncé, le message part comme une tâche à la conversation ouverte (Équipe : à tous),
+  // arrive dans leur bulle Tâches, et Loïc la suit dans « Pour l'équipe ». Le bouton se relâche après l'envoi.
+  $('#chat-tache').onclick = () => { chatTache = !chatTache; if (chatTache) chatUrgent = false; renderPour(); modeSaisie(); chatTxt.focus({ preventScroll: true }); };
 
   // --- Ne pas déranger : ni son ni fenêtre chez moi, les autres voient jusqu'à quand ---
   const menu = $('#chat-menu'), dnd = $('#chat-dnd');
@@ -1880,14 +1886,14 @@
   // Depuis le 25/11/2026, les notifications pour moi (BAT, paiements, PRT…) arrivent ici aussi, pour chacun,
   // Loïc compris : tout ce qu'on doit faire est dans Tâches. La To Do List (au-dessus) reste à soi seul.
   // POUR L'ÉQUIPE (25/11/2026, Charlie : « l'autre bulle est exclusivement réservée à la todolist de Loïc ») :
-  // Tâches ne fait plus que recevoir, Loïc compris. Écrire, envoyer et suivre les tâches données
-  // (qui a fini, en cours, effacer les terminées) passent dans une bulle à part, chez Loïc seul.
+  // Tâches ne fait plus que recevoir, Loïc compris. Suivre les tâches données (qui a fini, en cours,
+  // effacer les terminées) passe dans une bulle à part, chez Loïc seul ; il les envoie depuis la discussion.
   const CHEFS = ['loic'];
-  const LS_MIS = 'olda_taches', LS_MIS_POS = 'olda_taches_pos', LS_MIS_VUS = 'olda_taches_vus', LS_MIS_POUR = 'olda_taches_pour', LS_DON_POS = 'olda_taches_don_pos';
+  const LS_MIS = 'olda_taches', LS_MIS_POS = 'olda_taches_pos', LS_MIS_VUS = 'olda_taches_vus', LS_DON_POS = 'olda_taches_don_pos';
   const mis = $('#mis'), misOrb = $('#mis-orb'), misList = $('#mis-list');
-  const don = $('#don'), donOrb = $('#don-orb'), donList = $('#don-list'), donTxt = $('#don-txt');
+  const don = $('#don'), donOrb = $('#don-orb'), donList = $('#don-list');
   let missions = [], misRayes = new Set(), misEclat = new Set(), releveM = false;
-  const misVus = new Set(store.get(LS_MIS_VUS) || []), misPour = new Set(store.get(LS_MIS_POUR) || []);
+  const misVus = new Set(store.get(LS_MIS_VUS) || []);
   const misAttente = new Map();   // id → fait, le temps que BAT Studio confirme (une relève ne la décoche pas entre-temps)
   const chef = () => CHEFS.includes(me()?.id);
   const aujourdhui = iso => !!iso && new Date(iso).toDateString() === new Date().toDateString();
@@ -1907,7 +1913,7 @@
     boite: don, orb: donOrb, panel: $('#don-panel'), tete: $('#don-head'), cle: LS_DON_POS, ouvert: false,
     // La première fois : à gauche des Tâches.
     defaut: ({ w, h }) => enBasADroite(misF.rect() || rectTodo() || rectChat(), w, h),
-    auOuvrir: () => { devant(don); donOrb.classList.remove('has-new'); voirMis(); relireM(); if (matchMedia('(hover:hover)').matches) donTxt.focus({ preventScroll: true }); },
+    auOuvrir: () => { devant(don); donOrb.classList.remove('has-new'); voirMis(); relireM(); },
     auBasculer: () => majCompteD(),
   });
   $('#don-x').onclick = () => donF.basculer(false);
@@ -1965,7 +1971,7 @@
       if (misEclat.has(t.id)) li.classList.add('revient');
       return li;
     });
-    if (!out.length) { const v = el('li', 'todo-vide'); v.textContent = 'Écris une tâche, touche pour qui, envoie.'; out.push(v); }
+    if (!out.length) { const v = el('li', 'todo-vide'); v.textContent = 'Pour donner une tâche : dans la discussion, bouton Tâche, puis envoie.'; out.push(v); }
     donList.replaceChildren(...out);
     misEclat = new Set();
     const finies = donnees().filter(t => t.fait).length;
@@ -1973,21 +1979,6 @@
     $('#don-pied').hidden = !finies;
     majCompteD();
   }
-  // Pour qui : un ou plusieurs prénoms (« Tous » les prend tous) ; le choix reste pour la prochaine.
-  function renderPourM(){
-    const p = me(), autres = PROFILES.filter(x => x.id !== p?.id), tous = autres.every(x => misPour.has(x.id));
-    const garder = () => { store.set(LS_MIS_POUR, [...misPour]); renderPourM(); };
-    const puce = (txt, on, fn, x) => {
-      const b = el('button', 'mis-chip'); b.type = 'button'; b.textContent = txt; b.setAttribute('aria-pressed', String(on));
-      if (x) b.style.setProperty('--a', x.tint);
-      b.onclick = () => { fn(); garder(); };
-      return b;
-    };
-    $('#don-pour').replaceChildren(
-      puce('Tous', tous, () => tous ? misPour.clear() : autres.forEach(x => misPour.add(x.id))),
-      ...autres.map(x => puce(x.name, misPour.has(x.id), () => misPour.has(x.id) ? misPour.delete(x.id) : misPour.add(x.id), x)));
-  }
-
   // --- Cocher : aussitôt chez moi, Loïc l'apprend à sa prochaine relève ---
   async function cocherMis(t){
     const avant = t.fait, fait = !t.fait;
@@ -2006,27 +1997,25 @@
     } finally { misAttente.delete(t.id); garderMis(); renderMis(); }
   }
 
-  // --- Donner (Loïc) : la ligne paraît tout de suite, en attente, puis BAT Studio la confirme ---
-  $('#don-add').onsubmit = async e => {
-    e.preventDefault();
-    const p = me(), texte = donTxt.value.replace(/\s+/g, ' ').trim().slice(0, 300);
-    if (!p || !texte) return;
-    const pour = PROFILES.filter(x => x.id !== p.id && misPour.has(x.id)).map(x => x.id);
-    if (!pour.length) { toast('Pour qui ? Touche un prénom.'); $('#don-pour button')?.focus(); return; }
+  // --- Donner (Loïc, depuis la discussion) : la ligne paraît tout de suite, en attente, puis BAT Studio la confirme ---
+  async function donnerTache(brut, pour){
+    const p = me(), texte = String(brut || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+    if (!p || !texte || !pour.length) return true;
     const at = new Date().toISOString();
     const temp = pour.map(x => ({ id: 'w' + nouvelId(), de: p.id, pour: x, texte, at, fait: null, vu: null, wait: true }));
-    missions = [...temp, ...missions]; donTxt.value = ''; renderMis(); donList.scrollTop = 0;
+    missions = [...temp, ...missions]; renderMis(); donList.scrollTop = 0;
+    let ok = true;
     try {
       const { taches = [] } = await posterM('', { texte, pour });
       missions = [...taches, ...missions.filter(t => !temp.includes(t))];
-      toast(`Envoyée à ${pour.map(misNom).join(', ').replace(/, ([^,]*)$/, ' et $1')}.`);
+      toast(`Tâche envoyée à ${pour.map(misNom).join(', ').replace(/, ([^,]*)$/, ' et $1')}.`);
     } catch (err) {
-      missions = missions.filter(t => !temp.includes(t));
-      if (!donTxt.value) donTxt.value = texte;
+      missions = missions.filter(t => !temp.includes(t)); ok = false;
       toast(err.statut ? err.message : 'Réseau indisponible : la tâche n’est pas partie.');
     }
     garderMis(); renderMis();
-  };
+    return ok;
+  }
   async function retirerMis(t){
     const avant = missions;
     missions = missions.filter(x => x !== t); garderMis(); renderMis();
@@ -2085,7 +2074,7 @@
     missions = c && c.qui === p?.id && Array.isArray(c.taches) ? c.taches : [];
     mis.classList.toggle('is-min', !misF.pos.ouvert);
     don.classList.toggle('is-min', !donF.pos.ouvert);
-    if (p) { renderPourM(); renderMis(); relireM(); }
+    if (p) { renderMis(); relireM(); }
   }
 
   // --- Cacher / afficher, site par site : clic droit, ou appui long au doigt ---
