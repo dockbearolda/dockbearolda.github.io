@@ -1351,6 +1351,9 @@
       case 'bat-paiement': case 'bat-production': return /Commande mix/.test(t) ? `${client} a validé sa commande mix` : `${client} a validé son BAT`;
       case 'bat-note': return `${client} a laissé une note sur son BAT`;
       case 'bat-relance': return `${client} n’a pas répondu au BAT`;
+      // BAT laser (gabarits-laser, 25/11/2026) : le client valide sur /bat/<id>, ou dit ce qu'il faut changer.
+      case 'laser-valide': return `${client} a validé son BAT laser`;
+      case 'laser-note': { const d = x.length > 90 ? x.slice(0, 89) + '…' : x; return d ? `${client} demande une modif : « ${d} »` : `${client} demande une modif de son BAT laser`; }
       // Le PRT n'est pas arrivé dans le planning 20 min après l'envoi (server/notifs.mjs verifierPrts).
       case 'prt-imprimer': return n.rate ? `PRT de ${client} pas arrivé : à renvoyer` : nomme ? `${nomme} a validé les cotes de ${client}` : `Cotes prises pour ${client}`;
       case 'prt-shop': return nomme ? `${nomme} a demandé un réassort boutique` : 'Réassort boutique demandé';
@@ -1533,6 +1536,8 @@
     window.open(u.toString(), '_blank', 'noopener');
   }
   const ouvrirPlanningT = () => window.open(PLANNING, '_blank', 'noopener');
+  const GABARITS = 'https://gabarits-laser.dockbear.workers.dev/';
+  const ouvrirGabaritsT = () => window.open(GABARITS, '_blank', 'noopener');
   // direct : « Envoyer en production » — la Planche crée le PRT d'elle-même (rien d'autre sur la planche).
   const ouvrirPlancheT = (c, direct) => window.open(`${PLANCHE}?id=${encodeURIComponent(c.id)}&zone=${encodeURIComponent(c.zone)}${direct ? '&auto=1' : ''}`, '_blank', 'noopener');
   // ENVOYER UN PRT (22/11/2026) : la Planche s'ouvre, BAT Studio note l'heure. Si 20 min plus tard
@@ -1591,6 +1596,8 @@
         ? [{ label: 'Oui, en production', cls: 'oui', fn: () => payerT(n, true) }, { label: 'Pas encore', cls: 'non', fn: () => payerT(n, false) }]
         : [];
       case 'bat-relance': return n.copie ? [{ label: 'Copier le lien', cls: 'go', fn: () => copierT(n) }] : [];
+      case 'laser-valide': return [{ label: 'Ouvrir Gabarits laser', cls: 'go', fn: ouvrirGabaritsT }, { label: 'Vu', cls: 'oui', fn: () => {} }];
+      case 'laser-note': return [{ label: 'Refaire le BAT', cls: 'go', fn: ouvrirGabaritsT }];
       case 'a-facturer': return [{ label: 'Facturé', cls: 'oui', fn: () => {} }];
       case 'retards': return [planning];
       case 'bat-valide': return [{ label: 'Prendre les cotes', cls: 'go', fn: () => ouvrirBatT(n.lien) }];
@@ -1615,7 +1622,7 @@
       default: return n.lien && n.lien !== '/' ? [{ label: 'Ouvrir', cls: 'go', fn: () => ouvrirBatT(n.lien) }] : [];
     }
   }
-  const FAIT = { 'prt-imprimer': 'Envoyé', 'bat-paiement': 'Répondu', 'bat-production': 'Répondu', 'bat-relance': 'Lien copié', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu', 'a-facturer': 'Facturé', 'stock-bas': 'Traité', 'stock-manque': 'Répondu' };
+  const FAIT = { 'laser-valide': 'Vu', 'laser-note': 'Refait', 'prt-imprimer': 'Envoyé', 'bat-paiement': 'Répondu', 'bat-production': 'Répondu', 'bat-relance': 'Lien copié', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu', 'a-facturer': 'Facturé', 'stock-bas': 'Traité', 'stock-manque': 'Répondu' };
   function boutonsNotif(n){
     const liste = reponsesNotif(n);
     if (!liste.length) return [];
