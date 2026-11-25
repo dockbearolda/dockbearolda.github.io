@@ -1538,16 +1538,22 @@
   // LA RÉPONSE EN UN CLIC (21/11/2026) : « tout le travail doit être déjà mâché, on n'a plus qu'à
   // cliquer ». Chaque notification arrive avec sa question et ses réponses ; répondre la coche.
   const PLANCHE = 'http://127.0.0.1:47831/bat';   // la Planche DTF de Fast White, sur le poste
+  // Un seul onglet par appli (25/11/2026) : sur le Dashboard, dans son onglet à lui ; ailleurs, l'onglet
+  // du navigateur nommé d'après le site — re-cliquer y ramène au lieu d'ouvrir une fenêtre de plus.
+  const ouvrirLien = url => {
+    if (window.oldaOuvrir) return window.oldaOuvrir(url);
+    try { window.open(url, 'olda-' + new URL(url).host.replace(/[^\w-]/g, '-')); } catch (_) {}
+  };
   function ouvrirBatT(lien){
     let u; try { u = new URL(lien || '/', BAT + '/'); } catch (_) { return; }
     if (u.origin !== BAT_ORIGINE) return;   // le lien ne mène que chez BAT Studio
     u.searchParams.set('poste', me()?.id || '');
-    window.open(u.toString(), '_blank', 'noopener');
+    ouvrirLien(u.toString());
   }
   const GABARITS = 'https://gabarits-laser.dockbear.workers.dev/';
-  const ouvrirGabaritsT = () => window.open(GABARITS, '_blank', 'noopener');
+  const ouvrirGabaritsT = () => ouvrirLien(GABARITS);
   // direct : « Envoyer en production » — la Planche crée le PRT d'elle-même (rien d'autre sur la planche).
-  const ouvrirPlancheT = (c, direct) => window.open(`${PLANCHE}?id=${encodeURIComponent(c.id)}&zone=${encodeURIComponent(c.zone)}${direct ? '&auto=1' : ''}`, '_blank', 'noopener');
+  const ouvrirPlancheT = (c, direct) => ouvrirLien(`${PLANCHE}?id=${encodeURIComponent(c.id)}&zone=${encodeURIComponent(c.zone)}${direct ? '&auto=1' : ''}`);
   // ENVOYER UN PRT (22/11/2026) : la Planche s'ouvre, BAT Studio note l'heure. Si 20 min plus tard
   // aucun PRT n'est arrivé sur la bulle du planning (Planche fermée, connexion impossible, RIP raté),
   // la notification revient : aucun PRT oublié. Pas noté (réseau) : la ligne reste à faire chez BAT Studio.

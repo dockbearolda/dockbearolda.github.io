@@ -8,6 +8,9 @@
    - dans le Dashboard, si l'appli est son planning (il répond { olda: 'hub' }),
      elle agrandit le cadre du Dashboard ;
    - ailleurs, elle met la page en plein écran (Échap ou la flèche la rend).
+   Et, dans un cadre du Dashboard (25/11/2026, « un seul onglet ») : un lien
+   « nouvel onglet » de l'appli ne fait plus naître une fenêtre ; le Dashboard
+   l'ouvre dans l'onglet de l'appli visée (ou l'onglet du navigateur de ce site).
    Chargé par chaque appli : <script src="https://dockbearolda.github.io/barre.js" defer></script> */
 (function () {
   if (window.__obBarre) return;
@@ -51,5 +54,16 @@
   // Une appli posée plus tard (le Logo maker monte sa barre en JS) : on revoit au premier besoin.
   new MutationObserver(function () { if (doc.querySelector('.ob-grand:not([aria-pressed])')) maj(); })
     .observe(racine, { childList: true, subtree: true });
+  // Le Dashboard autour (Chrome, Safari : location.ancestorOrigins ; sans, rien ne change).
+  var autour = cadre && location.ancestorOrigins && location.ancestorOrigins[0];
+  if (autour && OK.test(autour)) doc.addEventListener('click', function (e) {
+    if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = null, chemin = e.composedPath ? e.composedPath() : [e.target];
+    for (var i = 0; i < chemin.length && !a; i++) if (chemin[i].tagName === 'A' && chemin[i].href) a = chemin[i];
+    if (!a || a.hasAttribute('download') || (a.getAttribute('target') || '').toLowerCase() !== '_blank') return;
+    if (a.protocol !== 'https:' && a.protocol !== 'http:') return;
+    e.preventDefault();
+    window.parent.postMessage({ olda: 'ouvrir', url: a.href }, autour);
+  });
   if (cadre) window.parent.postMessage({ olda: 'hub-ready' }, '*');
 })();
