@@ -1,0 +1,10 @@
+{
+  // Le Dashboard sur olda.myolda.com : relais de GitHub Pages + passage de la bulle vers BAT Studio (worker.js).
+  // Déployer : npx wrangler deploy (seulement si worker.js ou ce fichier changent ; les pages, elles, suivent main).
+  "name": "olda-dashboard",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": false,
+  "routes": [{ "pattern": "olda.myolda.com", "custom_domain": true }],
+  "services": [{ "binding": "BAT", "service": "bat-studio" }]
+}

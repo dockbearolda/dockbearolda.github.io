@@ -22,7 +22,12 @@
   const script = document.currentScript;
   const DASHBOARD = !!script && script.hasAttribute('data-dashboard');
   const local = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
-  const BAT = (script && script.dataset.bat) || (local && new URLSearchParams(location.search).get('bat')) || 'https://bat-studio.dockbear.workers.dev';
+  // Sur myolda.com (derrière Cloudflare Access, 25/11/2026) : les liens vont à bat.myolda.com, et les appels
+  // passent par l'appli elle-même (/olda-bat/…, relayé à BAT Studio) — même adresse, donc le cookie Access suit.
+  const myolda = /\.myolda\.com$/.test(location.hostname);
+  const BAT = (script && script.dataset.bat) || (local && new URLSearchParams(location.search).get('bat'))
+    || (myolda ? 'https://bat.myolda.com' : 'https://bat-studio.dockbear.workers.dev');
+  const BAT_API = myolda && BAT === 'https://bat.myolda.com' && location.hostname !== 'bat.myolda.com' ? location.origin + '/olda-bat' : BAT;
 
   // --- Qui est au poste (les mêmes que le Dashboard ; chacun sa couleur) ---
   const PROFILES = [
@@ -860,14 +865,14 @@
     m.lu = new Date().toISOString();   // aussitôt chez moi ; le serveur confirme et prévient l'auteur
     garderChat();
     if (chatWs?.readyState === 1) chatWs.send(JSON.stringify({ type: 'lu', id: m.id }));
-    else fetch(`${BAT}/api/chat/lu/${encodeURIComponent(m.id)}?qui=${encodeURIComponent(p.id)}`, { method: 'POST' }).catch(() => {});
+    else fetch(`${BAT_API}/api/chat/lu/${encodeURIComponent(m.id)}?qui=${encodeURIComponent(p.id)}`, { method: 'POST' }).catch(() => {});
   }
   // Retirer mon message : aussitôt chez moi, le serveur le retire chez les autres.
   function supprimerMsg(m){
     const p = me(); if (!p || m.de !== p.id) return;
     chatChoix = null; msgs = msgs.filter(x => x !== m); garderChat(); renderChat();
     if (chatWs?.readyState === 1) chatWs.send(JSON.stringify({ type: 'suppr', id: m.id }));
-    else fetch(`${BAT}/api/chat/suppr/${encodeURIComponent(m.id)}?qui=${encodeURIComponent(p.id)}`, { method: 'POST' }).catch(() => {});
+    else fetch(`${BAT_API}/api/chat/suppr/${encodeURIComponent(m.id)}?qui=${encodeURIComponent(p.id)}`, { method: 'POST' }).catch(() => {});
   }
   const garderChat = () => store.set(LS_CHAT, { qui: me()?.id, msgs: msgs.filter(m => !m.wait && !m.rate).slice(-200) });
   // Un « toc » discret, différent du ding-dong des notifications.
@@ -900,7 +905,7 @@
     clearTimeout(chatRetry); clearInterval(chatSonde); chatSonde = null;
     if (chatWs) { chatWs.onclose = null; chatWs.close(); chatWs = null; }
     let ws;
-    try { ws = new WebSocket(BAT.replace(/^http/, 'ws') + '/api/chat/ws?qui=' + encodeURIComponent(p.id)); } catch (_) { return sonder(); }
+    try { ws = new WebSocket(BAT_API.replace(/^http/, 'ws') + '/api/chat/ws?qui=' + encodeURIComponent(p.id)); } catch (_) { return sonder(); }
     chatWs = ws; let ouvert = false;
     ws.onopen = () => { ouvert = true; chatEssais = 0; chatMode = 'ws'; majEtat(); };
     ws.onmessage = ev => {
@@ -926,7 +931,7 @@
   async function relire(){
     try {
       const dernier = msgs.filter(m => !m.wait && !m.rate).at(-1);
-      const r = await fetch(`${BAT}/api/chat?qui=${encodeURIComponent(me()?.id || '')}${dernier ? '&depuis=' + encodeURIComponent(dernier.id) : ''}`, { cache: 'no-store' });
+      const r = await fetch(`${BAT_API}/api/chat?qui=${encodeURIComponent(me()?.id || '')}${dernier ? '&depuis=' + encodeURIComponent(dernier.id) : ''}`, { cache: 'no-store' });
       if (!r.ok) return;
       const { messages = [], pauses: pz } = await r.json();
       if (pz && JSON.stringify(pz) !== JSON.stringify(pauses)) { pauses = pz; majPause(); }
@@ -984,7 +989,7 @@
       setTimeout(() => { if (m.wait) { m.wait = false; m.rate = true; renderChat(); } }, 10000);
       return;
     }
-    fetch(`${BAT}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ de: p.id, ...corps, cle: m.cle }) })
+    fetch(`${BAT_API}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ de: p.id, ...corps, cle: m.cle }) })
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(({ msg }) => recevoir(msg))
       .catch(() => { m.wait = false; m.rate = true; renderChat(); });
@@ -1011,7 +1016,7 @@
     if (urgent) m.urgent = true;
     msgs.push(m); renderChat();
     try {
-      const r = await fetch(`${BAT}/api/chat/vocal`, { method: 'POST', headers: { 'Content-Type': blob.type || 'audio/webm' }, body: blob });
+      const r = await fetch(`${BAT_API}/api/chat/vocal`, { method: 'POST', headers: { 'Content-Type': blob.type || 'audio/webm' }, body: blob });
       if (!r.ok) throw 0;
       const { id } = await r.json();
       sons.set(id, local);   // déjà là : on ne la retélécharge pas
@@ -1044,7 +1049,7 @@
       let url = v.url || sons.get(v.id);
       if (!url) {
         btn.disabled = true;
-        try { const r = await fetch(`${BAT}/api/chat/vocal/${v.id}`); if (!r.ok) throw 0; url = URL.createObjectURL(await r.blob()); sons.set(v.id, url); }
+        try { const r = await fetch(`${BAT_API}/api/chat/vocal/${v.id}`); if (!r.ok) throw 0; url = URL.createObjectURL(await r.blob()); sons.set(v.id, url); }
         catch (_) { toast('Note vocale introuvable.'); btn.disabled = false; return; }
         btn.disabled = false;
       }
@@ -1195,7 +1200,7 @@
     if (jusqua) pauses[p.id] = jusqua; else delete pauses[p.id];
     majPause(); menu.hidden = true;
     if (chatWs?.readyState === 1) chatWs.send(JSON.stringify({ type: 'pause', jusqua }));
-    else fetch(`${BAT}/api/chat/pause?qui=${encodeURIComponent(p.id)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jusqua }) }).catch(() => {});
+    else fetch(`${BAT_API}/api/chat/pause?qui=${encodeURIComponent(p.id)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jusqua }) }).catch(() => {});
     toast(jusqua ? `Ne pas déranger jusqu’à ${heure(jusqua)}. Les messages urgents attendront.` : 'Tu reçois à nouveau tout.');
   }
   dnd.onclick = e => {
@@ -1481,7 +1486,7 @@
     const c = store.get(LS_TODO);
     if (!c || !c.aEnvoyer || !profil(c.qui)) return;
     try {
-      const r = await fetch(`${BAT}/api/todo?qui=${encodeURIComponent(c.qui)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: c.items }) });
+      const r = await fetch(`${BAT_API}/api/todo?qui=${encodeURIComponent(c.qui)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: c.items }) });
       if (!r.ok) throw 0;
       const d = store.get(LS_TODO);
       if (d && d.v === c.v) store.set(LS_TODO, { ...d, aEnvoyer: false });
@@ -1502,7 +1507,7 @@
   function cocherNotif(n){
     if (n.lu) return;
     n.lu = new Date().toISOString();
-    fetch(`${BAT}/api/notifs/${encodeURIComponent(n.id)}/lu`, { method: 'POST' }).catch(() => {});
+    fetch(`${BAT_API}/api/notifs/${encodeURIComponent(n.id)}/lu`, { method: 'POST' }).catch(() => {});
     rayerNotif(n);
   }
   // Le trait, puis la ligne part (elle reste lue chez BAT Studio).
@@ -1551,7 +1556,7 @@
     u.searchParams.set('poste', me()?.id || '');
     ouvrirLien(u.toString());
   }
-  const GABARITS = 'https://gabarits-laser.dockbear.workers.dev/';
+  const GABARITS = myolda ? 'https://laser.myolda.com/' : 'https://gabarits-laser.dockbear.workers.dev/';
   const ouvrirGabaritsT = () => ouvrirLien(GABARITS);
   // direct : « Envoyer en production » — la Planche crée le PRT d'elle-même (rien d'autre sur la planche).
   const ouvrirPlancheT = (c, direct) => ouvrirLien(`${PLANCHE}?id=${encodeURIComponent(c.id)}&zone=${encodeURIComponent(c.zone)}${direct ? '&auto=1' : ''}`);
@@ -1560,13 +1565,13 @@
   // la notification revient : aucun PRT oublié. Pas noté (réseau) : la ligne reste à faire chez BAT Studio.
   async function envoyerPrtT(n){
     ouvrirPlancheT(n.carte, true);   // tout de suite, dans le clic : sinon le navigateur bloque la fenêtre
-    const r = await fetch(`${BAT}/api/notifs/${encodeURIComponent(n.id)}/envoi`, { method: 'POST' }).catch(() => null);
+    const r = await fetch(`${BAT_API}/api/notifs/${encodeURIComponent(n.id)}/envoi`, { method: 'POST' }).catch(() => null);
     if (r?.ok) { n.envoi = new Date().toISOString(); delete n.rate; }
   }
   // « Le client a-t-il payé ? » — Oui : la bulle part dans PRT, cotes à prendre ; Non : la ligne reste
   // en rouge en haut du Dashboard. Le serveur coche aussi la question de l'autre (Mélina / Loïc).
   async function payerT(n, paye){
-    const r = await fetch(`${BAT}/api/suivi/${encodeURIComponent(n.projetId)}/paiement`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paye, qui: me()?.id || '' }) });
+    const r = await fetch(`${BAT_API}/api/suivi/${encodeURIComponent(n.projetId)}/paiement`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paye, qui: me()?.id || '' }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok && r.status !== 404) throw new Error(j.error || 'Erreur ' + r.status);   // 404 : déjà réglé
     toast(n.type === 'bat-production'
@@ -1575,7 +1580,7 @@
   }
   async function prevenuT(n){
     if (!n.carte?.id) return;   // une notification d'avant : rien à ranger
-    const r = await fetch(`${BAT}/api/suivi/${encodeURIComponent(n.carte.id)}/prevenu`, { method: 'POST' });
+    const r = await fetch(`${BAT_API}/api/suivi/${encodeURIComponent(n.carte.id)}/prevenu`, { method: 'POST' });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || 'Erreur ' + r.status);
     toast('Client prévenu : la commande est aux Archives.');
@@ -1701,7 +1706,7 @@
   }
   async function envoyerNote(id, texte){
     const p = me(); if (!p) return false;
-    const r = await fetch(`${BAT}/api/notifs/${encodeURIComponent(id)}/note?qui=${encodeURIComponent(p.id)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texte }) }).catch(() => null);
+    const r = await fetch(`${BAT_API}/api/notifs/${encodeURIComponent(id)}/note?qui=${encodeURIComponent(p.id)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texte }) }).catch(() => null);
     // 404 : la notification n'existe plus chez BAT Studio, inutile d'insister.
     if (!r || (!r.ok && r.status !== 404)) return false;
     const notes = notesLocales(); if (notes[id]) { notes[id].envoyee = true; garderNotes(notes); }
@@ -1763,8 +1768,8 @@
       const c = store.get(LS_TODO);
       if (c?.aEnvoyer && c.qui === p.id) await envoyerT();
       const [rt, rn] = await Promise.all([
-        fetch(`${BAT}/api/todo?qui=${encodeURIComponent(p.id)}`, { cache: 'no-store' }).catch(() => null),
-        fetch(`${BAT}/api/notifs?pour=${encodeURIComponent(p.id)}`, { cache: 'no-store' }).catch(() => null),
+        fetch(`${BAT_API}/api/todo?qui=${encodeURIComponent(p.id)}`, { cache: 'no-store' }).catch(() => null),
+        fetch(`${BAT_API}/api/notifs?pour=${encodeURIComponent(p.id)}`, { cache: 'no-store' }).catch(() => null),
       ]);
       if (me() !== p) return;
       const d = store.get(LS_TODO);
@@ -1901,7 +1906,7 @@
   $('#mis-x').onclick = () => misF.basculer(false);
   const garderMis = () => store.set(LS_MIS, { qui: me()?.id, taches: missions.filter(t => !t.wait) });
   const posterM = async (chemin, corps) => {
-    const r = await fetch(`${BAT}/api/taches${chemin}?qui=${encodeURIComponent(me()?.id || '')}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps || {}) });
+    const r = await fetch(`${BAT_API}/api/taches${chemin}?qui=${encodeURIComponent(me()?.id || '')}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps || {}) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw Object.assign(new Error(j.error || 'Réseau indisponible, réessaie.'), { statut: r.status });
     return j;
@@ -2025,7 +2030,7 @@
     const p = me(); if (!p || releveM) return;
     releveM = true;
     try {
-      const r = await fetch(`${BAT}/api/taches?qui=${encodeURIComponent(p.id)}`, { cache: 'no-store' }).catch(() => null);
+      const r = await fetch(`${BAT_API}/api/taches?qui=${encodeURIComponent(p.id)}`, { cache: 'no-store' }).catch(() => null);
       if (!r?.ok || me() !== p) return;
       const { taches } = await r.json().catch(() => ({}));
       if (!Array.isArray(taches)) return;
