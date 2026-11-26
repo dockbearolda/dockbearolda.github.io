@@ -579,13 +579,21 @@
     t.textContent = msg; t.classList.add('show');
     clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
   }
+  // UN SEUL ONGLET SONNE (26/11/2026). Chaque appli ouverte (BAT Studio, planning, laser, cotes, Dashboard)
+  // a sa bulle et sa connexion : un message urgent sonnait et s'imposait dans toutes à la fois, toutes les 20 s.
+  // Les applis n'ont pas la même adresse : elles ne peuvent pas se parler entre elles. C'est BAT Studio, qui
+  // voit toutes les connexions de chacun, qui désigne l'onglet « chef » : le dernier qu'on a regardé.
+  // Lui seul sonne et ouvre « … t'écrit » ou la relance ; les autres affichent, en silence.
+  // Sans WebSocket (BAT Studio local, relevé), ou avec un BAT Studio qui ne le dit pas : chaque onglet est chef.
+  let ongletChef = true;
+  const onglet = Math.random().toString(36).slice(2, 12);
   // Le son ne part qu'après un premier geste sur la page (règle des navigateurs).
   let audio = null;
   const debloquer = () => { try { audio ||= new (window.AudioContext || window.webkitAudioContext)(); if (audio.state !== 'running') audio.resume(); } catch (_) {} };
   addEventListener('pointerdown', debloquer, { passive: true, capture: true });
   addEventListener('keydown', debloquer, { capture: true });
   function sonner(){
-    if (!audio || audio.state !== 'running') return;
+    if (!ongletChef || !audio || audio.state !== 'running') return;
     const t0 = audio.currentTime + .02;
     [[880, 0], [659, .22], [880, .7], [659, .92]].forEach(([f, d]) => {
       const o = audio.createOscillator(), g = audio.createGain();
@@ -877,7 +885,7 @@
   const garderChat = () => store.set(LS_CHAT, { qui: me()?.id, msgs: msgs.filter(m => !m.wait && !m.rate).slice(-200) });
   // Un « toc » discret, différent du ding-dong des notifications.
   function toc(){
-    if (!audio || audio.state !== 'running') return;
+    if (!ongletChef || !audio || audio.state !== 'running') return;
     const t0 = audio.currentTime + .01, o = audio.createOscillator(), g = audio.createGain();
     o.type = 'sine'; o.frequency.setValueAtTime(740, t0); o.frequency.exponentialRampToValueAtTime(1110, t0 + .09);
     g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.14, t0 + .015); g.gain.exponentialRampToValueAtTime(.001, t0 + .28);
@@ -905,7 +913,7 @@
     clearTimeout(chatRetry); clearInterval(chatSonde); chatSonde = null;
     if (chatWs) { chatWs.onclose = null; chatWs.close(); chatWs = null; }
     let ws;
-    try { ws = new WebSocket(BAT_API.replace(/^http/, 'ws') + '/api/chat/ws?qui=' + encodeURIComponent(p.id)); } catch (_) { return sonder(); }
+    try { ws = new WebSocket(BAT_API.replace(/^http/, 'ws') + '/api/chat/ws?qui=' + encodeURIComponent(p.id) + '&onglet=' + onglet + (document.hidden ? '' : '&vu=1')); } catch (_) { return sonder(); }
     chatWs = ws; let ouvert = false;
     ws.onopen = () => { ouvert = true; chatEssais = 0; chatMode = 'ws'; majEtat(); };
     ws.onmessage = ev => {
@@ -916,12 +924,13 @@
       else if (e.type === 'presents') { presents = e.presents || []; majEtat(); renderPour(); }
       else if (e.type === 'tape') { clearTimeout(tapeurs.get(e.de)?.t); tapeurs.set(e.de, { prive: !!e.prive, t: setTimeout(() => { tapeurs.delete(e.de); majEtat(); }, 4000) }); majEtat(); }
       else if (e.type === 'suppr') { const n = msgs.length; msgs = msgs.filter(x => x.id !== e.id); if (msgs.length !== n) { garderChat(); renderChat(); majNonLus(); } }
-      else if (e.type === 'lu') { const m = msgs.find(x => x.id === e.id); if (m) { m.lu = e.lu; garderChat(); renderChat(); } }
+      else if (e.type === 'lu') { const m = msgs.find(x => x.id === e.id); if (m) { m.lu = e.lu; garderChat(); renderChat(); aLire(); } }   // lu dans un autre onglet : ici aussi, c'est fini
       else if (e.type === 'refus') { const m = msgs.find(x => x.cle === e.cle); if (m) { m.wait = false; m.rate = true; renderChat(); } }
+      else if (e.type === 'chef') { if (ongletChef !== !!e.chef) { ongletChef = !!e.chef; aLire(); } }
     };
     ws.onclose = () => {
       if (chatWs !== ws) return;
-      chatWs = null; presents = [];
+      chatWs = null; presents = []; ongletChef = true;   // seul, on redevient son propre chef
       // Jamais ouvert : pas de WebSocket ici (BAT Studio local) → on relève. Sinon on se reconnecte, de plus en plus calmement.
       if (!ouvert && chatEssais === 0) return sonder();
       chatMode = 'coupe'; majEtat();
@@ -1142,9 +1151,12 @@
     donnerTache(t, pour).then(ok => { if (!ok && !chatTxt.value) { chatTxt.value = t; ajuster(); } });
   };
   chatList.addEventListener('scroll', () => { if (chatList.scrollHeight - chatList.scrollTop - chatList.clientHeight < 40) lireTout(); }, { passive: true });
+  // On regarde cet onglet : il devient le chef (BAT Studio le dit aux autres onglets de la même personne).
+  const vu = () => { if (!document.hidden && chatWs?.readyState === 1) chatWs.send(JSON.stringify({ type: 'vu' })); };
+  addEventListener('focus', vu);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) return;
-    lireTout();
+    lireTout(); vu();
     if (!chatWs && chatMode !== 'sonde' && me()) connecter();
   });
 
@@ -1160,7 +1172,12 @@
   function aLire(){
     const file = enAttenteDeMoi();
     if (lireCourant && !file.some(m => m.id === lireCourant.id)) lireCourant = null;
-    if (!file.length) { if (lireDlg.open) lireDlg.close(); clearInterval(lireDing); lireDing = null; document.title = titreAvant; setTimeout(relancer); return; }
+    if (!file.length || !ongletChef) {
+      if (lireDlg.open) lireDlg.close(); clearInterval(lireDing); lireDing = null; lireCourant = null;
+      const de = file.length && profilDe(file[0].de);
+      document.title = file.length ? `🔴 ${de ? de.name : 'Message'} t’écrit` : titreAvant;
+      setTimeout(relancer); return;
+    }
     $('#lire-n').textContent = file.length > 1 ? `Encore ${file.length - 1} message${file.length > 2 ? 's' : ''} après celui-ci` : '';
     if (lireCourant) return;
     const m = lireCourant = file[0], de = profilDe(m.de);
@@ -1715,7 +1732,7 @@
   function relancer(){
     const file = aRelancer();
     if (relCourant && !file.some(n => n.id === relCourant.id)) relCourant = null;   // réglée ailleurs entre-temps
-    if (!file.length) { if (relDlg.open) relDlg.close(); return; }
+    if (!file.length || !ongletChef) { if (relDlg.open) relDlg.close(); relCourant = null; return; }
     $('#relance-n').textContent = file.length > 1 ? `Encore ${file.length - 1} après celle-ci` : '';
     if (relCourant) return;   // on ne touche pas à la note en cours de frappe
     if (lireDlg.open) return;   // un message urgent d'abord ; aLire nous rappelle ensuite
