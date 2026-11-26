@@ -58,7 +58,7 @@
     },
     {
       "name": "Tarif Laser",
-      "url": "https://tarif-laser.myolda.com/",
+      "url": "https://tarif-laser.dockbear.workers.dev/",
       "icon": "euro",
       "color": "rouge",
       "since": 1793030196023
