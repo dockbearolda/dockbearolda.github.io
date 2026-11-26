@@ -390,6 +390,26 @@
   kbd{ display:inline-block; min-width:20px; padding:3px 5px; border-radius:6px; border:1px solid var(--line); border-bottom-width:2px; background:#f7f9fa; font:600 11px/1 inherit; text-align:center; color:var(--ink); }
   .btn kbd{ background:rgba(255,255,255,.6); }
 
+  /* ---------- MES APPS (25/11/2026, Charlie : « supprimer ou ajouter des apps rapidement, certains
+     n'ont pas besoin de certaines apps ») : chacun choisit les siennes, d'un interrupteur ---------- */
+  .apps-liste{ display:grid; gap:2px; }
+  .app-ligne{ display:flex; align-items:center; gap:12px; min-height:52px; padding:4px 6px; border-radius:14px; cursor:pointer; }
+  @media (hover:hover){ .app-ligne:hover{ background:#f1f4f6; } }
+  .app-ligne .card-icon{ width:36px; height:36px; border-radius:11px; }
+  .app-ligne .card-icon svg{ width:18px; height:18px; }
+  .app-ligne .card-letter{ font-size:16px; }
+  .app-ligne b{ flex:1; min-width:0; font-size:15px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .app-ligne.off b{ color:var(--muted); font-weight:500; }
+  .interrupteur{ -webkit-appearance:none; appearance:none; flex:none; position:relative; width:44px; height:26px; margin:0; border-radius:13px; background:#d6dde3; cursor:pointer; transition:background-color .2s; }
+  .interrupteur::after{ content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(32,41,48,.25); transition:transform .25s var(--spring); }
+  .interrupteur:checked{ background:var(--duck); }
+  .interrupteur:checked::after{ transform:translateX(18px); }
+  .interrupteur:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:2px; }
+  .ctx-app{ position:fixed; z-index:40; min-width:240px; padding:6px; border-radius:16px; background:#fff; box-shadow:0 0 0 1px rgba(74,98,116,.12), 0 18px 40px rgba(42,58,72,.22); animation:appear .18s ease-out; }
+  .ctx-app button{ display:flex; align-items:center; width:100%; min-height:44px; padding:0 12px; border:0; border-radius:10px; background:none; font-size:15px; font-weight:600; text-align:left; color:var(--ink); }
+  .ctx-app button:hover,.ctx-app button:focus-visible{ background:#f1f4f6; outline:none; }
+  .ctx-app button.danger{ color:var(--danger); }
+
   /* Les toasts et les confirmations : messages.js (source unique, le même dans toutes les applis OLDA, toasts en haut) */
 
   @media (prefers-reduced-motion:reduce){
@@ -521,6 +541,25 @@
     </footer>
   </form>
 </dialog>
+
+<dialog id="mes-apps" aria-labelledby="mes-apps-titre">
+  <div class="sheet">
+    <header class="sheet-head">
+      <h2 id="mes-apps-titre">Mes apps</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </header>
+    <div class="sheet-body">
+      <p class="hint" id="mes-apps-qui"></p>
+      <div class="apps-liste" id="apps-liste"></div>
+    </div>
+    <div class="sheet-foot">
+      <button type="button" class="btn btn--ghost" id="b-nouvelle-app">Nouvelle app</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn btn--primary" data-close>OK</button>
+    </div>
+  </div>
+</dialog>
+<div class="ctx-app" id="ctx-app" role="menu" hidden></div>
 
 <dialog id="who" aria-labelledby="who-title">
   <div class="sheet">
@@ -682,13 +721,23 @@
   // UNE APPLI POUR UNE SEULE PERSONNE (21/11/2026) : « pour » liste les profils qui la
   // voient (Fast White : Charlie seul) ; sans « pour », tout le monde. En édition, tout paraît.
   const pourMoi = s => !Array.isArray(s.pour) || s.pour.includes(store.raw('olda_poste'));
+  // MES APPS (25/11/2026, Charlie) : chacun retire les apps dont il n'a pas besoin, et les remet,
+  // d'un clic ; retenu sur ce poste, par profil (comme l'ordre), sans rien publier.
+  const LS_MASQUEES = 'olda_masquees';
+  const masquees = () => (store.get(LS_MASQUEES) || {})[store.raw('olda_poste')] || [];
+  const visible = s => pourMoi(s) && !masquees().includes(s.url);
+  function garderApp(url, oui){
+    const m = store.get(LS_MASQUEES) || {}, p = store.raw('olda_poste'), l = new Set(m[p] || []);
+    if (oui) l.delete(url); else l.add(url);
+    m[p] = [...l]; store.set(LS_MASQUEES, m); render();
+  }
   // Les apps, dans l'ordre des raccourcis, dans la barre de gauche ; le planning à droite.
   function render(){
     const h = hubIndex();
     hubTile.hidden = h < 0;
     if (h >= 0) syncHub(state.shortcuts[h]); else if (maxed) setMax(false);
     const frag = document.createDocumentFragment();
-    let apps = state.shortcuts.map((s, i) => ({ s, i })).filter(x => x.i !== h && (editing || pourMoi(x.s)));
+    let apps = state.shortcuts.map((s, i) => ({ s, i })).filter(x => x.i !== h && (editing || visible(x.s)));
     if (!editing) apps = ordonner(apps);
     apps.forEach(({ s, i }, k) => {
       const tile = el('div', 'tile'); tile.dataset.i = i;
@@ -713,6 +762,14 @@
       }
       frag.append(tile);
     });
+    if (!editing) {
+      const tile = el('div', 'tile tile--add');
+      const add = el('button', 'card card--add'); add.type = 'button';
+      add.setAttribute('aria-label', 'Mes apps : en ajouter ou en retirer');
+      add.innerHTML = '<div class="card-icon">' + SVG('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>') + '</div><div class="card-name">Mes apps</div>';
+      add.onclick = ouvrirMesApps;
+      tile.append(add); frag.append(tile);
+    }
     if (editing) {
       const tile = el('div', 'tile tile--add');
       const add = el('button', 'card card--add'); add.type = 'button';
@@ -1136,6 +1193,45 @@
     const i = tile.dataset.i;
     deplacer(tile, tuiles().indexOf(tile) + pas)?.then(() => grid.querySelector(`.tile[data-i="${i}"] .card`)?.focus());
   });
+
+  // ---------- Mes apps : un interrupteur par app ; clic droit sur une app : la retirer ----------
+  const mesApps = $('#mes-apps'), appsListe = $('#apps-liste');
+  function ouvrirMesApps(){
+    const h = hubIndex(), cachees = masquees();
+    $('#mes-apps-qui').textContent = me() ? `Les apps de ${me().name} sur ce poste. Un clic pour en ajouter ou en retirer.` : 'Un clic pour ajouter ou retirer une app de la barre.';
+    appsListe.replaceChildren(...state.shortcuts.filter((s, i) => i !== h && pourMoi(s)).map(s => {
+      const on = !cachees.includes(s.url);
+      const l = el('label', 'app-ligne' + (on ? '' : ' off'));
+      const b = el('b'); b.textContent = s.name || 'Sans nom';
+      const sw = el('input', 'interrupteur'); sw.type = 'checkbox'; sw.checked = on; sw.setAttribute('aria-label', (s.name || 'App') + ' dans ma barre');
+      sw.onchange = () => { garderApp(s.url, sw.checked); l.classList.toggle('off', !sw.checked); };
+      l.append(iconEl(s), b, sw);
+      return l;
+    }));
+    mesApps.showModal();
+  }
+  $('#b-nouvelle-app').onclick = () => { mesApps.close(); openSheet(-1); };
+  const ctx = $('#ctx-app');
+  const fermerCtx = () => { ctx.hidden = true; };
+  grid.addEventListener('contextmenu', e => {
+    if (editing || drag) return;
+    const tile = e.target.closest('.tile[data-i]'); if (!tile) return;
+    e.preventDefault();
+    const s = state.shortcuts[+tile.dataset.i];
+    const ligne = (txt, fn, cls) => { const b = el('button', cls || ''); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.textContent = txt; b.onclick = () => { fermerCtx(); fn(); }; return b; };
+    ctx.replaceChildren(
+      ligne('Ouvrir dans un onglet du navigateur', () => window.open(s.url, '_blank', 'noopener')),
+      ligne('Retirer de mes apps', () => { garderApp(s.url, false); toast(`« ${s.name} » retirée de tes apps`, 'Annuler', () => garderApp(s.url, true)); }, 'danger'),
+      ligne('Mes apps…', ouvrirMesApps));
+    ctx.hidden = false;
+    const r = ctx.getBoundingClientRect();
+    ctx.style.left = Math.min(e.clientX, innerWidth - r.width - 8) + 'px';
+    ctx.style.top = Math.min(e.clientY, innerHeight - r.height - 8) + 'px';
+    ctx.querySelector('button').focus();
+  });
+  document.addEventListener('pointerdown', e => { if (!ctx.hidden && !ctx.contains(e.target)) fermerCtx(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !ctx.hidden) fermerCtx(); });
+  window.addEventListener('blur', fermerCtx);
 
   // ---------- Feuille d'édition ----------
   const sheet = $('#sheet'), fName = $('#f-name'), fUrl = $('#f-url');
