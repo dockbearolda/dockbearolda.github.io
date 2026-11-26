@@ -865,7 +865,7 @@
   // chargé en arrière-plan ; l'onglet « Planning » ramène au planning.
   // Seules les applis qui acceptent d'être affichées dans un cadre y vont : les sites
   // (myolda.com, B2B, OLDA Pro) l'interdisent (X-Frame-Options: DENY) et s'ouvrent comme avant.
-  const CADRE_OK = /(^|\.)dockbear\.workers\.dev$|^(olda|bat|planning|cotes|laser)\.myolda\.com$|^design-olda-production\.up\.railway\.app$/;
+  const CADRE_OK = /(^|\.)dockbear\.workers\.dev$|^(olda|bat|planning|cotes|laser)\.myolda\.com$/;
   const LS_ONGLETS = 'olda_onglets';
   const hubBox = $('.hub'), hubFrameBox = $('.hub-frame'), ongletsNav = $('#onglets'), ongletsListe = $('#onglets-liste');
   // Une même appli peut être ouverte deux fois (bouton Dupliquer) : chaque onglet a son id.
