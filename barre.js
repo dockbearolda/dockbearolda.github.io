@@ -17,7 +17,7 @@
   window.__obBarre = true;
   var GRAND = '<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/>';
   var PETIT = '<path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/>';
-  var OK = /^(https:\/\/dockbearolda\.github\.io|https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?)$/;
+  var OK = /^(https:\/\/dockbearolda\.github\.io|https:\/\/olda\.myolda\.com|https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?)$/;
   var cadre = window.parent !== window;
   var dash = null, maxed = false;
   var doc = document, racine = doc.documentElement;
