@@ -1,5 +1,5 @@
 {
-  "rev": 1795662555343,
+  "rev": 1795697213285,
   "shortcuts": [
     {
       "name": "BAT Studio",
@@ -29,7 +29,7 @@
     },
     {
       "name": "Design",
-      "url": "https://design-olda-production.up.railway.app/",
+      "url": "https://design-olda.dockbear.workers.dev/",
       "icon": "pen",
       "color": "rose"
     },
