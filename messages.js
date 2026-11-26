@@ -16,7 +16,7 @@
  *
  * Les toasts paraissent EN HAUT, au centre, dans toutes les applis (22/11/2026, Charlie : en bas
  * ils gênaient). Réglages par l'appli (variables CSS sur :root) : --olda-message-haut (écart au
- * bord haut), --olda-message-x (son centre). De nuit (data-theme="dark" sur <html>), la fenêtre passe sombre.
+ * bord haut), --olda-message-x (son centre). Toujours clair (pas de mode nuit).
  */
 (() => {
   if (window.oldaMessages) return;
@@ -31,7 +31,6 @@
     font-family:'Inter','Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
     font-variant-numeric:tabular-nums; color:var(--encre);
   }
-  .racine.nuit{ --encre:#e8eaed; --encre-2:#a3b1bc; --filet:#3c4652; --surface:#1f262d; --survol:#2a333b; --ardoise:#5f7d92; --ardoise-survol:#6d8ba0; --rouge:#f28b82; }
   button,input,select{ font:inherit; color:inherit; }
   button{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
 
@@ -43,7 +42,6 @@
     border-radius:16px; background:#202930; color:#fff; font-size:14px; font-weight:500; line-height:1.35;
     box-shadow:0 12px 30px rgba(32,41,48,.3); pointer-events:auto;
     opacity:0; transform:translateY(-16px); transition:opacity .25s, transform .35s var(--ressort); }
-  .racine.nuit .toast{ background:#323b44; box-shadow:0 12px 30px rgba(0,0,0,.45); }
   .toast.on{ opacity:1; transform:none; }
   .toast .txt{ padding:10px 14px 10px 0; }
   .toast.seul .txt{ padding-right:14px; }
@@ -60,7 +58,6 @@
     border-radius:24px; box-shadow:0 24px 60px rgba(32,41,48,.28); overflow:hidden; }
   dialog[open]{ display:flex; flex-direction:column; animation:entre .35s var(--ressort); }
   dialog::backdrop{ background:rgba(32,41,48,.36); }
-  .racine.nuit dialog::backdrop{ background:rgba(0,0,0,.55); }
   @keyframes entre{ from{ opacity:0; transform:translateY(24px) scale(.98); } }
   @media (max-width:560px){
     dialog{ width:100%; max-width:100%; margin:auto 0 0; border-radius:24px 24px 0 0; max-height:92dvh; }
@@ -89,7 +86,6 @@
   .btn.principal.danger{ background:var(--rouge); }
   .btn.principal.danger:hover{ filter:brightness(1.08); }
   .btn.second{ background:transparent; color:var(--ardoise); border-color:var(--filet); }
-  .racine.nuit .btn.second{ color:var(--encre); }
   .btn.second:hover{ background:var(--survol); }
   @media (prefers-reduced-motion:reduce){ .toast,dialog[open]{ transition:none; animation:none; } }
   `;
@@ -103,11 +99,6 @@
     sh.innerHTML = `<style>${CSS}</style><div class="racine"><div class="pile" role="status" aria-live="polite"></div></div>`;
     racine = sh.querySelector('.racine'); pile = sh.querySelector('.pile');
     (document.body || document.documentElement).appendChild(hote);
-    const nuit = () => racine.classList.toggle('nuit', document.documentElement.dataset.theme === 'dark' || document.body?.dataset.theme === 'dark');
-    nuit();
-    const o = new MutationObserver(nuit);
-    o.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-    if (document.body) o.observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
   }
   const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
 
