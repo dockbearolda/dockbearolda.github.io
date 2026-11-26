@@ -71,8 +71,8 @@
   .corps{ overflow-y:auto; overscroll-behavior:contain; padding:4px 20px 20px; display:grid; gap:16px; }
   .corps p{ font-size:15px; line-height:1.5; color:var(--encre-2); white-space:pre-line; }
   .champ{ display:grid; gap:6px; }
-  .champ span{ font-size:13px; font-weight:600; color:var(--encre-2); }
-  .champ :is(input,select){ width:100%; height:48px; padding:0 14px; font-size:16px; border-radius:12px;
+  .champ span{ font-size:14px; font-weight:600; color:#7d8b96; }   /* l'intitulé de BAT Studio */
+  .champ :is(input,select){ width:100%; height:44px; padding:0 12px; font-size:16px; border-radius:12px;
     border:1px solid var(--filet); background:var(--surface); transition:border-color .2s, box-shadow .2s; }
   .champ :is(input,select):focus{ outline:none; border-color:#6B8191; box-shadow:0 0 0 3px rgba(107,129,145,.22); }
   .pied{ display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px; padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--filet); }
