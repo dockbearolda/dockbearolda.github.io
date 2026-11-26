@@ -1,0 +1,79 @@
+/* ===========================================================================
+   OLDA — LES JETONS COMMUNS (26/11/2026)
+   ---------------------------------------------------------------------------
+   La SEULE source des couleurs, ombres, rayons et police de toutes les applis
+   OLDA : Dashboard, BAT Studio (et Stock textile), Planning, Cotes DTF,
+   Gabarits laser. Chaque appli charge ce fichier EN PREMIER :
+
+     <link rel="stylesheet" href="https://dockbearolda.github.io/olda.css">
+
+   Une appli ne redéclare jamais une de ces valeurs chez elle : elle prend le
+   jeton, ou l'ajoute ici avec son rôle écrit. Seuls les jetons propres à une
+   appli (la palette d'un logo, la grille d'un calendrier…) restent chez elle.
+
+   Rien ici que des variables : aucune règle, aucun sélecteur d'élément.
+   Changer une valeur ici la change dans les 5 applis au prochain chargement.
+   =========================================================================== */
+
+:root {
+  /* ---------------------------------------------- L'ARDOISE : ce qui agit */
+  --duck: #4a6274;
+  --duck-hover: #42596a;
+  --duck-press: #384c5b;
+  --duck-focus: #6b8191;
+  --duck-rgb: 74, 98, 116;
+  --duck-voile: rgba(74, 98, 116, .08);   /* fond doux d'une action secondaire, d'un choix */
+
+  /* ------------------------------------------------------------ L'ENCRE */
+  --ink: #202930;        /* texte principal */
+  --muted: #5b6b78;      /* texte secondaire, intitulés */
+  --faint: #7d8b96;      /* atténué : repères, méta */
+
+  /* ----------------------------------------------------------- LES TRAITS */
+  --line: #d6dde3;
+  --line-soft: #e4e9ed;
+  --line-strong: #b6c2cc;
+
+  /* --------------------------------------------------------- LES SURFACES */
+  --page: #f4f6f8;                         /* le fond sous les halos (= theme-color) */
+  --surface: #fff;
+  --glass: rgba(255, 255, 255, .62);       /* le verre des cartes et de la recherche */
+  --glass-strong: rgba(255, 255, 255, .78);
+  --card-border: rgba(255, 255, 255, .7);
+  --hover: rgba(74, 98, 116, .07);          /* survol d'une ligne, d'un outil */
+  --press: rgba(74, 98, 116, .12);          /* appui */
+
+  /* ------------------------------------------------------------ LES ÉTATS
+     UNE teinte par état, partout (texte, pastille, coche, bouton plein).
+     Le vert et l'orange sont les seuls à tenir 4,5:1 sur blanc ET sur leur
+     fond pâle : ils se lisent en 13 px comme en 20. */
+  --ok: #137333;     --ok-bg: #e6f4ea;     --ok-line: #81c995;     --ok-rgb: 19, 115, 51;
+  --warn: #b45309;   --warn-bg: #fdf3e5;   --warn-line: #f6d9a8;
+  --danger: #d93025; --danger-bg: #fce8e6; --danger-line: #f4b6b0;
+
+  /* --------------------------------------------------------- LES OMBRES */
+  --shadow: 0 1px 2px rgba(32, 41, 48, .04), 0 10px 26px rgba(74, 98, 116, .10);
+  --shadow-hover: 0 4px 10px rgba(32, 41, 48, .06), 0 22px 46px rgba(74, 98, 116, .18);
+  --shadow-pop: 0 24px 60px rgba(32, 41, 48, .28);
+  --ring: 0 0 0 3px rgba(107, 129, 145, .45);     /* l'anneau de focus */
+
+  /* ---------------------------------------------------------- LES FORMES
+     Trois rayons, pas un de plus : la carte, la recherche, le champ. */
+  --radius: 22px;            /* carte, bulle, ligne de liste, modale */
+  --radius-recherche: 18px;  /* la grande recherche de 60 px */
+  --radius-champ: 12px;      /* champ, bouton carré, menu */
+  --recherche-h: 60px;
+  --cible: 44px;             /* la plus petite cible au doigt */
+
+  /* ------------------------------------------------------- LE MOUVEMENT */
+  --spring: cubic-bezier(.34, 1.56, .64, 1);
+
+  /* ---------------------------------------------------------- LA POLICE */
+  --font: 'Inter', 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+
+  /* -------------------------------------------------- LES BORDS DE L'ÉCRAN */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+}

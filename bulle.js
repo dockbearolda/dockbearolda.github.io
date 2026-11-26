@@ -395,7 +395,7 @@
   .todo-act:disabled{ opacity:.5; cursor:default; }
   .todo-act:focus-visible{ outline:3px solid rgba(74,98,116,.4); outline-offset:2px; }
   .todo-act.go{ background:var(--duck); border-color:var(--duck); color:#fff; }
-  .todo-act.oui, .todo-act.ok{ background:#1e8e3e; border-color:#1e8e3e; color:#fff; }
+  .todo-act.oui, .todo-act.ok{ background:#137333; border-color:#137333; color:#fff; }
   .todo-act.ok{ cursor:default; opacity:.85; }
   .todo-act svg{ width:16px; height:16px; flex-shrink:0; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
   @media (hover:hover){ .todo-act:not(.ok):not(:disabled):hover{ filter:brightness(.95); } }

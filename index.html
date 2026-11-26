@@ -8,32 +8,22 @@
   if (location.hostname === 'dockbearolda.github.io' && window.top === window.self) location.replace('https://olda.myolda.com' + location.pathname + location.search + location.hash);
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#ffffff" />
+<meta name="theme-color" content="#f4f6f8" />
 <title>OLDA</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 <!-- Inter : les mêmes fichiers que BAT Studio, le planning, le Stock textile et le Logo maker (même dessin partout) -->
 <link rel="preload" href="fonts/Inter-Regular-latin.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="preload" href="fonts/Inter-SemiBold-latin.woff2" as="font" type="font/woff2" crossorigin />
+<!-- Les jetons communs à toutes les applis OLDA (couleurs, ombres, rayons) : source unique, chargée en premier -->
+<link rel="stylesheet" href="olda.css" />
 <link rel="stylesheet" href="fonts/inter.css" />
 <style>
-  :root{
-    --duck:#4A6274; --duck-hover:#42596A; --duck-focus:#6B8191;
-    --ink:#202930; --muted:#5b6b78; --line:#d6dde3;
-    --danger:#d93025;
-    --card-border:rgba(255,255,255,0.7);
-    --glass:rgba(255,255,255,.62);
-    --shadow:0 1px 2px rgba(32,41,48,.04),0 10px 26px rgba(74,98,116,.10);
-    --shadow-hover:0 4px 10px rgba(32,41,48,.06),0 22px 46px rgba(74,98,116,.18);
-    --spring:cubic-bezier(.34,1.56,.64,1);
-    --radius:22px;
-    --safe-b:env(safe-area-inset-bottom,0px);
-  }
   *{ margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
   html,body{ height:100%; }
   body{
     /* Inter servie par le Dashboard (fonts/inter.css) : les mêmes fichiers que toutes les applis OLDA */
-    font-family:'Inter','Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
-    background:#f4f6f8;
+    font-family:var(--font);
+    background:var(--page);
     color:var(--ink);
     font-variant-numeric:tabular-nums; overflow-x:hidden;
   }
