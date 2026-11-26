@@ -1,9 +1,9 @@
 {
-  "rev": 1795574801805,
+  "rev": 1795662555343,
   "shortcuts": [
     {
       "name": "BAT Studio",
-      "url": "https://bat-studio.dockbear.workers.dev/",
+      "url": "https://bat.myolda.com/",
       "icon": "check",
       "color": "vert"
     },
@@ -15,14 +15,14 @@
     },
     {
       "name": "Stock textile",
-      "url": "https://bat-studio.dockbear.workers.dev/?stock",
+      "url": "https://bat.myolda.com/?stock",
       "icon": "shirt",
       "color": "menthe",
       "since": 1795221119632
     },
     {
       "name": "Cotes DTF",
-      "url": "https://cotes-dtf.dockbear.workers.dev/",
+      "url": "https://cotes.myolda.com/",
       "icon": "ruler",
       "color": "ardoise",
       "since": 1795402053445
@@ -65,7 +65,7 @@
     },
     {
       "name": "Gabarits laser",
-      "url": "https://gabarits-laser.dockbear.workers.dev/",
+      "url": "https://laser.myolda.com/",
       "icon": "bolt",
       "color": "rouge",
       "since": 1795574801805
@@ -104,7 +104,7 @@
     },
     {
       "name": "Planning",
-      "url": "https://planning-olda.dockbear.workers.dev/",
+      "url": "https://planning.myolda.com/",
       "icon": "calendar",
       "color": "cyan",
       "since": 1794435665009,
