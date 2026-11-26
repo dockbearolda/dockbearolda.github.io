@@ -65,7 +65,7 @@
   button{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .avatar{
     --a:66,133,244; width:64px; height:64px; border-radius:50%; flex-shrink:0;
-    display:grid; place-items:center; font-size:26px; font-weight:650; letter-spacing:-.01em;
+    display:grid; place-items:center; font-size:26px; font-weight:600; letter-spacing:-.01em;
     color:rgb(var(--a)); background:rgba(var(--a),.14); box-shadow:inset 0 0 0 1px rgba(var(--a),.22);
   }
   dialog{
@@ -284,7 +284,7 @@
   .lire-n{ font-size:12.5px; color:var(--muted); min-height:16px; }
 
   /* ---------- LA RELANCE DU LENDEMAIN : plein écran, on répond ou on laisse une note ---------- */
-  #relance{ --main:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; --encre:#1d2733; --ligne:rgba(74,98,116,.16);
+  #relance{ --main:'Inter','Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif; --encre:#202930; --ligne:rgba(74,98,116,.16);
     width:100%; height:100%; max-width:none; max-height:none; margin:0; border-radius:0; background:#f4f6f8; box-shadow:none; overflow-y:auto; overscroll-behavior:contain; }
   #relance[open]{ display:block; animation:relanceIn .3s ease-out; }
   @keyframes relanceIn{ from{ opacity:0; } }
@@ -295,18 +295,18 @@
   .relance-badge{ display:inline-flex; align-items:center; gap:7px; height:28px; padding:0 12px; border-radius:14px; background:rgba(217,48,37,.1); color:var(--danger); font-size:13px; font-weight:700; }
   .relance-badge::before{ content:""; width:8px; height:8px; border-radius:50%; background:currentColor; }
   .relance-n{ font-size:13px; font-weight:600; color:var(--muted); }
-  .relance-t{ font-size:26px; font-weight:750; letter-spacing:-.02em; line-height:1.15; }
+  .relance-t{ font-size:26px; font-weight:700; letter-spacing:-.02em; line-height:1.15; }
   .relance-s{ margin-top:-8px; font-size:15px; line-height:1.4; color:var(--muted); }
   .relance-carte{ display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:18px; border-radius:20px; background:#fff;
     box-shadow:0 0 0 1px rgba(74,98,116,.12), 0 8px 24px rgba(32,41,48,.08); }
-  .relance-q{ font-family:var(--main); font-size:19px; font-weight:650; line-height:1.35; color:var(--encre); overflow-wrap:anywhere; }
+  .relance-q{ font-family:var(--main); font-size:19px; font-weight:600; line-height:1.35; color:var(--encre); overflow-wrap:anywhere; }
   .relance-projet{ font-size:15px; font-weight:600; line-height:1.35; color:var(--encre); opacity:.75; overflow-wrap:anywhere; }
   .relance-quand{ font-size:13px; color:var(--muted); }
   .relance-avant{ align-self:stretch; margin-top:8px; padding:10px 12px; border-radius:12px; background:#f4f6f8; font-size:14px; line-height:1.4; overflow-wrap:anywhere; }
   .relance-carte .todo-acts{ margin-top:10px; }
   .relance-ou{ display:flex; align-items:center; gap:12px; font-size:13px; font-weight:600; color:var(--muted); }
   .relance-ou::before, .relance-ou::after{ content:""; flex:1; height:1px; background:var(--line); }
-  .relance-l{ font-size:15px; font-weight:650; }
+  .relance-l{ font-size:15px; font-weight:600; }
   #relance-txt{ width:100%; min-height:96px; resize:vertical; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:#fff;
     font-size:16px; line-height:1.4; outline:none; transition:border-color .2s, box-shadow .2s; }
   #relance-txt:focus{ border-color:var(--duck); box-shadow:0 0 0 3px rgba(74,98,116,.18); }
@@ -320,9 +320,9 @@
 
   /* ---------- La to do list : un bloc-notes à soi, coché ici, rayé partout ---------- */
   .todo{ position:fixed; z-index:36; left:0; top:0; touch-action:none; user-select:none; -webkit-user-select:none;
-    --main:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; --papier:#fff; --encre:#1d2733; --ligne:rgba(74,98,116,.12); }
+    --main:'Inter','Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif; --papier:#fff; --encre:#202930; --ligne:rgba(74,98,116,.12); }
   .todo-orb{ position:relative; width:56px; height:56px; border-radius:50%; border:0; padding:0; display:grid; place-items:center; -webkit-touch-callout:none;
-    background:#fff; color:#1a73e8;   /* blanc et bleu, comme Google Tasks ou Rappels d'Apple */
+    background:#fff; color:var(--duck);   /* blanche, l'ardoise de la charte OLDA */
     box-shadow:0 0 0 1px rgba(32,41,48,.06), 0 8px 22px rgba(32,41,48,.18), 0 2px 6px rgba(32,41,48,.12);
     transition:transform .35s var(--spring); cursor:grab; }
   .todo-orb:hover{ transform:scale(1.05); }
@@ -356,7 +356,7 @@
   .todo-cc:disabled{ cursor:default; }
   .todo-cc svg{ width:22px; height:22px; fill:none; stroke:var(--encre); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
   .todo-cc circle{ opacity:.55; }
-  .todo-i.fait .todo-cc circle{ opacity:1; stroke:#1a73e8; fill:#1a73e8; }
+  .todo-i.fait .todo-cc circle{ opacity:1; stroke:var(--duck); fill:var(--duck); }
   .todo-cc .v{ stroke:#fff; stroke-width:2.4; stroke-dasharray:16; stroke-dashoffset:16; }
   .todo-i.fait .todo-cc .v{ stroke-dashoffset:0; }
   .todo-i.raye .todo-cc .v{ animation:coche .3s ease-out; }
@@ -406,7 +406,7 @@
   .todo-i.part{ animation:partir .3s ease-in .55s forwards; pointer-events:none; }
   @keyframes partir{ to{ opacity:0; transform:translateX(12px); } }
   .todo-i.revient{ animation:revient 1.2s ease-out; }
-  @keyframes revient{ from{ background:rgba(26,115,232,.14); } }
+  @keyframes revient{ from{ background:rgba(74,98,116,.14); } }
   /* ---------- Clic droit : cacher / afficher la to do list ou la messagerie ---------- */
   .ctx{ position:fixed; z-index:60; left:0; top:0; min-width:236px; padding:6px; border-radius:14px; background:rgba(255,255,255,.98);
     box-shadow:inset 0 0 0 1px rgba(74,98,116,.14), 0 18px 40px rgba(42,58,72,.24); animation:chatPop .2s var(--spring); }
@@ -433,6 +433,7 @@
   .info b{ display:block; font-weight:700; }
   .info span{ display:block; color:rgba(255,255,255,.8); }
   @media (prefers-reduced-motion:reduce){ .info{ transition:none; } }
+
 </style>
 <div class="chat is-min" id="chat" hidden>
   <button type="button" class="chat-orb" id="chat-orb" aria-label="Ouvrir la discussion de l'équipe">
