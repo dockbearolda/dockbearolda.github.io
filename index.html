@@ -903,7 +903,7 @@
     let o = ongletDe(actif);
     if (o?.url !== app) o = onglets.find(x => x.url === app);
     if (!o) onglets.push(o = nouvelOnglet(app));
-    if (url !== app) { o.src = url; if (o.frame) { o.frame.classList.remove('on'); o.frame.src = url; } }
+    if (url !== app) { o.src = url; if (o.frame) { o.frame.classList.remove('on'); o.frame.src = avecPoste(url); } }
     montrer(o.id);
     if (!large.matches) hubTile.scrollIntoView({ block: 'start', behavior: reduced.matches ? 'auto' : 'smooth' });
     return true;
@@ -927,15 +927,25 @@
     const f = o ? o.frame : frame;
     if (!f) return;
     f.classList.remove('on');
-    if (o) f.src = o.url; else { hubReady = false; tellHub(); f.src = frame.dataset.src || hubTile.dataset.url; }
+    if (o) f.src = avecPoste(o.url); else { hubReady = false; tellHub(); f.src = frame.dataset.src || hubTile.dataset.url; }
     majOnglets();
+  }
+  // QUI EST AU POSTE, DIT À BAT STUDIO (27/11/2026) : il signe les envois et prend l'habit de la personne
+  // (le rose de Mélina) d'après « ?poste= » (postes.js, theme.js) — sans ça, il ne savait jamais qui était là.
+  const BAT_HOTES = /^(bat\.myolda\.com|bat-studio\.dockbear\.workers\.dev)$/;
+  function avecPoste(url){
+    try {
+      const u = new URL(url, location.href), p = store.raw('olda_poste');
+      if (!p || !BAT_HOTES.test(u.hostname)) return url;
+      u.searchParams.set('poste', p); return u.href;
+    } catch (_) { return url; }
   }
   function cadreDe(o){
     if (!o.frame) {
       const f = document.createElement('iframe');
       f.title = nomDe(o.url); f.allow = 'clipboard-read; clipboard-write; fullscreen; microphone; local-network; loopback-network';
       f.addEventListener('load', () => { f.classList.add('on'); majOnglets(); });
-      f.src = o.src || o.url; hubFrameBox.append(f); o.frame = f;
+      f.src = avecPoste(o.src || o.url); hubFrameBox.append(f); o.frame = f;
     }
     return o.frame;
   }
@@ -958,7 +968,7 @@
     // Un site de l'équipe (une appli du Dashboard) garde le lien avec nous : c'est ce qui permet de retrouver son onglet.
     // Tout autre site (Dropbox, WhatsApp… cliqués dans une appli) s'ouvre détaché : il ne peut pas toucher au Dashboard.
     if (!appDe(url)) { window.open(url, '_blank', 'noopener'); return; }
-    const w = window.open(url, nom);
+    const w = window.open(avecPoste(url), nom);
     if (w) fenetres.set(nom, { w, url });
   }
   // L'appli d'une adresse : le raccourci lui-même, ou celui du même site dont le chemin la contient
@@ -1505,10 +1515,15 @@
       const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', x === p);
       const n = el('span'); n.textContent = x.name;
       b.append(avatar(x), n);
-      b.onclick = () => { store.set(LS_WHO, x.id); who.close(); syncWho(); if (x !== p) { toast(`Bonjour ${x.name} 👋`); window.oldaBulle?.relancer(); render(); } };
+      b.onclick = () => { store.set(LS_WHO, x.id); who.close(); syncWho(); if (x !== p) { toast(`Bonjour ${x.name} 👋`); window.oldaBulle?.relancer(); render(); posteAuxCadres(); } };
       return b;
     }));
     if (!who.open) who.showModal();
+  }
+  // Changement de profil : BAT Studio, déjà ouvert dans un onglet d'ici, repart avec la nouvelle personne.
+  function posteAuxCadres(){
+    for (const o of onglets) if (o.frame && BAT_HOTES.test(hoteDe(o.url))) { o.frame.classList.remove('on'); o.frame.src = avecPoste(o.src || o.url); }
+    majOnglets();
   }
   // Premier passage : on choisit avant tout, impossible de fermer sans choisir.
   // (Chrome laisse parfois Échap fermer malgré tout : on rouvre aussitôt.)
