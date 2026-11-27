@@ -386,6 +386,13 @@
     display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
   .todo-i.fait .todo-projet{ opacity:.45; }
   /* La note d'information laissée à la relance du matin */
+  .todo-logos{ display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+  .todo-logos:empty{ display:none; }
+  .todo-logo{ margin:0; width:96px; display:flex; flex-direction:column; gap:3px; }
+  .todo-logo-v{ height:64px; display:grid; place-items:center; border-radius:9px; overflow:hidden; font-size:11px; font-weight:700; color:var(--encre); opacity:.85;
+    background:repeating-conic-gradient(#d4dae0 0 25%, #eef1f4 0 50%) 50% / 12px 12px; }
+  .todo-logo-v img{ max-width:calc(100% - 8px); max-height:56px; object-fit:contain; }
+  .todo-logo figcaption{ font-size:11.5px; line-height:1.25; color:var(--encre); opacity:.75; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
   .todo-note{ max-width:100%; margin-top:2px; padding:6px 9px; border-radius:9px; background:rgba(74,98,116,.08); font-size:13px; line-height:1.35; color:var(--encre); overflow-wrap:anywhere; }
   .todo-acts{ display:flex; flex-wrap:wrap; gap:6px; width:100%; margin-top:6px; }
   .todo-act{ flex:1 1 0; height:44px; padding:0 12px; border:1px solid var(--ligne); border-radius:12px; background:#fff; color:var(--encre);
@@ -1366,6 +1373,23 @@
     const sigle = gardes.map(m => m.match(/[\p{L}\d]/u)[0]).join('').toUpperCase();
     return sigle.length >= 2 ? sigle : n;
   }
+  // LA RÉIMPRESSION D'UN LOGO (27/11/2026, Charlie : « quand Julien me relance un logo, les logos ne s'affichent pas ») :
+  // la bulle de la réimpression (bat-…-r1) et ce qu'elle demande, puis ses logos en vignettes (`logos` de la notification ;
+  // l'image vient de sa fiche PRT, BAT Studio en fait un PNG à Dropbox, même pour un PDF).
+  const estReimpression = n => n.type === 'prt-imprimer' && (/demande une réimpression/.test(n.texte || '') || /-r\d+$/.test(n.carte?.id || ''));
+  function vignettesReimpression(n){
+    const box = el('div', 'todo-logos');
+    for (const l of n.logos) {
+      const f = el('figure', 'todo-logo'), v = el('span', 'todo-logo-v'), img = new Image();
+      img.alt = ''; img.decoding = 'async'; img.draggable = false;
+      img.src = `${BAT_API}/api/dropbox/prt?id=${encodeURIComponent(n.carte.id)}&nom=${encodeURIComponent(l.fichier)}&apercu=1`;
+      img.onerror = () => { v.textContent = (String(l.fichier).match(/\.(\w+)$/)?.[1] || 'logo').toUpperCase(); };
+      v.append(img);
+      const c = el('figcaption'); c.textContent = [l.nom || l.fichier, l.vue, `${l.largeur_mm} mm`, `× ${l.quantite}`].filter(Boolean).join(' · ');
+      f.title = c.textContent; f.append(v, c); box.append(f);
+    }
+    return box;
+  }
   function ligneNotif(n, court = true){
     const t = String(n.titre || ''), x = String(n.texte || '');
     const raccourcir = v => (court ? nomCourt(v) : String(v).trim()).toLocaleUpperCase('fr');   // les clients, toujours en majuscules
@@ -1389,7 +1413,8 @@
       case 'laser-note': { const d = x.length > 90 ? x.slice(0, 89) + '…' : x; return d ? `${client} demande une modif : « ${d} »` : `${client} demande une modif de son BAT laser`; }
       // Le PRT n'est pas arrivé dans le planning 20 min après l'envoi (server/notifs.mjs verifierPrts).
       // Une commande mix ou boutique envoyée en production (27/11/2026) : « à imprimer », comme les cotes prises.
-      case 'prt-imprimer': return n.rate ? `PRT de ${client} pas arrivé : à renvoyer` : /envoyées en production/.test(x) ? `${client} : PRT à imprimer` : nomme ? `${nomme} a validé les cotes de ${client}` : `Cotes prises pour ${client}`;
+      // Une réimpression demandée depuis la Presse (planning, 27/11/2026) : avant, elle se lisait « Julien a validé les cotes ».
+      case 'prt-imprimer': return n.rate ? `PRT de ${client} pas arrivé : à renvoyer` : estReimpression(n) ? `${nomme || 'L’atelier'} relance un logo de ${client} : à réimprimer` : /envoyées en production/.test(x) ? `${client} : PRT à imprimer` : nomme ? `${nomme} a validé les cotes de ${client}` : `Cotes prises pour ${client}`;
       case 'presse-fini': return `La commande ${client} est terminée`;
       default: return t;
     }
@@ -1424,7 +1449,7 @@
     $('#todo-c').textContent = n ? `${n} à faire` : '';
     todoOrb.setAttribute('aria-label', n ? `Ma To Do List : ${n} à faire` : 'Ouvrir ma To Do List');
   }
-  function ligneT({ texte, projet, quand, qui, fait, cocher, ouvrir, suppr, actions, note }){
+  function ligneT({ texte, projet, detail, quand, qui, fait, cocher, ouvrir, suppr, actions, note }){
     const li = el('li', 'todo-i' + (fait ? ' fait' : ''));
     const c = el('button', 'todo-cc'); c.type = 'button'; c.setAttribute('role', 'checkbox'); c.setAttribute('aria-checked', String(!!fait));
     c.setAttribute('aria-label', projet ? `${texte} · ${projet}` : texte); c.innerHTML = SVG('<circle cx="12" cy="12" r="8.5"/><path class="v" d="M7.5 12.5l3 3 6-7"/>');
@@ -1432,6 +1457,7 @@
     const corps = el('div', 'todo-corps');
     const tx = el('span', 'todo-tx'), sp = el('span'); sp.textContent = texte; tx.append(sp); corps.append(tx);
     if (projet) { const pj = el('span', 'todo-projet'); pj.textContent = projet; pj.title = projet; corps.append(pj); }
+    if (detail) corps.append(detail);
     // Reçue quand : « Aujourd’hui à 14:32 », « Hier à 09:10 », « samedi 21 novembre à 18:05 ».
     if (quand && !isNaN(Date.parse(quand))) { const q = el('time', 'todo-quand'); q.dateTime = quand; q.textContent = `${qui ? qui + ' · ' : ''}${jour(quand)} à ${heure(quand)}`; corps.append(q); }
     if (note) { const nt = el('span', 'todo-note'); nt.textContent = `Ta note : ${note}`; corps.append(nt); }
@@ -1446,7 +1472,7 @@
   function lignesNotifs(){
     const out = notifsVisibles().map(n => {
       const cocher = !n.lu ? () => cocherNotif(n) : revenues.has(n.id) ? () => rayerNotif(n) : null;
-      const li = ligneT({ texte: ligneNotif(n), projet: projetNotif(n), quand: n.at, fait: !!n.lu, cocher, actions: boutonsNotif(n), note: !n.lu && n.note?.texte });
+      const li = ligneT({ texte: ligneNotif(n), projet: projetNotif(n), detail: !n.lu && estReimpression(n) && n.carte && n.logos?.length ? vignettesReimpression(n) : null, quand: n.at, fait: !!n.lu, cocher, actions: boutonsNotif(n), note: !n.lu && n.note?.texte });
       li.dataset.id = n.id;
       if (partantes.has(n.id)) li.classList.add('part');
       const entier = ligneNotif(n, false);
