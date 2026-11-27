@@ -56,18 +56,18 @@
   const hote = document.createElement('olda-bulle');
   const root = hote.attachShadow({ mode: 'open' });
   // L'habit de la personne au poste : sur le Dashboard seulement (les applis gardent la bulle commune).
-  const poserHabit = () => { if (DASHBOARD) hote.dataset.poste = store.raw(LS_WHO) || ''; };
+  const poserHabit = () => { if (DASHBOARD) hote.dataset.poste = document.documentElement.dataset.habit || ''; };
   poserHabit();
-  const ardoise = () => hote.dataset.poste === 'melina' ? '176,62,108' : '74,98,116';
+  const ardoise = () => hote.dataset.poste === 'melina' ? '154,85,113' : '74,98,116';
   root.innerHTML = `<style>
   :host{ all:initial; position:fixed; left:0; top:0; width:0; height:0; z-index:2147483000; }
   /* L'ardoise et l'ombre en canaux : l'habit de Mélina les change (voir plus bas). */
   :host{ --duck-rgb:74,98,116; --ombre-rgb:42,58,72; }
-  /* L'HABIT DE MÉLINA (27/11/2026), sur le Dashboard seulement (data-poste posé par poserHabit) :
-     les mêmes formes, l'ardoise devient un vieux rose framboise — comme le reste du Dashboard. */
-  :host([data-poste="melina"]){ --duck-rgb:176,62,108; --ombre-rgb:120,40,80; }
+  /* L'HABIT DE MÉLINA (27/11/2026), sur le Dashboard seulement (data-poste = l'habit du Dashboard, posé par poserHabit) :
+     les mêmes formes, l'ardoise devient un vieux rose poudré — comme le reste du Dashboard. */
+  :host([data-poste="melina"]){ --duck-rgb:154,85,113; --ombre-rgb:110,60,85; }
   :host([data-poste="melina"]) :is(.chat, .todo, .ctx, .rappel, dialog, .toast, .info){
-    --duck:#b03e6c; --duck-hover:#9e3761; --duck-focus:#d98aab; --ink:#2b2128; --muted:#6e5a66; --line:#ecd9e0;
+    --duck:#9a5571; --duck-hover:#884b64; --duck-focus:#c79aad; --ink:#2a2428; --muted:#685b63; --line:#e8dde2;
   }
   .chat, .todo, .ctx, .rappel, dialog, .toast, .info{
     --duck:#4A6274; --duck-hover:#42596A; --duck-focus:#6B8191;
