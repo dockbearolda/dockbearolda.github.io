@@ -54,6 +54,7 @@
   .side,.main{ display:contents; }
   .me-row{ order:1; }
   .tile--hub{ order:3; }
+  .recherche-clients{ order:2; z-index:30; }
   .bento{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
   .bento{ order:4; display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
   .bento > .tile:last-child:nth-child(odd){ grid-column:1 / -1; }
@@ -441,6 +442,8 @@
       <nav class="bento" id="bento" aria-label="Apps"></nav>
     </aside>
     <div class="main">
+      <!-- LA RECHERCHE DES CLIENTS (27/11/2026) : un nom tapé, sa fiche — projets textile puis Trotec, liens, validés (fiches.js). -->
+      <div class="recherche-clients" id="recherche-clients" role="search"></div>
       <div class="tile tile--hub" id="hub" hidden>
         <section class="hub" aria-labelledby="hub-name">
           <nav class="onglets" id="onglets" aria-label="Applis ouvertes" hidden>
@@ -602,6 +605,7 @@
 </dialog>
 
 <script src="messages.js"></script>
+<script src="fiches.js" defer onload="oldaFiches.barre(document.getElementById('recherche-clients'))"></script>
 <script src="bulle.js" data-dashboard defer></script>
 
 <script>
