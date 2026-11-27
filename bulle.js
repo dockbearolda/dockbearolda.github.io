@@ -1373,8 +1373,7 @@
     const client = raccourcir(avant.split(' · ')[0].replace(/\s*\(Pro\)$/, '')) || 'un client';
     // L'auteur : celui que la notification nomme, sinon celui que son ancien texte citait.
     const nomme = profilDe(n.de)?.name
-      || (n.type === 'prt-imprimer' && x.match(/^Cotes prises par ([^:]+?) :/)?.[1])
-      || (n.type === 'prt-shop' && x.match(/ — ([^—]+)$/)?.[1]?.trim()) || '';
+      || (n.type === 'prt-imprimer' && x.match(/^Cotes prises par ([^:]+?) :/)?.[1]) || '';
     switch (n.type) {
       case 'bat-valide':
         if (/ : payé, en PRT$/.test(t)) return `${nomme || 'Le bureau'} a validé le paiement de ${client}`;
@@ -1389,22 +1388,9 @@
       case 'laser-valide': return `${client} a validé son BAT laser`;
       case 'laser-note': { const d = x.length > 90 ? x.slice(0, 89) + '…' : x; return d ? `${client} demande une modif : « ${d} »` : `${client} demande une modif de son BAT laser`; }
       // Le PRT n'est pas arrivé dans le planning 20 min après l'envoi (server/notifs.mjs verifierPrts).
-      case 'prt-imprimer': return n.rate ? `PRT de ${client} pas arrivé : à renvoyer` : nomme ? `${nomme} a validé les cotes de ${client}` : `Cotes prises pour ${client}`;
-      case 'prt-shop': return nomme ? `${nomme} a demandé un réassort boutique` : 'Réassort boutique demandé';
-      case 'presse-pret': return `${client} est imprimé, à presser`;
-      case 'presse-fini': case 'a-facturer': return `La commande ${client} est terminée`;
-      case 'shop-fini': return 'Réassort boutique terminé';
-      case 'retards': {
-        const tot = +(t.match(/^\d+/)?.[0] || 0), r = (x.match(/de retard\)/g) || []).length, d = tot - r;
-        const cmd = k => `${k} commande${k > 1 ? 's' : ''}`;
-        if (!tot) return t;
-        // Un seul client : on le nomme.
-        if (tot === 1) {
-          const m = x.match(/^(.*?) \(([^)]*)\)$/), qui = raccourcir((m?.[1] || '').split(' · ')[0]);
-          if (qui) return r ? `${qui} est en retard` : `${qui} est à livrer ${m[2]}`;
-        }
-        return r && d ? `${cmd(r)} en retard, ${d} urgente${d > 1 ? 's' : ''}` : r ? `${cmd(r)} en retard` : `${cmd(d)} urgente${d > 1 ? 's' : ''}`;
-      }
+      // Une commande mix ou boutique envoyée en production (27/11/2026) : « à imprimer », comme les cotes prises.
+      case 'prt-imprimer': return n.rate ? `PRT de ${client} pas arrivé : à renvoyer` : /envoyées en production/.test(x) ? `${client} : PRT à imprimer` : nomme ? `${nomme} a validé les cotes de ${client}` : `Cotes prises pour ${client}`;
+      case 'presse-fini': return `La commande ${client} est terminée`;
       default: return t;
     }
   }
@@ -1415,9 +1401,7 @@
   function projetNotif(n){
     const t = String(n.titre || ''), x = String(n.texte || '');
     let p = String(n.projet || '').trim();
-    if (!p && n.type === 'prt-shop') p = t.match(/« ([^»]+) »/)?.[1] || '';
-    else if (!p && n.type === 'retards') p = +(t.match(/^\d+/)?.[0] || 0) === 1 ? (x.match(/^(.*?) \([^)]*\)$/)?.[1] || '').split(' · ').slice(1).join(' · ') : '';
-    else if (!p && n.type !== 'shop-fini') {
+    if (!p) {
       const avant = t.replace(/^Rappel — /, '').split(' : ')[0], i = avant.indexOf(' · ');
       if (i > 0) p = avant.slice(i + 3);
     }
@@ -1584,8 +1568,8 @@
     if (r?.ok) { n.envoi = new Date().toISOString(); delete n.rate; }
   }
   // « Le client a-t-il payé ? » (Mélina / Loïc, un BAT de Charlie) ou « part en production ? » (celui qui a
-  // fait le BAT, 26/11/2026) — Oui : la bulle part dans PRT avec la règle, Julien est prévenu ; Non : la ligne
-  // reste en rouge en haut du Dashboard. Le serveur coche aussi la question de l'autre.
+  // fait le BAT, 26/11/2026) — Oui : la bulle part dans PRT avec la règle, Julien est prévenu ; Non : la question
+  // revient le lendemain matin. Le serveur coche aussi la question de l'autre.
   async function payerT(n, paye){
     const r = await fetch(`${BAT_API}/api/suivi/${encodeURIComponent(n.projetId)}/paiement`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paye, qui: me()?.id || '' }) });
     const j = await r.json().catch(() => ({}));
@@ -1624,29 +1608,22 @@
       case 'bat-relance': return n.copie ? [{ label: 'Copier le lien', cls: 'go', fn: () => copierT(n) }] : [];
       case 'laser-valide': return [{ label: 'Ouvrir Gabarits laser', cls: 'go', fn: ouvrirGabaritsT }, { label: 'Vu', cls: 'oui', fn: () => {} }];
       case 'laser-note': return [{ label: 'Refaire le BAT', cls: 'go', fn: ouvrirGabaritsT }];
-      case 'a-facturer': return [{ label: 'Facturé', cls: 'oui', fn: () => {} }];
-      case 'retards': return [vu];
       case 'bat-valide': return [{ label: 'Prendre les cotes', cls: 'go', fn: () => ouvrirBatT(n.lien) }];
       case 'bat-note': return [{ label: 'Refaire le BAT', cls: 'go', fn: () => ouvrirBatT(n.projetId ? `/?projet=${encodeURIComponent(n.projetId)}` : n.lien) }];
       case 'prt-imprimer': return n.carte
         ? [{ label: n.rate ? 'Renvoyer' : 'En production', cls: 'oui', fn: () => envoyerPrtT(n) }]
         : [vu];
-      case 'prt-shop': return [vu];
       // Une commande mix validée par le client (25/11/2026) : la suite, c'est le PRT, dans BAT Studio.
       case 'mix-valide': return [{ label: 'Créer le PRT', cls: 'go', fn: () => ouvrirBatT(n.lien) }];
-      // La presse se chronomètre article par article dans le planning : ici, Julien dit juste qu'il a vu.
-      case 'presse-pret': return [vu];
       // « Client prévenu » range la bulle du planning : de Terminé aux Archives.
       // Mélina et Loïc n'ont que ce bouton à toucher (22/11/2026) ; l'un répond, c'est coché chez l'autre.
       case 'presse-fini': return [{ label: 'Client prévenu', cls: 'oui', fn: () => prevenuT(n) }];
-      case 'shop-fini': return [vu];
       // La note d'un client sur sa commande mix, le BAT atelier : le travail se fait dans BAT Studio.
       case 'mix-note': return [{ label: 'Refaire la commande', cls: 'go', fn: () => ouvrirBatT(n.lien) }];
-      case 'bat-atelier': return n.lien && n.lien !== '/' ? [{ label: 'Voir le BAT atelier', cls: 'go', fn: () => ouvrirBatT(n.lien) }] : [vu];
       default: return [vu];
     }
   }
-  const FAIT = { 'laser-valide': 'Vu', 'laser-note': 'Refait', 'prt-imprimer': 'Envoyé', 'bat-paiement': 'Répondu', 'bat-production': 'Répondu', 'bat-relance': 'Lien copié', 'presse-fini': 'Client prévenu', 'shop-fini': 'Vu', 'a-facturer': 'Facturé', 'presse-pret': 'Vu', 'retards': 'Vu', 'prt-shop': 'Vu' };
+  const FAIT = { 'laser-valide': 'Vu', 'laser-note': 'Refait', 'prt-imprimer': 'Envoyé', 'bat-paiement': 'Répondu', 'bat-production': 'Répondu', 'bat-relance': 'Lien copié', 'presse-fini': 'Client prévenu' };
   function boutonsNotif(n){
     const liste = reponsesNotif(n);
     if (!liste.length) return [];
@@ -1681,8 +1658,10 @@
     if (!misF.pos.ouvert) misOrb.classList.add('has-new');
     $('#rappel').classList.add('neuf');
     // Les notifications n'arrivent qu'ici, dans « Tâches » : la bulle sonne, rien d'autre ne s'affiche.
+    // SON PROPRE GESTE NE SONNE PAS (27/11/2026) : la commande mix que Charlie envoie lui-même arrive
+    // dans « À imprimer » (le filet des 20 min), sans sonner.
     const p = me();
-    if (p && !enPause(p.id)) sonner();
+    if (p && !enPause(p.id) && neuves.some(n => n.de !== p.id)) sonner();
   }
 
   // ---------- LA RELANCE DU LENDEMAIN (24/11/2026, Charlie) ----------
@@ -1703,12 +1682,10 @@
   }
   const garderNotes = notes => store.set(LS_RELANCE, { qui: me()?.id, jour: debutJour(), notes });
   const noteDuJour = n => (n.note && Date.parse(n.note.at) >= debutJour()) || !!notesLocales()[n.id];
-  // Le point des retards du matin est remplacé par celui du lendemain : l'ancien ne se relance pas.
-  const perimee = n => n.type === 'retards' && notifsT.some(x => x.type === 'retards' && Date.parse(x.at) > Date.parse(n.at));
   function aRelancer(){
     const p = me(); if (!p || enPause(p.id)) return [];
     const auj = debutJour();
-    return notifsT.filter(n => !n.lu && Date.parse(n.at) < auj && !noteDuJour(n) && !perimee(n))
+    return notifsT.filter(n => !n.lu && Date.parse(n.at) < auj && !noteDuJour(n))
       .sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
   }
   // Après une relève : la note locale reste visible, et celle que le réseau n'a pas prise repart.
