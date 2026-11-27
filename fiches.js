@@ -70,6 +70,7 @@
     modif: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5"/><path d="M12 16h.01"/>',
     brouillon: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
     copier: '<rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+    croix: '<path d="M6 6l12 12"/><path d="M18 6 6 18"/>',
     ouvrir: '<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
   };
   const svg = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
@@ -92,6 +93,7 @@
       <span class="ofi-pil">${MOT[l.etat] || ''}</span>
       ${l.lien ? `<button type="button" class="ofi-bt" data-copier="${esc(l.lien)}" aria-label="Copier le lien envoyé au client" title="Copier le lien envoyé au client">${svg(I.copier)}</button>` : '<span class="ofi-bt ofi-vide" aria-hidden="true"></span>'}
       ${l.ouvrir ? `<a class="ofi-bt" href="${esc(l.ouvrir)}" target="_blank" rel="noopener" data-ouvrir aria-label="Ouvrir" title="Ouvrir">${svg(I.ouvrir)}</a>` : '<span class="ofi-bt ofi-vide" aria-hidden="true"></span>'}
+      <button type="button" class="ofi-bt ofi-suppr" data-suppr="${esc(cote)}" data-id="${esc(l.id)}" data-projet="${esc(l.projet)}" aria-label="Supprimer ce projet définitivement" title="Supprimer ce projet définitivement">${svg(I.croix)}</button>
     </div>`;
   }
   const MAX_LIGNES = 6;
@@ -104,9 +106,10 @@
   }
   function fiche(f) {
     const n = f.textile.length + f.trotec.length;
-    return `<article class="ofi-fiche">
-      <header><h2>${esc(f.client)}</h2>${f.ok ? `<span class="ofi-ok" title="Tout ce qui est parti chez lui est validé">${svg(I.valide)}</span>` : ''}
-        <small>${n} projet${n > 1 ? 's' : ''}</small></header>
+    return `<article class="ofi-fiche" data-cle="${esc(f.cle)}">
+      <header><button type="button" class="ofi-nom" data-client title="Ouvrir le client">${esc(f.client)}</button>${f.ok ? `<span class="ofi-ok" title="Tout ce qui est parti chez lui est validé">${svg(I.valide)}</span>` : ''}
+        <small>${n} projet${n > 1 ? 's' : ''}</small>
+        <button type="button" class="ofi-bt ofi-suppr" data-suppr="client" aria-label="Supprimer le client ${esc(f.client)} définitivement" title="Supprimer le client et tous ses projets, définitivement">${svg(I.croix)}</button></header>
       ${section(f, 'textile', 'Textile')}${section(f, 'trotec', 'Trotec')}
     </article>`;
   }
@@ -125,24 +128,89 @@
     try { if (new URL(url).origin === location.origin) { location.assign(url); return; } } catch (_) { return; }
     window.open(url, '_blank', 'noopener');
   }
-  function brancher(conteneur, ouvrir) {
+  // LE CLIENT (27/11/2026, Charlie : « quand je clique sur le client ou le projet, ça ferme la recherche ») :
+  // sa page dans BAT Studio (?client=) s'il a du textile, sinon Gabarits laser. Ouvrir ferme la recherche (opts.fermer).
+  function urlClient(f) {
+    const t = f.textile.find((l) => l.ouvrir), g = f.trotec.find((l) => l.ouvrir && /\/\?cmd=/.test(l.ouvrir));
+    try {
+      if (t) { const u = new URL(t.ouvrir); return `${u.origin}/?client=${encodeURIComponent(f.client)}`; }
+      if (g) { const u = new URL(g.ouvrir); return `${u.origin}/?q=${encodeURIComponent(f.client)}`; }
+    } catch (_) {}
+    return '';
+  }
+  const ficheDe = (el) => (clients || []).find((f) => f.cle === el.closest('[data-cle]')?.dataset.cle);
+
+  // SUPPRIMER D'UNE CROIX (27/11/2026, Charlie : « supprimer définitivement un client, ou uniquement son
+  // projet, via une croix ») : une confirmation (c'est définitif), puis BAT Studio /api/clients/supprimer
+  // (textile, stock, et le Trotec chez Gabarits laser). La fiche se redessine tout de suite.
+  async function demander(o) {
+    if (window.oldaMessages?.confirmer) return window.oldaMessages.confirmer(o);
+    return window.confirm(`${o.titre}\n\n${o.texte}`);
+  }
+  function dire(texte, erreur) {
+    if (window.oldaMessages?.toast) window.oldaMessages.toast(texte, { erreur });
+    else if (erreur) window.alert(texte);
+  }
+  async function supprimer(bouton, conteneur) {
+    const f = ficheDe(bouton);
+    if (!f) return;
+    const quoi = bouton.dataset.suppr;
+    const demande = quoi === 'client' ? { client: f.client }
+      : quoi === 'trotec' ? { client: f.client, trotec: bouton.dataset.id } : { client: f.client, projet: bouton.dataset.projet };
+    const n = f.textile.length + f.trotec.length;
+    const ok = await demander(quoi === 'client'
+      ? { titre: `Supprimer ${f.client} ?`, texte: `Le client et ${n > 1 ? `ses ${n} projets` : 'son projet'} (textile et Trotec) sont supprimés définitivement, pour tout le monde. Les liens déjà envoyés ne mèneront plus à rien.`, ok: 'Supprimer définitivement', danger: true }
+      : { titre: `Supprimer « ${bouton.dataset.projet} » ?`, texte: `Ce projet de ${f.client} est supprimé définitivement, pour tout le monde. Son lien déjà envoyé ne mènera plus à rien.`, ok: 'Supprimer définitivement', danger: true });
+    if (!ok) return;
+    // Tout de suite à l'écran ; le serveur suit.
+    const avant = clients;
+    clients = clients.map((x) => (x.cle !== f.cle ? x : quoi === 'client' ? null
+      : { ...x, [quoi === 'trotec' ? 'trotec' : 'textile']: x[quoi === 'trotec' ? 'trotec' : 'textile'].filter((l) => (quoi === 'trotec' ? l.id !== bouton.dataset.id : l.projet !== bouton.dataset.projet)) }))
+      .filter((x) => x && x.textile.length + x.trotec.length);
+    for (const g of abonnes) g();
+    try {
+      const r = await fetch(API + '/api/clients/supprimer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(demande) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
+      dire(quoi === 'client' ? `${f.client} supprimé.` : `« ${bouton.dataset.projet} » supprimé.`);
+      conteneur.__apresSuppression?.(j);
+    } catch (e) {
+      clients = avant;
+      for (const g of abonnes) g();
+      dire(`Rien n'a été supprimé : ${e.message}`, true);
+    }
+    charger(true);
+  }
+
+  function brancher(conteneur) {
     if (conteneur.__ofi) return;
     conteneur.__ofi = true;
     conteneur.addEventListener('click', (e) => {
       const c = e.target.closest('[data-copier]');
       if (c) { e.preventDefault(); copier(c); return; }
+      const s = e.target.closest('[data-suppr]');
+      if (s) { e.preventDefault(); supprimer(s, conteneur); return; }
       const p = e.target.closest('[data-plus]');
       if (p) { p.previousElementSibling.hidden = false; p.remove(); return; }
+      const n = e.target.closest('[data-client]');
+      if (n) {
+        const f = ficheDe(n);
+        if (!f) return;
+        conteneur.__fermer?.();
+        if (conteneur.__ouvrirClient) conteneur.__ouvrirClient(f); else { const u = urlClient(f); if (u) ouvrirParDefaut(u); }
+        return;
+      }
       const a = e.target.closest('a[data-ouvrir]');
-      if (a && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); (conteneur.__ouvrir || ouvrirParDefaut)(a.href); }
+      if (a && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); conteneur.__fermer?.(); (conteneur.__ouvrir || ouvrirParDefaut)(a.href); }
     });
   }
 
   const MAX_CLIENTS = 5;
   function rendre(conteneur, q, opts = {}) {
     styler();
-    brancher(conteneur, opts.ouvrir);
-    if (opts.ouvrir) conteneur.__ouvrir = opts.ouvrir;
+    brancher(conteneur);
+    // Les gestes propres à l'appli : ouvrir un projet ou un client chez elle, fermer sa recherche, relire après une suppression.
+    for (const k of ['ouvrir', 'ouvrirClient', 'fermer', 'apresSuppression']) if (opts[k]) conteneur['__' + k] = opts[k];
     const dessiner = () => {
       const trouves = chercher(q).slice(0, opts.max || MAX_CLIENTS);
       conteneur.innerHTML = trouves.length ? `<div class="ofi">${trouves.map(fiche).join('')}</div>`
@@ -168,14 +236,15 @@
     const champ = hote.querySelector('input'), panneau = hote.querySelector('.ofi-panneau');
     const maj = () => {
       const q = champ.value;
-      const n = rendre(panneau, q, { max: 4 });
+      const n = rendre(panneau, q, { max: 4, fermer: () => { champ.value = ''; panneau.hidden = true; champ.blur(); } });
       panneau.hidden = compact(q).length < 2;
       if (!n && !panneau.hidden && clients) panneau.innerHTML = '<p class="ofi-attente">Aucun client à ce nom.</p>';
     };
     champ.addEventListener('input', maj);
     champ.addEventListener('focus', () => { charger(); if (champ.value) maj(); });
     champ.addEventListener('keydown', (e) => { if (e.key === 'Escape') { champ.value = ''; maj(); champ.blur(); } });
-    document.addEventListener('pointerdown', (e) => { if (!hote.contains(e.target)) panneau.hidden = true; });
+    // Un clic ailleurs la ferme — pas celui de la fenêtre de confirmation (messages.js) ouverte par une croix.
+    document.addEventListener('pointerdown', (e) => { if (!hote.contains(e.target) && !e.target.closest?.('dialog, .msg-ecran, .msg-flottant')) panneau.hidden = true; });
     abonnes.add(() => { if (!panneau.hidden) maj(); });
     return champ;
   }
@@ -189,7 +258,11 @@
 .ofi{display:flex;flex-direction:column;gap:12px;font-family:var(--font,Inter,system-ui,sans-serif);color:var(--ink,#202930)}
 .ofi-fiche{background:var(--surface,#fff);border:1px solid var(--line-soft,#e4e9ed);border-radius:var(--radius-champ,12px);padding:14px 16px 6px}
 .ofi-fiche header{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-.ofi-fiche h2{margin:0;font-size:17px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.ofi-nom{margin:0;padding:6px 8px;margin-left:-8px;min-height:44px;border:0;border-radius:var(--radius-champ,12px);background:none;font:inherit;font-size:17px;font-weight:600;line-height:1.3;color:inherit;text-align:left;overflow-wrap:anywhere;cursor:pointer}
+.ofi-nom:hover{background:var(--hover,rgba(74,98,116,.07))}
+.ofi-nom:focus-visible{outline:none;box-shadow:var(--ring,0 0 0 3px rgba(107,129,145,.45))}
+.ofi-suppr:hover{color:var(--danger,#d93025);background:var(--danger-bg,#fce8e6)}
+.ofi-fiche header .ofi-suppr{margin-right:-10px}
 .ofi-fiche header small{margin-left:auto;color:var(--muted,#5b6b78);font-size:13px;white-space:nowrap}
 .ofi-ok{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--ok,#137333);color:#fff;align-items:center;justify-content:center;flex:none}
 .ofi-ok svg{width:14px;height:14px;stroke:currentColor;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
