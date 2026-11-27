@@ -7,7 +7,8 @@
   // (bulle.js, messages.js, barre.js et les polices restent servis ici pour toutes les applis.)
   if (location.hostname === 'dockbearolda.github.io' && window.top === window.self) location.replace('https://olda.myolda.com' + location.pathname + location.search + location.hash);
   // L'HABIT DE LA PERSONNE AU POSTE (27/11/2026) : posé avant le premier rendu (Mélina : le rose, voir la fin du <style>).
-  try { document.documentElement.dataset.poste = localStorage.getItem('olda_poste') || ''; } catch (_) {}
+  // Elle peut l'éteindre (« Qui est au poste ? » → Thème rose) : « olda_habit_rose » = « non » sur l'appareil.
+  try { document.documentElement.dataset.habit = localStorage.getItem('olda_poste') === 'melina' && localStorage.getItem('olda_habit_rose') !== 'non' ? 'melina' : ''; } catch (_) {}
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#f4f6f8" />
@@ -364,6 +365,8 @@
   .who-grid button:focus-visible{ outline:3px solid rgba(107,129,145,.45); outline-offset:2px; }
   @media (hover:hover){ .who-grid button:hover{ border-color:var(--duck-focus); box-shadow:var(--shadow); } }
   .who-grid button[aria-pressed="true"]{ border-color:var(--duck); box-shadow:0 0 0 2px var(--duck) inset; }
+  .habit-ligne{ margin-top:12px; }
+  .habit-pastille{ flex:none; width:36px; height:36px; border-radius:11px; background:linear-gradient(135deg,#e6b5c9,#9a5571); }
 
 
   /* ---------- Toast ---------- */
@@ -425,40 +428,41 @@
 
   /* ---------- L'HABIT DE MÉLINA (27/11/2026, Charlie : « plus girly, mais le même design, pour Mélina ») ----------
      Mêmes formes, mêmes mesures, même verre : seules les TEINTES changent quand Mélina est au poste
-     (html[data-poste="melina"], posé dans le <head> et au changement de profil). L'ardoise devient un vieux
-     rose framboise (blanc dessus : 5,6:1), les halos passent au rose, lilas et pêche. Les états (vert,
+     (html[data-habit="melina"], posé dans le <head>, au changement de profil et par l'interrupteur
+     « Thème rose » de « Qui est au poste ? », qu'elle seule voit). L'ardoise devient un vieux
+     rose poudré (blanc dessus : 5,4:1), les halos passent au rose, lilas et pêche. Les états (vert,
      orange, rouge) restent ceux de tout le monde. Les applis ouvertes dans les cadres gardent leur habit. */
-  html[data-poste="melina"]{
-    --duck:#b03e6c; --duck-hover:#9e3761; --duck-press:#872f53; --duck-focus:#d98aab;
-    --duck-rgb:176, 62, 108; --duck-voile:rgba(176,62,108,.08);
-    --ink:#2b2128; --muted:#6e5a66; --faint:#8c7884;
-    --line:#ecd9e0; --line-soft:#f3e6eb; --line-strong:#d9bcc7;
-    --page:#fbf4f6; --glass:rgba(255,255,255,.64);
-    --hover:rgba(176,62,108,.07); --press:rgba(176,62,108,.12);
-    --shadow:0 1px 2px rgba(43,33,40,.04), 0 10px 26px rgba(176,62,108,.11);
-    --shadow-hover:0 4px 10px rgba(43,33,40,.06), 0 22px 46px rgba(176,62,108,.19);
-    --ring:0 0 0 3px rgba(217,138,171,.5);
+  html[data-habit="melina"]{
+    --duck:#9a5571; --duck-hover:#884b64; --duck-press:#723f54; --duck-focus:#c79aad;
+    --duck-rgb:154, 85, 113; --duck-voile:rgba(154,85,113,.08);
+    --ink:#2a2428; --muted:#685b63; --faint:#877a82;
+    --line:#e8dde2; --line-soft:#f0e8eb; --line-strong:#d4c3ca;
+    --page:#f8f4f5; --glass:rgba(255,255,255,.64);
+    --hover:rgba(154,85,113,.07); --press:rgba(154,85,113,.12);
+    --shadow:0 1px 2px rgba(42,36,40,.04), 0 10px 26px rgba(154,85,113,.11);
+    --shadow-hover:0 4px 10px rgba(42,36,40,.06), 0 22px 46px rgba(154,85,113,.19);
+    --ring:0 0 0 3px rgba(199,154,173,.5);
   }
-  html[data-poste="melina"] .aurora{ background:
-    radial-gradient(circle at 13vmax 5vmax, rgba(240,110,165,.26), transparent 28vmax),
-    radial-gradient(circle at calc(100% - 7vmax) 9vmax, rgba(176,124,232,.16), transparent 28vmax),
-    radial-gradient(circle at calc(100% - 19vmax) calc(100% - 1vmax), rgba(255,168,140,.22), transparent 28vmax),
-    radial-gradient(circle at 9vmax calc(100% - 3vmax), rgba(246,150,190,.16), transparent 28vmax); }
-  html[data-poste="melina"] .hub{ box-shadow:0 1px 2px rgba(43,33,40,.05), 0 34px 80px -28px rgba(214,70,140,.40), 0 12px 30px rgba(176,62,108,.10), inset 0 1px 0 rgba(255,255,255,.9); }
-  html[data-poste="melina"] .hub::after{ background:linear-gradient(135deg,#f29cc0,#e0619a 45%,#b98cf0 80%,#f29cc0); }
-  html[data-poste="melina"] .editing .hub::after{ background:none; border-color:rgba(176,62,108,.4); }
-  html[data-poste="melina"] .card-icon{ --c-hi:#e3a3bd; --c-lo:#b03e6c; background:#f8eef2; }
-  html[data-poste="melina"] .card--add .card-icon{ background:none; box-shadow:inset 0 0 0 1.5px rgba(176,62,108,.35); }
-  html[data-poste="melina"] .editing .bento .card{ border-color:rgba(176,62,108,.32); }
-  html[data-poste="melina"] .onglet.on{ box-shadow:0 1px 3px rgba(43,33,40,.10), inset 0 0 0 1px rgba(176,62,108,.12); }
-  html[data-poste="melina"] .side-tirer{ box-shadow:inset 0 0 0 1px rgba(176,62,108,.14), 0 6px 18px rgba(120,40,80,.14); }
-  html[data-poste="melina"] .ctx-app{ box-shadow:0 0 0 1px rgba(176,62,108,.12), 0 18px 40px rgba(120,40,80,.22); }
-  html[data-poste="melina"] :is(.card.actif){ box-shadow:0 0 0 2px rgba(217,138,171,.28), var(--shadow); }
-  html[data-poste="melina"] :is(.card:focus-visible, .field input:focus){ box-shadow:0 0 0 3px rgba(217,138,171,.28), var(--shadow); }
-  html[data-poste="melina"] .tile.drop .card{ box-shadow:0 0 0 3px rgba(217,138,171,.32), var(--shadow); }
-  html[data-poste="melina"] :is(.me, .hub-id, .btn, .icon-btn, .who-grid button, .interrupteur, .qui-liste button, .onglet-btn, .onglet-x, .onglet-r):focus-visible,
-  html[data-poste="melina"] .badge:focus-visible > span{ outline-color:rgba(217,138,171,.6); }
-  html[data-poste="melina"] ::selection{ background:#f7d3e1; }
+  html[data-habit="melina"] .aurora{ background:
+    radial-gradient(circle at 13vmax 5vmax, rgba(225,130,165,.17), transparent 28vmax),
+    radial-gradient(circle at calc(100% - 7vmax) 9vmax, rgba(170,140,220,.11), transparent 28vmax),
+    radial-gradient(circle at calc(100% - 19vmax) calc(100% - 1vmax), rgba(245,175,150,.15), transparent 28vmax),
+    radial-gradient(circle at 9vmax calc(100% - 3vmax), rgba(235,165,190,.11), transparent 28vmax); }
+  html[data-habit="melina"] .hub{ box-shadow:0 1px 2px rgba(42,36,40,.05), 0 34px 80px -28px rgba(170,90,125,.28), 0 12px 30px rgba(154,85,113,.10), inset 0 1px 0 rgba(255,255,255,.9); }
+  html[data-habit="melina"] .hub::after{ background:linear-gradient(135deg,#e6b5c9,#c98aa5 45%,#b5a3dc 80%,#e6b5c9); }
+  html[data-habit="melina"] .editing .hub::after{ background:none; border-color:rgba(154,85,113,.4); }
+  html[data-habit="melina"] .card-icon{ --c-hi:#d4b0c0; --c-lo:#9a5571; background:#f6f0f2; }
+  html[data-habit="melina"] .card--add .card-icon{ background:none; box-shadow:inset 0 0 0 1.5px rgba(154,85,113,.35); }
+  html[data-habit="melina"] .editing .bento .card{ border-color:rgba(154,85,113,.32); }
+  html[data-habit="melina"] .onglet.on{ box-shadow:0 1px 3px rgba(42,36,40,.10), inset 0 0 0 1px rgba(154,85,113,.12); }
+  html[data-habit="melina"] .side-tirer{ box-shadow:inset 0 0 0 1px rgba(154,85,113,.14), 0 6px 18px rgba(110,60,85,.14); }
+  html[data-habit="melina"] .ctx-app{ box-shadow:0 0 0 1px rgba(154,85,113,.12), 0 18px 40px rgba(110,60,85,.22); }
+  html[data-habit="melina"] :is(.card.actif){ box-shadow:0 0 0 2px rgba(199,154,173,.28), var(--shadow); }
+  html[data-habit="melina"] :is(.card:focus-visible, .field input:focus){ box-shadow:0 0 0 3px rgba(199,154,173,.28), var(--shadow); }
+  html[data-habit="melina"] .tile.drop .card{ box-shadow:0 0 0 3px rgba(199,154,173,.32), var(--shadow); }
+  html[data-habit="melina"] :is(.me, .hub-id, .btn, .icon-btn, .who-grid button, .interrupteur, .qui-liste button, .onglet-btn, .onglet-x, .onglet-r):focus-visible,
+  html[data-habit="melina"] .badge:focus-visible > span{ outline-color:rgba(199,154,173,.6); }
+  html[data-habit="melina"] ::selection{ background:#efdbe3; }
 </style>
 </head>
 <body>
@@ -614,6 +618,11 @@
     </header>
     <div class="sheet-body">
       <div class="who-grid" id="who-grid"></div>
+      <label class="app-ligne habit-ligne" id="habit-ligne" hidden>
+        <span class="habit-pastille" aria-hidden="true"></span>
+        <b>Thème rose</b>
+        <input type="checkbox" class="interrupteur" id="habit-rose">
+      </label>
       <p class="hint">Retenu sur cet appareil. Pour changer, touche ton prénom en haut.</p>
     </div>
   </div>
@@ -972,11 +981,15 @@
   // QUI EST AU POSTE, DIT À BAT STUDIO (27/11/2026) : il signe les envois et prend l'habit de la personne
   // (le rose de Mélina) d'après « ?poste= » (postes.js, theme.js) — sans ça, il ne savait jamais qui était là.
   const BAT_HOTES = /^(bat\.myolda\.com|bat-studio\.dockbear\.workers\.dev)$/;
+  // Le thème rose de Mélina, qu'elle peut éteindre (« Qui est au poste ? ») : déclaré ici, avant les onglets.
+  function habitRose(){ return store.raw('olda_poste') === 'melina' && store.raw('olda_habit_rose') !== 'non'; }
   function avecPoste(url){
     try {
       const u = new URL(url, location.href), p = store.raw('olda_poste');
       if (!p || !BAT_HOTES.test(u.hostname)) return url;
-      u.searchParams.set('poste', p); return u.href;
+      u.searchParams.set('poste', p);
+      if (p === 'melina') u.searchParams.set('habit', habitRose() ? 'melina' : 'commun');
+      return u.href;
     } catch (_) { return url; }
   }
   function cadreDe(o){
@@ -1539,6 +1552,15 @@
   const LS_WHO = 'olda_poste', who = $('#who'), whoGrid = $('#who-grid');
   const avatar = (p, cls) => { const a = el('span', 'avatar' + (cls ? ' ' + cls : '')); a.style.setProperty('--a', p.tint); a.textContent = p.name.charAt(0); a.setAttribute('aria-hidden', 'true'); return a; };
   const me = () => PROFILES.find(p => p.id === store.raw(LS_WHO));
+  // L'HABIT : le rose de Mélina, qu'elle peut éteindre (l'interrupteur n'apparaît que pour elle).
+  function poserHabit(){
+    document.documentElement.dataset.habit = habitRose() ? 'melina' : '';
+    $('#habit-ligne').hidden = store.raw(LS_WHO) !== 'melina'; $('#habit-rose').checked = habitRose();
+  }
+  $('#habit-rose').addEventListener('change', e => {
+    store.set('olda_habit_rose', e.target.checked ? 'oui' : 'non');
+    poserHabit(); window.oldaBulle?.relancer(); posteAuxCadres();
+  });
   function syncWho(){
     const p = me(), b = $('#b-who');
     b.hidden = !p; if (!p) return;
@@ -1554,7 +1576,7 @@
       const b = el('button'); b.type = 'button'; b.setAttribute('aria-pressed', x === p);
       const n = el('span'); n.textContent = x.name;
       b.append(avatar(x), n);
-      b.onclick = () => { store.set(LS_WHO, x.id); document.documentElement.dataset.poste = x.id; who.close(); syncWho(); if (x !== p) { toast(`Bonjour ${x.name} 👋`); window.oldaBulle?.relancer(); render(); posteAuxCadres(); } };
+      b.onclick = () => { store.set(LS_WHO, x.id); poserHabit(); who.close(); syncWho(); if (x !== p) { toast(`Bonjour ${x.name} 👋`); window.oldaBulle?.relancer(); render(); posteAuxCadres(); } };
       return b;
     }));
     if (!who.open) who.showModal();
@@ -1569,6 +1591,7 @@
   who.addEventListener('cancel', e => { if (who.dataset.locked) e.preventDefault(); });
   who.addEventListener('close', () => { if (!me()) openWho(); });
   $('#b-who').onclick = openWho;
+  poserHabit();
   syncWho();
   if (!me()) openWho();
 
