@@ -55,8 +55,20 @@
   // --- La bulle vit dans son Shadow DOM, au-dessus de tout ---
   const hote = document.createElement('olda-bulle');
   const root = hote.attachShadow({ mode: 'open' });
+  // L'habit de la personne au poste : sur le Dashboard seulement (les applis gardent la bulle commune).
+  const poserHabit = () => { if (DASHBOARD) hote.dataset.poste = store.raw(LS_WHO) || ''; };
+  poserHabit();
+  const ardoise = () => hote.dataset.poste === 'melina' ? '176,62,108' : '74,98,116';
   root.innerHTML = `<style>
   :host{ all:initial; position:fixed; left:0; top:0; width:0; height:0; z-index:2147483000; }
+  /* L'ardoise et l'ombre en canaux : l'habit de Mélina les change (voir plus bas). */
+  :host{ --duck-rgb:74,98,116; --ombre-rgb:42,58,72; }
+  /* L'HABIT DE MÉLINA (27/11/2026), sur le Dashboard seulement (data-poste posé par poserHabit) :
+     les mêmes formes, l'ardoise devient un vieux rose framboise — comme le reste du Dashboard. */
+  :host([data-poste="melina"]){ --duck-rgb:176,62,108; --ombre-rgb:120,40,80; }
+  :host([data-poste="melina"]) :is(.chat, .todo, .ctx, .rappel, dialog, .toast, .info){
+    --duck:#b03e6c; --duck-hover:#9e3761; --duck-focus:#d98aab; --ink:#2b2128; --muted:#6e5a66; --line:#ecd9e0;
+  }
   .chat, .todo, .ctx, .rappel, dialog, .toast, .info{
     --duck:#4A6274; --duck-hover:#42596A; --duck-focus:#6B8191;
     --ink:#202930; --muted:#5b6b78; --line:#d6dde3; --danger:#d93025;
@@ -96,7 +108,7 @@
   .chat-qui-s{ font-size:13.5px; color:var(--muted); text-align:center; max-width:300px; line-height:1.4; }
   .chat-qui{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; width:min(100%, 340px); }
   .chat-qui button{ min-height:96px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; border:0; border-radius:18px;
-    background:rgba(255,255,255,.8); box-shadow:inset 0 0 0 1px rgba(74,98,116,.14); font-size:15px; font-weight:600; transition:transform .2s var(--spring); }
+    background:rgba(255,255,255,.8); box-shadow:inset 0 0 0 1px rgba(var(--duck-rgb),.14); font-size:15px; font-weight:600; transition:transform .2s var(--spring); }
   .chat-qui button:hover{ background:#fff; }
   .chat-qui button:active{ transform:scale(.96); }
   .chat-qui .avatar{ width:48px; height:48px; font-size:20px; }
@@ -138,7 +150,7 @@
     display:grid; grid-template-columns:minmax(132px, 34%) minmax(0, 1fr); grid-template-rows:auto minmax(0, 1fr) auto; overflow:hidden; border-radius:26px;
     background:var(--chat-glass);
     -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);   /* flou léger : il recalcule tout ce qui bouge dessous (le planning) */
-    box-shadow:inset 0 0 0 1px var(--chat-edge), inset 0 1px 0 rgba(255,255,255,.95), 0 0 0 1px rgba(74,98,116,.14), 0 2px 8px rgba(32,41,48,.08), 0 30px 70px rgba(42,58,72,.3);
+    box-shadow:inset 0 0 0 1px var(--chat-edge), inset 0 1px 0 rgba(255,255,255,.95), 0 0 0 1px rgba(var(--duck-rgb),.14), 0 2px 8px rgba(32,41,48,.08), 0 30px 70px rgba(var(--ombre-rgb),.3);
     transform-origin:var(--ox,0) var(--oy,0); animation:chatOpen .42s var(--spring);
     user-select:text; -webkit-user-select:text;
   }
@@ -155,12 +167,12 @@
     background:linear-gradient(to bottom,rgba(255,255,255,.45),rgba(255,255,255,0));
   }
   .chat-head:active{ cursor:grabbing; }
-  .chat-grip{ position:absolute; left:50%; top:5px; width:36px; height:4px; margin-left:-18px; border-radius:2px; background:rgba(74,98,116,.22); }
+  .chat-grip{ position:absolute; left:50%; top:5px; width:36px; height:4px; margin-left:-18px; border-radius:2px; background:rgba(var(--duck-rgb),.22); }
   /* Une seule ligne, et seulement quand elle dit quelque chose : « écrit… », une pause, une reconnexion */
   .chat-etat{ flex:1; min-width:0; font-size:12.5px; font-weight:600; color:var(--duck); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .chat-etat.pause{ color:#3d3a8c; }
   .chat-x{ width:44px; height:44px; flex-shrink:0; display:grid; place-items:center; border:0; border-radius:50%; background:none; }
-  .chat-x:hover{ background:rgba(74,98,116,.1); }
+  .chat-x:hover{ background:rgba(var(--duck-rgb),.1); }
   .chat-x svg{ width:20px; height:20px; fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round; }
   .chat-list{ grid-column:2; grid-row:2; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:14px 12px 6px; display:flex; flex-direction:column; gap:2px; scrollbar-width:thin; }
   .chat-day{ align-self:center; margin:10px 0 6px; padding:3px 10px; border-radius:999px; font-size:11.5px; font-weight:600; color:var(--muted); background:rgba(255,255,255,.55); }
@@ -191,7 +203,7 @@
   .chat-pour .fil-n{ position:absolute; top:50%; right:8px; margin-top:-9px; min-width:18px; height:18px; padding:0 5px; border-radius:9px; display:grid; place-items:center;
     background:var(--danger); color:#fff; font-size:11px; font-weight:700; box-shadow:0 0 0 2px #fff; }
   .chat-pour button > span:not(.fil-n){ display:flex; align-items:center; gap:8px; width:100%; min-width:0; height:44px; padding:0 30px 0 6px; border-radius:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13.5px; font-weight:600; color:var(--muted);
-    background:rgba(255,255,255,.5); box-shadow:inset 0 0 0 1px rgba(74,98,116,.12); transition:background-color .2s, color .2s, box-shadow .2s; }
+    background:rgba(255,255,255,.5); box-shadow:inset 0 0 0 1px rgba(var(--duck-rgb),.12); transition:background-color .2s, color .2s, box-shadow .2s; }
   .chat-pour .tous > span:not(.fil-n){ padding-left:11px; }
   .chat-pour .tous svg{ width:18px; height:18px; flex-shrink:0; }
   .chat-pour .nom{ min-width:0; font-style:normal; overflow:hidden; text-overflow:ellipsis; }
@@ -213,13 +225,13 @@
   .chat-rec-onde{ flex:1; display:flex; align-items:center; justify-content:flex-end; gap:3px; height:28px; overflow:hidden; }
   .chat-rec-onde i{ width:3px; min-height:3px; border-radius:2px; background:var(--danger); opacity:.75; flex-shrink:0; }
   .chat-ic{ width:40px; height:40px; flex-shrink:0; display:grid; place-items:center; border:0; border-radius:50%; background:none; }
-  .chat-ic:hover{ background:rgba(74,98,116,.1); }
+  .chat-ic:hover{ background:rgba(var(--duck-rgb),.1); }
   .chat-ic svg{ width:20px; height:20px; fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-  .chat-mic{ background:rgba(255,255,255,.8) !important; box-shadow:inset 0 0 0 1px rgba(74,98,116,.18); }
+  .chat-mic{ background:rgba(255,255,255,.8) !important; box-shadow:inset 0 0 0 1px rgba(var(--duck-rgb),.18); }
   .chat-mic svg{ stroke:var(--duck) !important; }
   /* Urgent : le bouton du message, et sa marque dans la bulle */
   .chat-urg{ width:44px; height:44px; flex-shrink:0; display:grid; place-items:center; border:0; border-radius:50%; background:none; color:var(--muted); transition:background-color .2s, color .2s; }
-  .chat-urg:hover{ background:rgba(74,98,116,.1); }
+  .chat-urg:hover{ background:rgba(var(--duck-rgb),.1); }
   .chat-urg svg{ width:21px; height:21px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   .chat-urg[aria-pressed="true"]{ background:var(--danger); color:#fff; box-shadow:0 4px 12px rgba(217,48,37,.3); }
   /* Tâche (Loïc) : le message part comme une tâche, dans la bulle Tâches des autres */
@@ -230,15 +242,15 @@
   .chat-m.moi .chat-tag{ background:#fff; color:var(--danger); }
   /* Ne pas déranger */
   .chat-dnd{ width:44px; height:44px; flex-shrink:0; display:grid; place-items:center; border:0; border-radius:50%; background:none; }
-  .chat-dnd:hover{ background:rgba(74,98,116,.1); }
+  .chat-dnd:hover{ background:rgba(var(--duck-rgb),.1); }
   .chat-dnd svg{ width:19px; height:19px; fill:none; stroke:var(--ink); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   .chat-dnd[aria-pressed="true"]{ background:#3d3a8c; }
   .chat-dnd[aria-pressed="true"] svg{ stroke:#fff; fill:#fff; }
   .chat-menu{ position:absolute; z-index:2; top:58px; right:10px; min-width:230px; padding:6px; border-radius:16px; background:rgba(255,255,255,.96);
-    box-shadow:inset 0 0 0 1px rgba(74,98,116,.12), 0 18px 40px rgba(42,58,72,.22); animation:chatPop .25s var(--spring); }
+    box-shadow:inset 0 0 0 1px rgba(var(--duck-rgb),.12), 0 18px 40px rgba(var(--ombre-rgb),.22); animation:chatPop .25s var(--spring); }
   .chat-menu p{ padding:8px 10px 6px; font-size:12.5px; color:var(--muted); line-height:1.35; }
   .chat-menu button{ display:block; width:100%; min-height:44px; padding:0 12px; border:0; border-radius:10px; background:none; text-align:left; font-size:15px; font-weight:600; }
-  .chat-menu button:hover{ background:rgba(74,98,116,.09); }
+  .chat-menu button:hover{ background:rgba(var(--duck-rgb),.09); }
   .chat-menu button.fin{ color:var(--danger); }
   .chat-pour button.en-pause .avatar{ opacity:.45; }
   .chat-lune{ position:absolute; bottom:2px; left:2px; width:22px; height:22px; border-radius:50%; display:grid; place-items:center; background:#3d3a8c; box-shadow:0 0 0 2px #fff; }
@@ -257,15 +269,15 @@
   .chat-voc-t{ font-size:12px; font-weight:600; opacity:.7; min-width:30px; text-align:right; }
   .chat-form textarea{
     flex:1; min-height:44px; max-height:132px; padding:11px 14px; border-radius:22px; resize:none;
-    border:1px solid rgba(74,98,116,.16); background:rgba(255,255,255,.8); font:inherit; font-size:16px; line-height:1.3; color:var(--ink); outline:none;
+    border:1px solid rgba(var(--duck-rgb),.16); background:rgba(255,255,255,.8); font:inherit; font-size:16px; line-height:1.3; color:var(--ink); outline:none;
     transition:border-color .2s, box-shadow .2s;
   }
-  .chat-form textarea:focus{ border-color:var(--duck-focus); box-shadow:0 0 0 3px rgba(74,98,116,.14); }
+  .chat-form textarea:focus{ border-color:var(--duck-focus); box-shadow:0 0 0 3px rgba(var(--duck-rgb),.14); }
   .chat-send{ width:44px; height:44px; flex-shrink:0; display:grid; place-items:center; border:0; border-radius:50%; background:var(--duck); transition:transform .25s var(--spring), opacity .2s; }
   .chat-send:disabled{ opacity:.35; }
   .chat-send:not(:disabled):active{ transform:scale(.9); }
   .chat-send svg{ width:20px; height:20px; fill:none; stroke:#fff; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
-  .chat.drag .chat-panel, .chat.drag .chat-orb{ box-shadow:inset 0 0 0 1px var(--chat-edge), 0 34px 80px rgba(42,58,72,.34); }
+  .chat.drag .chat-panel, .chat.drag .chat-orb{ box-shadow:inset 0 0 0 1px var(--chat-edge), 0 34px 80px rgba(var(--ombre-rgb),.34); }
   .chat.drag .chat-orb{ transform:scale(1.08); }
   .chat.drag{ will-change:transform; }
   @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .chat{ --chat-glass:rgba(250,251,252,.96); } }
@@ -289,7 +301,7 @@
   .lire-n{ font-size:12.5px; color:var(--muted); min-height:16px; }
 
   /* ---------- LA RELANCE DU LENDEMAIN : plein écran, on répond ou on laisse une note ---------- */
-  #relance{ --main:'Inter','Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif; --encre:#202930; --ligne:rgba(74,98,116,.16);
+  #relance{ --main:'Inter','Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif; --encre:#202930; --ligne:rgba(var(--duck-rgb),.16);
     width:100%; height:100%; max-width:none; max-height:none; margin:0; border-radius:0; background:#f4f6f8; box-shadow:none; overflow-y:auto; overscroll-behavior:contain; }
   #relance[open]{ display:block; animation:relanceIn .3s ease-out; }
   @keyframes relanceIn{ from{ opacity:0; } }
@@ -303,7 +315,7 @@
   .relance-t{ font-size:26px; font-weight:700; letter-spacing:-.02em; line-height:1.15; }
   .relance-s{ margin-top:-8px; font-size:15px; line-height:1.4; color:var(--muted); }
   .relance-carte{ display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:18px; border-radius:20px; background:#fff;
-    box-shadow:0 0 0 1px rgba(74,98,116,.12), 0 8px 24px rgba(32,41,48,.08); }
+    box-shadow:0 0 0 1px rgba(var(--duck-rgb),.12), 0 8px 24px rgba(32,41,48,.08); }
   .relance-q{ font-family:var(--main); font-size:19px; font-weight:600; line-height:1.35; color:var(--encre); overflow-wrap:anywhere; }
   .relance-projet{ font-size:15px; font-weight:600; line-height:1.35; color:var(--encre); opacity:.75; overflow-wrap:anywhere; }
   .relance-quand{ font-size:13px; color:var(--muted); }
@@ -314,18 +326,18 @@
   .relance-l{ font-size:15px; font-weight:600; }
   #relance-txt{ width:100%; min-height:96px; resize:vertical; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:#fff;
     font-size:16px; line-height:1.4; outline:none; transition:border-color .2s, box-shadow .2s; }
-  #relance-txt:focus{ border-color:var(--duck); box-shadow:0 0 0 3px rgba(74,98,116,.18); }
+  #relance-txt:focus{ border-color:var(--duck); box-shadow:0 0 0 3px rgba(var(--duck-rgb),.18); }
   .relance-ok{ min-height:52px; border:0; border-radius:16px; background:var(--duck); color:#fff; font-size:16px; font-weight:700; transition:opacity .2s, transform .2s var(--spring); }
   .relance-ok:disabled{ opacity:.4; cursor:default; }
   .relance-ok:not(:disabled):active{ transform:scale(.97); }
-  .relance-ok:focus-visible{ outline:3px solid rgba(74,98,116,.4); outline-offset:2px; }
+  .relance-ok:focus-visible{ outline:3px solid rgba(var(--duck-rgb),.4); outline-offset:2px; }
   @media (hover:hover){ .relance-ok:not(:disabled):hover{ background:var(--duck-hover); } }
   @media (prefers-reduced-motion:reduce){ #relance[open]{ animation:none; } }
   .chat-b .vu{ font-weight:700; opacity:1; }
 
   /* ---------- La to do list : un bloc-notes à soi, coché ici, rayé partout ---------- */
   .todo{ position:fixed; z-index:36; left:0; top:0; touch-action:none; user-select:none; -webkit-user-select:none;
-    --main:'Inter','Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif; --papier:#fff; --encre:#202930; --ligne:rgba(74,98,116,.12); }
+    --main:'Inter','Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif; --papier:#fff; --encre:#202930; --ligne:rgba(var(--duck-rgb),.12); }
   .todo-orb{ position:relative; width:56px; height:56px; border-radius:50%; border:0; padding:0; display:grid; place-items:center; -webkit-touch-callout:none;
     background:#fff; color:var(--duck);   /* blanche, l'ardoise de la charte OLDA */
     box-shadow:0 0 0 1px rgba(32,41,48,.06), 0 8px 22px rgba(32,41,48,.18), 0 2px 6px rgba(32,41,48,.12);
@@ -338,11 +350,11 @@
     background:var(--danger); color:#fff; font-size:12px; font-weight:700; box-shadow:0 0 0 2px #fff; animation:chatPop .45s var(--spring); }
   .todo-panel{ position:absolute; left:0; top:0; width:min(340px, calc(100vw - 24px)); height:min(480px, calc(100dvh - 24px));
     display:flex; flex-direction:column; overflow:hidden; border-radius:22px; background:var(--papier);
-    box-shadow:0 0 0 1px rgba(74,98,116,.14), 0 2px 8px rgba(32,41,48,.08), 0 30px 70px rgba(42,58,72,.28);
+    box-shadow:0 0 0 1px rgba(var(--duck-rgb),.14), 0 2px 8px rgba(32,41,48,.08), 0 30px 70px rgba(var(--ombre-rgb),.28);
     transform-origin:var(--ox,0) var(--oy,0); animation:chatOpen .42s var(--spring); user-select:text; -webkit-user-select:text; }
   .todo.is-min .todo-panel{ display:none; }
   .todo:not(.is-min) .todo-orb{ display:none; }
-  .todo.drag .todo-panel, .todo.drag .todo-orb{ box-shadow:0 0 0 1px rgba(74,98,116,.14), 0 34px 80px rgba(42,58,72,.34); }
+  .todo.drag .todo-panel, .todo.drag .todo-orb{ box-shadow:0 0 0 1px rgba(var(--duck-rgb),.14), 0 34px 80px rgba(var(--ombre-rgb),.34); }
   .todo.drag{ will-change:transform; }
   .todo-head{ position:relative; display:flex; align-items:center; gap:8px; min-height:58px; padding:8px 6px 0 18px; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
   .todo-head:active{ cursor:grabbing; }
@@ -353,7 +365,7 @@
   .todo-add input{ flex:1; min-width:0; height:48px; border:0; background:none; outline:none; font-family:var(--main); font-size:16px; color:var(--encre); }
   .todo-add input::placeholder{ color:rgba(35,50,74,.38); }
   .todo-plus{ width:44px; height:44px; flex-shrink:0; border:0; border-radius:50%; background:none; display:grid; place-items:center; }
-  .todo-plus:hover{ background:rgba(74,98,116,.1); }
+  .todo-plus:hover{ background:rgba(var(--duck-rgb),.1); }
   .todo-plus svg{ width:20px; height:20px; fill:none; stroke:var(--encre); stroke-width:2.2; stroke-linecap:round; }
   .todo-list{ flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; list-style:none; padding:4px 0 10px; scrollbar-width:thin; }
   .todo-i{ display:flex; align-items:flex-start; min-height:50px; padding-right:4px; border-bottom:1px solid var(--ligne); }
@@ -375,7 +387,7 @@
   .todo-i.raye .todo-tx > span{ animation:raye .45s ease-out; }
   @keyframes raye{ from{ background-size:0 1.5px; } }
   .todo-ic{ width:40px; height:48px; flex-shrink:0; border:0; border-radius:12px; background:none; display:grid; place-items:center; color:var(--muted); }
-  .todo-ic:hover{ background:rgba(74,98,116,.09); color:var(--ink); }
+  .todo-ic:hover{ background:rgba(var(--duck-rgb),.09); color:var(--ink); }
   .todo-ic svg{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
   /* LA RÉPONSE EN UN CLIC : des boutons tous pareils (même hauteur ; deux côte à côte, de même
      largeur), et « fait » dans la même case, en vert. Jamais un mot coupé ni qui déborde : un
@@ -393,14 +405,14 @@
     background:repeating-conic-gradient(#d4dae0 0 25%, #eef1f4 0 50%) 50% / 12px 12px; }
   .todo-logo-v img{ max-width:calc(100% - 8px); max-height:56px; object-fit:contain; }
   .todo-logo figcaption{ font-size:11.5px; line-height:1.25; color:var(--encre); opacity:.75; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-  .todo-note{ max-width:100%; margin-top:2px; padding:6px 9px; border-radius:9px; background:rgba(74,98,116,.08); font-size:13px; line-height:1.35; color:var(--encre); overflow-wrap:anywhere; }
+  .todo-note{ max-width:100%; margin-top:2px; padding:6px 9px; border-radius:9px; background:rgba(var(--duck-rgb),.08); font-size:13px; line-height:1.35; color:var(--encre); overflow-wrap:anywhere; }
   .todo-acts{ display:flex; flex-wrap:wrap; gap:6px; width:100%; margin-top:6px; }
   .todo-act{ flex:1 1 0; height:44px; padding:0 12px; border:1px solid var(--ligne); border-radius:12px; background:#fff; color:var(--encre);
     font-family:var(--main); font-size:14px; font-weight:700; line-height:1; white-space:nowrap; cursor:pointer;
     display:flex; align-items:center; justify-content:center; gap:6px; transition:transform .15s, opacity .2s; }
   .todo-act:active{ transform:scale(.97); }
   .todo-act:disabled{ opacity:.5; cursor:default; }
-  .todo-act:focus-visible{ outline:3px solid rgba(74,98,116,.4); outline-offset:2px; }
+  .todo-act:focus-visible{ outline:3px solid rgba(var(--duck-rgb),.4); outline-offset:2px; }
   .todo-act.go{ background:var(--duck); border-color:var(--duck); color:#fff; }
   .todo-act.oui, .todo-act.ok{ background:#137333; border-color:#137333; color:#fff; }
   .todo-act.ok{ cursor:default; opacity:.85; }
@@ -418,16 +430,16 @@
   .todo-i.part{ animation:partir .3s ease-in .55s forwards; pointer-events:none; }
   @keyframes partir{ to{ opacity:0; transform:translateX(12px); } }
   .todo-i.revient{ animation:revient 1.2s ease-out; }
-  @keyframes revient{ from{ background:rgba(74,98,116,.14); } }
+  @keyframes revient{ from{ background:rgba(var(--duck-rgb),.14); } }
   /* ---------- Clic droit : cacher / afficher la to do list ou la messagerie ---------- */
   .ctx{ position:fixed; z-index:60; left:0; top:0; min-width:236px; padding:6px; border-radius:14px; background:rgba(255,255,255,.98);
-    box-shadow:inset 0 0 0 1px rgba(74,98,116,.14), 0 18px 40px rgba(42,58,72,.24); animation:chatPop .2s var(--spring); }
+    box-shadow:inset 0 0 0 1px rgba(var(--duck-rgb),.14), 0 18px 40px rgba(var(--ombre-rgb),.24); animation:chatPop .2s var(--spring); }
   .ctx button{ display:flex; align-items:center; gap:10px; width:100%; min-height:44px; padding:0 12px; border:0; border-radius:10px; background:none; text-align:left; font-size:15px; font-weight:600; }
-  .ctx button:hover, .ctx button:focus-visible{ background:rgba(74,98,116,.1); outline:none; }
+  .ctx button:hover, .ctx button:focus-visible{ background:rgba(var(--duck-rgb),.1); outline:none; }
   .ctx svg{ width:18px; height:18px; flex-shrink:0; fill:none; stroke:var(--muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   /* Tout est caché : un petit point en bas à droite pour tout remettre */
   .rappel{ position:fixed; right:calc(2px + env(safe-area-inset-right,0px)); bottom:calc(2px + var(--safe-b)); width:44px; height:44px; border:0; background:none; display:grid; place-items:center; }
-  .rappel i{ width:12px; height:12px; border-radius:50%; background:rgba(74,98,116,.38); box-shadow:0 0 0 2px rgba(255,255,255,.85); transition:transform .2s, background-color .2s; }
+  .rappel i{ width:12px; height:12px; border-radius:50%; background:rgba(var(--duck-rgb),.38); box-shadow:0 0 0 2px rgba(255,255,255,.85); transition:transform .2s, background-color .2s; }
   .rappel:hover i, .rappel:focus-visible i{ transform:scale(1.4); background:var(--duck); }
   .rappel.neuf i{ background:var(--danger); }
   /* ---------- LA BLANCHE / L'ORANGE (25/11/2026, Charlie) : la blanche, ce sont les Tâches (le centre) ;
@@ -969,11 +981,11 @@
   }
   function renderPour(){
     const p = me(); if (!p) return;
-    const choix = [{ id: 'tous', name: 'Équipe', tint: '74,98,116' }, ...PROFILES.filter(x => x.id !== p.id)];
+    const choix = [{ id: 'tous', name: 'Équipe', tint: ardoise() }, ...PROFILES.filter(x => x.id !== p.id)];
     $('#chat-pour').replaceChildren(...choix.map(x => {
       const b = el('button', (x.id === 'tous' ? 'tous' : '') + (presents.includes(x.id) ? ' en-ligne' : '') + (enPause(x.id) ? ' en-pause' : '')); b.type = 'button'; b.setAttribute('role', 'tab');
       b.setAttribute('aria-checked', String(chatPour === x.id)); b.setAttribute('aria-selected', String(chatPour === x.id));
-      b.style.setProperty('--a', '74,98,116');
+      b.style.setProperty('--a', ardoise());
       const n = nonLus(x.id);
       b.title = (x.id === 'tous' ? 'L’équipe' : x.name + (enPause(x.id) ? ` · en pause jusqu’à ${heure(pauses[x.id])}` : presents.includes(x.id) ? ' · en ligne' : '')) + (n ? ` · ${n} non lu${n > 1 ? 's' : ''}` : '');
       const s = el('span');
@@ -1188,7 +1200,7 @@
     $('#lire-n').textContent = file.length > 1 ? `Encore ${file.length - 1} message${file.length > 2 ? 's' : ''} après celui-ci` : '';
     if (lireCourant) return;
     const m = lireCourant = file[0], de = profilDe(m.de);
-    lireDlg.style.setProperty('--a', de ? de.tint : '74,98,116');
+    lireDlg.style.setProperty('--a', de ? de.tint : ardoise());
     const av = de ? avatar(de) : el('span', 'avatar'); av.id = 'lire-av'; $('#lire-av').replaceWith(av);
     $('#lire-de').textContent = `${de ? de.name : '?'} t’écrit`;
     $("#lire-quand").textContent = `Urgent · ${heure(m.at)}`;
@@ -2124,6 +2136,7 @@
   }
 
   function chatRelancer(){
+    poserHabit();
     const p = me(); chat.classList.toggle('sans-nom', !p);
     chat.classList.toggle('is-min', !chatPos.ouvert);   // avant todoRelancer : la discussion se mesure ouverte ou en pastille pour poser les autres à côté
     todoRelancer();
