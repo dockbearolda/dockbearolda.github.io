@@ -406,6 +406,7 @@
   .todo-logo-v img{ max-width:calc(100% - 8px); max-height:56px; object-fit:contain; }
   .todo-logo figcaption{ font-size:11.5px; line-height:1.25; color:var(--encre); opacity:.75; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
   .todo-note{ max-width:100%; margin-top:2px; padding:6px 9px; border-radius:9px; background:rgba(var(--duck-rgb),.08); font-size:13px; line-height:1.35; color:var(--encre); overflow-wrap:anywhere; }
+  .todo-demande{ white-space:pre-line; background:var(--danger-bg,#fce8e6); }
   .todo-acts{ display:flex; flex-wrap:wrap; gap:6px; width:100%; margin-top:6px; }
   .todo-act{ flex:1 1 0; height:44px; padding:0 12px; border:1px solid var(--ligne); border-radius:12px; background:#fff; color:var(--encre);
     font-family:var(--main); font-size:14px; font-weight:700; line-height:1; white-space:nowrap; cursor:pointer;
@@ -1389,6 +1390,13 @@
   // la bulle de la réimpression (bat-…-r1) et ce qu'elle demande, puis ses logos en vignettes (`logos` de la notification ;
   // l'image vient de sa fiche PRT, BAT Studio en fait un PNG à Dropbox, même pour un PDF).
   const estReimpression = n => n.type === 'prt-imprimer' && (/demande une réimpression/.test(n.texte || '') || /-r\d+$/.test(n.carte?.id || ''));
+  // CE QUE LE CLIENT DEMANDE (28/11/2026, Le Carpaccio : « on ne sait pas où voir ses modifications ») :
+  // le texte qu'il a écrit sur son lien, tel quel, sous la ligne — tant que ce n'est pas fait.
+  function demandeClient(n){
+    if (n.type !== 'bat-note' || n.lu || !String(n.texte || '').trim()) return null;
+    const d = el('span', 'todo-note todo-demande'); d.textContent = String(n.texte).trim();
+    return d;
+  }
   function vignettesReimpression(n){
     const box = el('div', 'todo-logos');
     for (const l of n.logos) {
@@ -1418,7 +1426,8 @@
       // Une commande mix (BAT Studio, « Commande mix client ») suit le circuit d'un BAT.
       case 'mix-valide': return /crée le PRT/.test(t) ? `${client} a validé sa commande mix : crée le PRT` : `${client} : commande mix ${/feu vert/.test(t) ? 'lancée' : 'payée'}, à envoyer en production`;
       case 'bat-paiement': case 'bat-production': return /Commande mix/.test(t) ? `${client} a validé sa commande mix` : `${client} a validé son BAT`;
-      case 'bat-note': return `${client} a laissé une note sur son BAT`;
+      // La demande du client (28/11/2026) : ses mots, en entier, dans le cadre dessous (demandeClient).
+      case 'bat-note': return `${client} demande une modification de son BAT`;
       case 'bat-relance': return `${client} n’a pas répondu au BAT`;
       // BAT laser (gabarits-laser, 25/11/2026) : le client valide sur /bat/<id>, ou dit ce qu'il faut changer.
       case 'laser-valide': return `${client} a validé son BAT laser`;
@@ -1484,7 +1493,7 @@
   function lignesNotifs(){
     const out = notifsVisibles().map(n => {
       const cocher = !n.lu ? () => cocherNotif(n) : revenues.has(n.id) ? () => rayerNotif(n) : null;
-      const li = ligneT({ texte: ligneNotif(n), projet: projetNotif(n), detail: !n.lu && estReimpression(n) && n.carte && n.logos?.length ? vignettesReimpression(n) : null, quand: n.at, fait: !!n.lu, cocher, actions: boutonsNotif(n), note: !n.lu && n.note?.texte });
+      const li = ligneT({ texte: ligneNotif(n), projet: projetNotif(n), detail: !n.lu && estReimpression(n) && n.carte && n.logos?.length ? vignettesReimpression(n) : demandeClient(n), quand: n.at, fait: !!n.lu, cocher, actions: boutonsNotif(n), note: !n.lu && n.note?.texte });
       li.dataset.id = n.id;
       if (partantes.has(n.id)) li.classList.add('part');
       const entier = ligneNotif(n, false);
