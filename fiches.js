@@ -81,8 +81,25 @@
     if (l.etat === 'brouillon') out.push('pas encore envoyé');
     else if (l.envoyeLe) out.push(`${cote === 'textile' && l.version ? 'v' + l.version + ' ' : ''}envoyé le ${jour(l.envoyeLe)}`);
     if (l.etat === 'valide' && l.valideLe) out.push(`validé${l.par ? ' par ' + l.par : ''} le ${jour(l.valideLe)}`);
-    if (l.note) out.push(`« ${l.note} »`);
+    if (l.note && !demandeDe(l)) out.push(`« ${l.note} »`);   // la demande en cours : dans le carré, sous le nom
     return out.join(' · ');
+  }
+  // LA DEMANDE DU CLIENT, DANS UN CARRÉ SOUS SON NOM (28/11/2026, Le Carpaccio : « il a fait des
+  // modifications, on ne sait pas où les voir » ; Charlie : « sous son nom, dans la recherche, un
+  // carré avec l'indication »). Ses mots en entier, textile par textile, et « Refaire le BAT ».
+  // Un BAT Studio d'avant (sans `demande`) : sa note seule.
+  const demandeDe = (l) => (l.etat !== 'modif' ? null
+    : l.demande?.textiles?.length ? l.demande : l.note ? { textiles: [{ nom: '', note: l.note }] } : null);
+  function carre(l) {
+    const d = demandeDe(l);
+    if (!d) return '';
+    const quand = jour(d.le);
+    const ouvrir = sur(l.ouvrir);
+    return `<div class="ofi-demande" role="note">
+      <div class="ofi-dem-tete">${svg(I.modif)}<b>Le client demande une modification</b><small>${esc([l.projet, l.version ? 'v' + l.version : '', quand].filter(Boolean).join(' · '))}</small></div>
+      ${d.textiles.map((x) => `<p>${x.nom && d.textiles.length > 1 ? `<span>${esc(x.nom)}</span>` : ''}${esc(x.note)}</p>`).join('')}
+      ${ouvrir ? `<a class="ofi-refaire" href="${esc(ouvrir)}" target="_blank" rel="noopener" data-ouvrir>Refaire le BAT</a>` : ''}
+    </div>`;
   }
   const sur = (u) => (/^https?:\/\//.test(String(u || '')) ? u : '');
   function ligne(l, cote) {
@@ -110,6 +127,7 @@
       <header><button type="button" class="ofi-nom" data-client title="Ouvrir le client">${esc(f.client)}</button>${f.ok ? `<span class="ofi-ok" title="Tout ce qui est parti chez lui est validé">${svg(I.valide)}</span>` : ''}
         <small>${n} projet${n > 1 ? 's' : ''}</small>
         <button type="button" class="ofi-bt ofi-suppr" data-suppr="client" aria-label="Supprimer le client ${esc(f.client)} définitivement" title="Supprimer le client et tous ses projets, définitivement">${svg(I.croix)}</button></header>
+      ${[...f.textile, ...f.trotec].map(carre).join('')}
       ${section(f, 'textile', 'Textile')}${section(f, 'trotec', 'Trotec')}
     </article>`;
   }
@@ -266,6 +284,16 @@
 .ofi-fiche header small{margin-left:auto;color:var(--muted,#5b6b78);font-size:13px;white-space:nowrap}
 .ofi-ok{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--ok,#137333);color:#fff;align-items:center;justify-content:center;flex:none}
 .ofi-ok svg{width:14px;height:14px;stroke:currentColor;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ofi-demande{display:flex;flex-direction:column;gap:6px;margin:6px 0 8px;padding:12px 14px;border-radius:var(--radius-champ,12px);background:var(--danger-bg,#fce8e6);border:1px solid var(--danger-line,#f4b6b0)}
+.ofi-dem-tete{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;color:var(--danger,#d93025)}
+.ofi-dem-tete svg{width:18px;height:18px;flex:none;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ofi-dem-tete b{font-size:14px;font-weight:600}
+.ofi-dem-tete small{font-size:13px;color:var(--muted,#5b6b78)}
+.ofi-demande p{margin:0;font-size:15px;line-height:1.45;color:var(--ink,#202930);white-space:pre-line;overflow-wrap:anywhere}
+.ofi-demande p span{display:block;font-size:12px;font-weight:600;color:var(--muted,#5b6b78)}
+.ofi-refaire{align-self:flex-start;display:inline-flex;align-items:center;min-height:44px;margin-top:2px;padding:0 18px;border-radius:999px;background:var(--duck,#4a6274);color:#fff;font-size:14px;font-weight:600;text-decoration:none}
+.ofi-refaire:hover{filter:brightness(1.1)}
+.ofi-refaire:focus-visible{outline:none;box-shadow:var(--ring,0 0 0 3px rgba(107,129,145,.45))}
 .ofi-sec h3{margin:10px 0 0;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--faint,#7d8b96)}
 .ofi-ligne{display:flex;align-items:center;gap:10px;min-height:52px;padding:4px 0;border-top:1px solid var(--line-soft,#e4e9ed)}
 .ofi-sec h3+.ofi-ligne{border-top:0}
